@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Golmet/golmet-cli/internal/core/doctor"
+	"github.com/Golmet/golmet-cli/internal/core/tools"
 )
 
 // captureProgress registra os eventos do Run para asserts de ordem/paridade.
@@ -226,7 +227,7 @@ func TestSqliteAutoInstallViaInjectedFn(t *testing.T) {
 		Home:         home,
 		LocalAppData: filepath.Join(home, "lad"),
 		InstallSqliteFn: func(ctx context.Context) error {
-			bin := filepath.Join(home, "lad", "Programs", "mcp-sqlite", "mcp-sqlite.exe")
+			bin := filepath.Join(home, "lad", "Programs", "mcp-sqlite", tools.SqliteBinaryName())
 			os.MkdirAll(filepath.Dir(bin), 0o755)
 			return os.WriteFile(bin, []byte("fake"), 0o755)
 		},

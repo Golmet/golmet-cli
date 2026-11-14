@@ -71,6 +71,8 @@ func TestOpencodeConfigHasMCPRegex(t *testing.T) {
 func TestOpenCodeConfigFallbackRegistered(t *testing.T) {
 	mock := newOpencodeMock()
 	mock.silentFailure = true // sondagem nunca mostra o nome
+	lookPathFn = func(string) (string, error) { return "opencode-fake", nil }
+	t.Cleanup(func() { lookPathFn = execLookPathImpl })
 	old := runEngineCmd
 	runEngineCmd = func(name string, args []string) (string, error) {
 		if len(args) > 1 && args[1] == "add" {
@@ -126,6 +128,8 @@ func TestOpenCodeListUnavailableConfigFallback(t *testing.T) {
 // skip sem rodar o add (regressão dos re-adds que duplicavam entradas).
 func TestOpenCodePrecheckConfigSkip(t *testing.T) {
 	mock := newOpencodeMock()
+	lookPathFn = func(string) (string, error) { return "opencode-fake", nil }
+	t.Cleanup(func() { lookPathFn = execLookPathImpl })
 	old := runEngineCmd
 	runEngineCmd = mock.run
 	t.Cleanup(func() { runEngineCmd = old })
@@ -165,6 +169,8 @@ func TestOpenCodePendingHealthNote(t *testing.T) {
 func TestOpenCodePendingRegisteredViaList(t *testing.T) {
 	mock := newOpencodeMock()
 	mock.status["figma"] = "pending" // pós-add: sondagem em curso
+	lookPathFn = func(string) (string, error) { return "opencode-fake", nil }
+	t.Cleanup(func() { lookPathFn = execLookPathImpl })
 	old := runEngineCmd
 	runEngineCmd = mock.run
 	t.Cleanup(func() { runEngineCmd = old })
@@ -186,6 +192,10 @@ func TestOpenCodePendingRegisteredViaList(t *testing.T) {
 func TestOpenCodePostVerifyErrorRequiresBothSources(t *testing.T) {
 	mock := newOpencodeMock()
 	mock.silentFailure = true // list OK (vazio) + add não registrou
+	lookPathFn = func(string) (string, error) { return "opencode-fake", nil }
+	t.Cleanup(func() { lookPathFn = execLookPathImpl })
+	lookPathFn = func(string) (string, error) { return "opencode-fake", nil }
+	t.Cleanup(func() { lookPathFn = execLookPathImpl })
 	old := runEngineCmd
 	runEngineCmd = mock.run
 	t.Cleanup(func() { runEngineCmd = old })

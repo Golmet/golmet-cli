@@ -3,6 +3,7 @@ package install
 import (
 	"context"
 	"encoding/json"
+	"github.com/Golmet/golmet-cli/internal/core/tools"
 	"os"
 	"path/filepath"
 	"strings"
@@ -270,10 +271,7 @@ func TestSQLiteBinaryPresentAndMissing(t *testing.T) {
 	// presente → registra o path absoluto
 	binDir := filepath.Join(lad, "Programs", "mcp-sqlite")
 	os.MkdirAll(binDir, 0o755)
-	binName := "mcp-sqlite.exe"
-	if !strings.Contains(filepath.Base(binDir+string(os.PathSeparator)+binName), ".exe") {
-		binName = "mcp-sqlite"
-	}
+	binName := tools.SqliteBinaryName()
 	os.WriteFile(filepath.Join(binDir, binName), []byte("fake"), 0o755)
 
 	res2, err := Run(Options{
