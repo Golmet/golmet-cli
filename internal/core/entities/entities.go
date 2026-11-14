@@ -212,7 +212,10 @@ func (f *Feature) FMString(key string) string {
 // primeira diretiva "> estado:" como estado do arquivo (§7.7).
 func ParseSpec(doc *fsutil.FileDoc) *Spec {
 	s := &Spec{File: doc.Rel}
-	dir := filepath.Base(filepath.Dir(doc.Abs))
+	// o Abs pode chegar com separador \\ de Windows em qualquer GOOS —
+	// Dir/Base são dependentes de plataforma, então normaliza antes
+	norm := strings.ReplaceAll(doc.Abs, "\\", "/")
+	dir := filepath.Base(filepath.Dir(norm))
 	if m := analysisDirRe.FindStringSubmatch(dir); m != nil {
 		s.ID = m[1]
 	}
