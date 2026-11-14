@@ -70,12 +70,12 @@ func NewServer() *mcp.Server {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "gm_eval",
-		Description: "Checker determinístico de evals — pontua criteria.yaml de fixture contra o workspace (DR-017); grava o relatório markdown em ~/.golmet/eval-reports e devolve report_path",
+		Description: "Roda fixture(s) de eval e grava o relatório markdown em ~/.golmet/eval-reports — devolve checks + report_path. O relatório humano fica listável via gm_eval_reports (USE ESTA em vez de procurar EVAL_REPORT no filesystem)",
 	}, gmEval)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "gm_eval_reports",
-		Description: "Lista os relatórios de eval gravados em ~/.golmet/eval-reports (mais recentes primeiro, cap 50) — leia o file com file tools para o relatório humano",
+		Description: "Resultado/relatório dos evals mais recentes do kit (o mais recente primeiro) — USE ESTA TOOL quando pedirem 'resultado do eval' ANTES de explorar o filesystem; devolve skill, fixture, data e o file do relatório humano (leia com file tools)",
 	}, gmEvalReports)
 
 	mcp.AddTool(server, &mcp.Tool{
