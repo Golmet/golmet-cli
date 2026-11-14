@@ -42,6 +42,7 @@ não deste prompt.
   Figma para comparação visual (opcional; fallback: raiz)
 - `AGENTS.md` do repo alvo — convenções do repositório (precedência sobre o playbook)
 - Código do repo alvo (ex: `<raiz-de-projetos>/<nome>.MFE`)
+- Docs correntes das libs do projeto (API/config/migrations) — MCP context7 ANTES de confiar na memória do modelo
 
 ## Gera (downstream)
 

@@ -1360,7 +1360,7 @@ items:
       "configurar o workflow", "setup do workflow", "primeira configuração",
       "onboarding do workflow" ou ao migrar de máquina.
     requires: [file, edit, glob, grep, shell, ask]
-    invokes: [gm-aws-setup, gm-azure-setup, gm-clarify, gm-decision-audit, gm-decision-log, gm-dev-backend, gm-dev-frontend, gm-gh-issue-creator, gm-gh-pr-creator, gm-gh-setup, gm-jev-classifier, gm-jev-setup, gm-next, gm-onboarding-orchestrator, gm-prompt-gate, gm-quality-gates, gm-upgrade]
+    invokes: [gm-aws-setup, gm-azure-setup, gm-clarify, gm-decision-audit, gm-decision-log, gm-dev-backend, gm-dev-frontend, gm-gh-issue-creator, gm-gh-pr-creator, gm-gh-setup, gm-jev-classifier, gm-jev-setup, gm-mcp-context7-setup, gm-next, gm-onboarding-orchestrator, gm-prompt-gate, gm-quality-gates, gm-upgrade]
     body: sources/gm-setup.md
 
   - id: gm-aws-setup
@@ -1449,6 +1449,27 @@ items:
     requires: [file, edit, glob, grep, shell, ask]
     invokes: [gm-gh-setup, gm-reverse-orchestrator]
     body: sources/gm-mcp-codegraph-setup.md
+
+  - id: gm-mcp-context7-setup
+    kind: skill
+    description: >-
+      Wizard de configuração do MCP Context7 no OpenCode — server REMOTE
+      oficial (Streamable HTTP em https://mcp.context7.com/mcp), funciona SEM
+      credenciais (initialize + tools/list OK; rate limits baixos); API key
+      OPCIONAL e recomendada (grátis em context7.com/dashboard, prefixo
+      ctx7sk) via header Authorization Bearer. Duas rotas: remota
+      (recomendada — sem Node.js) e local (npx @upstash/context7-mcp,
+      Node 20+, key via CONTEXT7_API_KEY); rota automática oficial
+      `npx ctx7 setup --opencode` citada como alternativa. Expõe
+      resolve-library-id e query-docs; a regra de COMPORTAMENTO (quando
+      consultar docs de libs) vive em rules/context7.md do operador — esta
+      skill cuida da INFRAESTRUTURA do server. Modo de erro continue
+      (setup de MCP não bloqueia o fluxo). Idempotente e executado por
+      demanda; delegado pelo gm-setup. Use quando o usuário pedir
+      "configurar MCP Context7", "setup context7", "conectar context7 ao
+      opencode" ou "docs de libs no agente".
+    requires: [file, edit, glob, grep, shell, ask]
+    body: sources/gm-mcp-context7-setup.md
 
   - id: gm-mcp-figma-setup
     kind: skill

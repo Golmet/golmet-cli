@@ -390,9 +390,10 @@ func (s safeDirFS) Open(name string) (fs.File, error) {
 	return os.Open(real)
 }
 
-// validateContentPath constrains renderer output to the two content roots.
-// The check is deliberately independent of the host path separator so a
-// malicious registry cannot exploit a different platform's syntax.
+// validateContentPath constrains renderer output to the three content roots
+// (agents/, skills/, rules/). The check is deliberately independent of the
+// host path separator so a malicious registry cannot exploit a different
+// platform's syntax.
 func validateContentPath(rel string) (string, error) {
 	normalized := strings.ReplaceAll(filepath.ToSlash(rel), "\\", "/")
 	if normalized == "" || strings.HasPrefix(normalized, "/") || filepath.IsAbs(rel) ||
@@ -405,7 +406,8 @@ func validateContentPath(rel string) (string, error) {
 			return "", fmt.Errorf("caminho de conteúdo fora do escopo: %q", rel)
 		}
 	}
-	if !strings.HasPrefix(normalized, "agents/") && !strings.HasPrefix(normalized, "skills/") {
+	if !strings.HasPrefix(normalized, "agents/") && !strings.HasPrefix(normalized, "skills/") &&
+		!strings.HasPrefix(normalized, "rules/") {
 		return "", fmt.Errorf("caminho de conteúdo fora do escopo: %q", rel)
 	}
 	return normalized, nil

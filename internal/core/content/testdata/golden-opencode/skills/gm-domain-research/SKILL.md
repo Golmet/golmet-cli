@@ -30,6 +30,7 @@ improviso embutidos no prompt.
 - `packs/<pack-ativo>/domains/<dominio>/KNOWLEDGE.md` — base anterior (quando re-pesquisa por staleness)
 - Regra de pesquisa de docs oficiais do ambiente (context7) — não confie na memória
 - Fontes externas via `websearch` / `find-docs` / `ctx7` — sempre fontes primárias e atuais
+- Fonte primária adicional: MCP context7 (`query-docs`) para docs oficiais de bibliotecas — cite URL e data de acesso como as demais fontes
 
 ## Gera (downstream)
 

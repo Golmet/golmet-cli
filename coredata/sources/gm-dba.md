@@ -38,6 +38,7 @@ ambiente identificado e backup confirmado.
   (ACID, CAP, PACELC, replicação, sharding/quórum, consenso, Saga, matriz
   de tecnologias). **OBRIGATÓRIA antes de qualquer parecer de arquitetura**
   (escolha de tecnologia, sharding, replicação, consistência) — ver §Arquitetura
+- Docs correntes das libs do projeto (API/config/migrations) — MCP context7 ANTES de confiar na memória do modelo
 
 ## Gera (downstream)
 

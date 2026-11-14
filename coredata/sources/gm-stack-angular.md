@@ -20,6 +20,7 @@ convenções de **teste** do projeto vêm de skill específica (camada acima des
 - Código-fonte do repo (read-only) — `angular.json`, `package.json`, `webpack.config.js`, componentes/services/guards existentes
 - Artefatos de spec do módulo referenciados pela task: TASKS.md, UI_SPEC.md, API_CONTRACTS.md, ACCEPTANCE_CRITERIA.md, REQUIREMENTS.md
 - Skill `<projeto>-test-generator` — convenções de spec Karma/Jasmine (camada acima deste playbook). **Project-local:** só existe em projetos que a fornecem — se ausente no projeto, siga as convenções de spec do próprio repo (specs existentes + AGENTS.md)
+- Docs correntes das libs do playbook (sintaxe/API/config) — MCP context7 (`resolve-library-id` + `query-docs`) quando disponível; este playbook define o padrão da casa, não a sintaxe corrente
 
 ## Gera (downstream)
 

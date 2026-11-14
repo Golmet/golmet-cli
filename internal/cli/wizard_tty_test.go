@@ -66,8 +66,8 @@ func TestMCPFrameUniformPrefix(t *testing.T) {
 			cols = append(cols, idx)
 		}
 	}
-	if len(cols) != 12 {
-		t.Fatalf("esperava 12 linhas de item, achei %d (%q)", len(cols), buf.String())
+	if len(cols) != 13 {
+		t.Fatalf("esperava 13 linhas de item, achei %d (%q)", len(cols), buf.String())
 	}
 	for i, col := range cols[1:] {
 		if col != cols[0] {

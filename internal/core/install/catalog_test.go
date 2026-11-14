@@ -10,12 +10,12 @@ import (
 	"testing"
 )
 
-// ---- catálogo: as 12 entradas, nomes/tipos/ordem ----
+// ---- catálogo: as 13 entradas, nomes/tipos/ordem ----
 
 func TestCatalogTwelveEntries(t *testing.T) {
 	cat := Catalog()
-	if len(cat) != 12 {
-		t.Fatalf("catálogo com %d entradas, want 12", len(cat))
+	if len(cat) != 13 {
+		t.Fatalf("catálogo com %d entradas, want 13", len(cat))
 	}
 	byName := map[string]MCPDef{}
 	for _, def := range cat {
@@ -38,6 +38,7 @@ func TestCatalogTwelveEntries(t *testing.T) {
 		"github":       {"remote", "", "https://api.githubcopilot.com/mcp/"},
 		"supabase":     {"remote", "", "https://mcp.supabase.com/mcp"},
 		"cloudflare":   {"remote", "", "https://mcp.cloudflare.com/mcp"},
+		"context7":     {"remote", "", "https://mcp.context7.com/mcp"},
 		"aws":          {"stdio", "uvx", ""},
 		"sqlite":       {"stdio", "@sqlite", ""},
 	}
@@ -81,6 +82,18 @@ func TestCatalogTwelveEntries(t *testing.T) {
 	}
 	if strings.Contains(sql.Command, "npx") {
 		t.Errorf("sqlite não é npx (binário rusq local): %s", sql.Command)
+	}
+	// context7: key OPCIONAL — nunca em env_required (registro funciona
+	// sem key, com rate limits baixos); a env recomendada fica em env_optional
+	ctx7 := byName["context7"]
+	if len(ctx7.EnvRequired) != 0 {
+		t.Errorf("context7 env_required = %v, want vazio (key opcional)", ctx7.EnvRequired)
+	}
+	if !hasEnv(ctx7.EnvOptional, "CONTEXT7_API_KEY") {
+		t.Errorf("context7 env_optional = %v, want CONTEXT7_API_KEY", ctx7.EnvOptional)
+	}
+	if ctx7.Required || ctx7.Recommended {
+		t.Errorf("context7 é opcional como os demais serviços: required=%v recommended=%v", ctx7.Required, ctx7.Recommended)
 	}
 	// Names: kit primeiro (golmet, codegraph), serviços alfabético
 	names := Names()
@@ -337,7 +350,7 @@ func TestCatalogHumanListCoversNewEntries(t *testing.T) {
 		names = append(names, def.Name)
 	}
 	for _, want := range []string{
-		"azure-devops", "github", "supabase", "cloudflare", "aws", "sqlite",
+		"azure-devops", "github", "supabase", "cloudflare", "context7", "aws", "sqlite",
 	} {
 		found := false
 		for _, n := range names {

@@ -32,6 +32,7 @@ Regra de fronteira: se o workflow nem disparou ou falhou no build/push/SSH,
   `scripts/deploy.sh`, estrutura do projeto — para adaptar o template
 - `gh` CLI para secrets existentes: `gh secret list -R <org>/<repo>`
   (lista NOMES apenas — nunca valor)
+- Sintaxe corrente de GitHub Actions/Compose/cloudflared/systemd — MCP context7
 
 ## Gera (downstream)
 
