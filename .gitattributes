@@ -1,0 +1,7 @@
+# EOL canônico do kit é LF — checkout idêntico em todas as plataformas
+* text=auto eol=lf
+
+# binários
+*.png binary
+*.exe binary
+*.zip binary

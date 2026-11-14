@@ -2,6 +2,7 @@ package install
 
 import (
 	"context"
+	"github.com/Golmet/golmet-cli/internal/core/tools"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,7 +22,7 @@ func TestOpenCodePlaceholdersResolvedAndPostVerify(t *testing.T) {
 	os.MkdirAll(filepath.Join(home, ".config", "opencode"), 0o755)
 
 	selfExe := selfExeForTest()
-	codegraphBin := filepath.Join(home, ".golmet", "tools", "codegraph", "codebase-memory-mcp.exe")
+	codegraphBin := filepath.Join(home, ".golmet", "tools", "codegraph", tools.BinaryName())
 	os.MkdirAll(filepath.Dir(codegraphBin), 0o755)
 	os.WriteFile(codegraphBin, []byte("fake"), 0o755)
 

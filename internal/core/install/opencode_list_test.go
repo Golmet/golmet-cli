@@ -160,6 +160,8 @@ func TestOpenCodeDuplicatePrecheckSkip(t *testing.T) {
 	mock := newOpencodeMock()
 	mock.status["golmet"] = "failed: Connection closed: MCP server process exited with code 255"
 	mock.order = []string{"golmet"}
+	lookPathFn = func(string) (string, error) { return "opencode-fake", nil }
+	t.Cleanup(func() { lookPathFn = execLookPathImpl })
 	old := runEngineCmd
 	runEngineCmd = mock.run
 	t.Cleanup(func() { runEngineCmd = old })
@@ -187,6 +189,8 @@ func TestOpenCodeForceReAdds(t *testing.T) {
 	mock := newOpencodeMock()
 	mock.status["golmet"] = "failed: Connection closed: MCP server process exited with code 255"
 	mock.order = []string{"golmet"}
+	lookPathFn = func(string) (string, error) { return "opencode-fake", nil }
+	t.Cleanup(func() { lookPathFn = execLookPathImpl })
 	old := runEngineCmd
 	runEngineCmd = mock.run
 	t.Cleanup(func() { runEngineCmd = old })
@@ -221,6 +225,8 @@ func TestOpenCodeRegisterStatusesFromFixture(t *testing.T) {
 	for _, tc := range cases {
 		mock := newOpencodeMock()            // nasce VAZIO — o pré-check vê lista vazia
 		mock.status[tc.name] = tc.mockStatus // status que o `add` registra
+		lookPathFn = func(string) (string, error) { return "opencode-fake", nil }
+		t.Cleanup(func() { lookPathFn = execLookPathImpl })
 		old := runEngineCmd
 		runEngineCmd = mock.run
 		def, ok := Lookup(tc.name)
@@ -248,6 +254,8 @@ func TestOpenCodeRegisterStatusesFromFixture(t *testing.T) {
 func TestOpenCodePostVerifyErrorMessageClean(t *testing.T) {
 	mock := newOpencodeMock()
 	mock.silentFailure = true // add sai 0 sem registrar (regressão simulada)
+	lookPathFn = func(string) (string, error) { return "opencode-fake", nil }
+	t.Cleanup(func() { lookPathFn = execLookPathImpl })
 	old := runEngineCmd
 	runEngineCmd = mock.run
 	t.Cleanup(func() { runEngineCmd = old })

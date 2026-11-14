@@ -21,7 +21,7 @@ func serveSqliteRelease(t *testing.T, exeContent []byte, corruptChecksum bool) (
 	t.Helper()
 	var zipBuf bytes.Buffer
 	zw := zip.NewWriter(&zipBuf)
-	w, err := zw.Create("mcp-sqlite.exe")
+	w, err := zw.Create(SqliteBinaryName())
 	if err != nil {
 		t.Fatal(err)
 	}
