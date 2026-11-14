@@ -571,3 +571,84 @@ func TestDoctorEngineConfigPersonalOnly(t *testing.T) {
 		t.Errorf("human sem o item isento:\n%s", rep.Human())
 	}
 }
+
+// ---- state pack working copy: versionado no repo do pack = SEGURO; só o
+// WIP não-commitado conta como risco (eixo IMP — dado acumulado pelo
+// operador vive em packs/<id>/ do config do engine) ----
+
+func TestDoctorEngineConfigStatePackWorkingCopy(t *testing.T) {
+	ws := minWorkspace(t)
+	root := filepath.Join(t.TempDir(), "configroot")
+	writeFile(t, root, "plugins/loose.js", "solto sem proveniência\n") // ruído fora do pack
+
+	// working copy de state pack: conteúdo commitado + 1 arquivo em WIP
+	packDir := filepath.Join(root, "packs", "techminds")
+	writeFile(t, packDir, "pack.yaml", "id: techminds\nversion: 1.0.0\nname: TechMinds pack\nkind: state\n")
+	writeFile(t, packDir, "skills/gm-x/SKILL.md", "skill do pack\n")
+	writeFile(t, packDir, "knowledge/banco/indices.md", "conhecimento\n")
+	if !gitInitCommit(t, packDir) {
+		t.Skip("git indisponível")
+	}
+	writeFile(t, packDir, "accumulation/patterns/wip.md", "acumulação não commitada\n")
+
+	rep, err := Run(ws, Options{EngineConfigRoot: root})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	c := checkOf(t, rep, "engine-config")
+	if c.Status != Warn {
+		t.Errorf("engine-config = %s (%s), want warn (há WIP em risco)", c.Status, c.Detail)
+	}
+	sec := rep.EngineConfig
+	if sec == nil {
+		t.Fatalf("seção engine_config ausente")
+	}
+	if sec.PackVersioned != 3 { // pack.yaml + SKILL.md + indices.md
+		t.Errorf("PackVersioned = %d, want 3", sec.PackVersioned)
+	}
+	if sec.PackDirty != 1 || len(sec.PackDirtyDirs) != 1 || sec.PackDirtyDirs[0] != "packs/techminds" {
+		t.Errorf("PackDirty = %d (%v), want 1 ([packs/techminds])", sec.PackDirty, sec.PackDirtyDirs)
+	}
+	if sec.UntrackedTotal != 1 { // só plugins/loose.js — nada do pack vira untracked
+		t.Errorf("UntrackedTotal = %d, want 1 (working copy do pack é seguro)", sec.UntrackedTotal)
+	}
+	if sec.AtRisk() != 2 { // 1 não-reconstrutível + 1 WIP do state pack
+		t.Errorf("AtRisk = %d, want 2", sec.AtRisk())
+	}
+	if !strings.Contains(c.Fix, "pack publish") {
+		t.Errorf("fix sem a remediação do publish: %s", c.Fix)
+	}
+	human := rep.Human()
+	if !strings.Contains(human, "versionado no repo do pack (working copy): 3 arquivo(s)") {
+		t.Errorf("human sem o working copy seguro:\n%s", human)
+	}
+	if !strings.Contains(human, "state pack com mudanças não-commitadas: packs/techminds") {
+		t.Errorf("human sem o WIP do state pack:\n%s", human)
+	}
+}
+
+// state pack LIMPO (tudo commitado) não gera achado nem ruído
+func TestDoctorEngineConfigStatePackClean(t *testing.T) {
+	ws := minWorkspace(t)
+	root := filepath.Join(t.TempDir(), "configroot")
+	packDir := filepath.Join(root, "packs", "techminds")
+	writeFile(t, packDir, "pack.yaml", "id: techminds\nversion: 1.0.0\nname: TechMinds pack\nkind: state\n")
+	writeFile(t, packDir, "skills/gm-x/SKILL.md", "skill do pack\n")
+	if !gitInitCommit(t, packDir) {
+		t.Skip("git indisponível")
+	}
+	rep, err := Run(ws, Options{EngineConfigRoot: root})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	c := checkOf(t, rep, "engine-config")
+	if c.Status != OK {
+		t.Errorf("engine-config = %s (%s), want ok (working copy commitado é seguro)", c.Status, c.Detail)
+	}
+	if rep.EngineConfig.AtRisk() != 0 {
+		t.Errorf("AtRisk = %d, want 0", rep.EngineConfig.AtRisk())
+	}
+	if !strings.Contains(c.Detail, "state pack (seguro)") {
+		t.Errorf("detail sem o working copy seguro: %s", c.Detail)
+	}
+}

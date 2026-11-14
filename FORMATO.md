@@ -82,21 +82,35 @@ products: [MeuApp]        # só quando container: true
 packs: []                # [{id, repo, pin}] — overlays da organização (§Pack)
 ```
 
-### 3.1 Contrato mínimo de pack (L2)
+### 3.1 Contrato de pack (L2) — arquétipos overlay e state
 
-Um pack compartilhável é um repositório Git com `pack.yaml` na raiz e os
-arquivos declarados em `provides`:
+Um pack compartilhável é um repositório Git com `pack.yaml` na raiz. O campo
+`kind` escolhe o arquétipo (default: `overlay` — omitir o campo mantém o
+comportamento original):
 
 ```yaml
 id: community-accessibility
 version: 1.0.0
 name: Helpers de acessibilidade
+kind: overlay            # opcional — overlay é o default
 requires-core: ">=0.1"
 no-override: true
 provides:
   - skills/gm-a11y/SKILL.md
   - agents/gm-a11y-reviewer.md
 ```
+
+| Semântica | `overlay` (padrão) | `state` |
+|---|---|---|
+| Conteúdo | arquivos declarados em `provides` | o próprio working copy Git (tudo exceto `pack.yaml`) |
+| Cópia local | cache somente-leitura em `~/.golmet/packs/<slug>` | working copy bidirecional em `<config>/packs/<id>` (clone completo) |
+| `provides` | obrigatório, restrito a `agents/` e `skills/` | **proibido** (erro — em state o conteúdo é o clone) |
+| Materialização | overlay 3-way de `provides` no config do engine | overlay 3-way de `skills/` e `agents/` do working copy (posse do pack substitui o render do core para o mesmo caminho) + `rules/packs/<id>.md` copiado gerido (layer `pack:<id>`, alimenta o lazy index) |
+| `knowledge/` e `accumulation/` | — | **não materializadas** — vivem no working copy; os leitores (gm-domain-research, pattern library, lazy index) apontam para `packs/<id>/...` |
+| Sync (`pack update`) | `pull --ff-only` no cache (cache sujo = erro) | commit do WIP local (`"sync: acumulação local <UTC>"` — o dado nunca se perde) + `fetch` + `rebase origin/<branch>`; conflito = FALHA com remediação (`git rebase --continue/--abort` e rode de novo) |
+| Push | — | manual por design: `golmet pack publish <fonte>` (commit do WIP `"publish: <mensagem>"` + `push origin <branch>`) |
+| Working copy pré-existente | n/a | **adotado** (`pack add`/`pack update` com `.git` e `origin` igual à fonte — nunca reclone nem sobrescreve; origem divergente = erro claro) |
+| Doctor | cache/manifest do config | arquivos do working copy são seguros (versionados no repo do pack); só mudanças não-commitadas contam como risco |
 
 `provides` só pode apontar para `agents/` ou `skills/` dentro do pack; path
 	traversal é rejeitado. `golmet pack add <source> --engine <id>` sincroniza o
@@ -106,6 +120,12 @@ Arquivos locais divergentes são
 preservados e reportados; `no-override: true` impede colisões mesmo quando o
 arquivo anterior foi instalado por outra camada. O pack é fixado pelo SHA
 resolvido no manifest de conteúdo.
+
+`requires-core` aceita apenas o formato `>=X.Y` (ex.: `">=0.3"`) — ranges
+(ex.: `">=X <Y"`) e outros operadores são rejeitados com erro citando o
+formato aceito, nos dois arquétipos. O pack central da organização (remoto)
+distribui o arquétipo `state` para todos os colaboradores; forks ramificam a
+partir dele.
 
 ## 4. Gramática de IDs
 

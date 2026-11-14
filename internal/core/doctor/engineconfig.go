@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/Golmet/golmet-cli/internal/core/content"
+	"github.com/Golmet/golmet-cli/internal/core/pack"
 )
 
 // untrackedListCap — cap de cada lista de paths na seção/render (o resumo
@@ -71,14 +72,23 @@ type EngineConfigSection struct {
 	Unreadable        []string   `json:"unreadable,omitempty"` // ilegíveis — não classificáveis (anomalia)
 	GitRepo           bool       `json:"git_repo"`
 	GitDirty          int        `json:"git_dirty,omitempty"` // mudanças não-commitadas (melhor-esforço)
+
+	// State packs (arquétipo kind: state): o working copy em packs/<id>/ é
+	// um repo Git PRÓPRIO do pack — arquivos versionados lá são seguros
+	// (reconstrutíveis pelo git do pack, não pelo manifest do config);
+	// apenas mudanças não-commitadas no working copy contam como risco.
+	PackVersioned int      `json:"pack_versioned,omitempty"`  // arquivos em working copies de state packs (seguro)
+	PackDirty     int      `json:"pack_dirty,omitempty"`      // mudanças não-commitadas em working copies de state packs
+	PackDirtyDirs []string `json:"pack_dirty_dirs,omitempty"` // quais packs têm WIP (rel "packs/<id>")
 }
 
 // AtRisk devolve o total de estado do usuário que o kit não reconstrói —
 // o que uma limpeza do config (ou um --force descuidado) perderia.
 // Pessoal-por-design NÃO conta: o usuário decidiu não versionar (IMP-103/136)
-// — o kit não reconstrói, mas não é risco nem ruído.
+// — o kit não reconstrói, mas não é risco nem ruído. Mudanças não-commitadas
+// em working copies de state packs contam (o dado ainda não está em commit).
 func (s *EngineConfigSection) AtRisk() int {
-	return s.CustomizedTotal + s.UntrackedTotal + s.RemovedLocalTotal
+	return s.CustomizedTotal + s.UntrackedTotal + s.RemovedLocalTotal + s.PackDirty
 }
 
 // runEngineConfig executa o check contra a raiz do config do engine e
@@ -97,6 +107,11 @@ func (r *Report) runEngineConfig(root string) {
 		r.add("engine-config", Warn, "manifest de conteúdo ilegível em "+root+" ("+aerr.Error()+")",
 			"corrija o .golmet/manifest.json do config ou rode o update do kit para reescrevê-lo")
 	case sec.AtRisk() == 0 && len(sec.Unreadable) == 0 && sec.ManagedOK == 0 && sec.PersonalTotal == 0:
+		if sec.PackVersioned > 0 {
+			r.add("engine-config", OK,
+				fmt.Sprintf("%d arquivo(s) versionado(s) em working copy de state pack (seguro) — nada a perder", sec.PackVersioned), "")
+			return
+		}
 		r.add("engine-config", OK, "config root vazio (sem arquivos nem manifest) — nada a perder", "")
 	case sec.AtRisk() == 0 && len(sec.Unreadable) == 0 && sec.ManagedOK == 0:
 		r.add("engine-config", OK,
@@ -105,6 +120,9 @@ func (r *Report) runEngineConfig(root string) {
 		detail := fmt.Sprintf("cache reconstrutível — %d arquivo(s) gerido(s) conforme(s) ao manifest", sec.ManagedOK)
 		if sec.PersonalTotal > 0 {
 			detail += fmt.Sprintf(" · %d pessoal-por-design (isento)", sec.PersonalTotal)
+		}
+		if sec.PackVersioned > 0 {
+			detail += fmt.Sprintf(" · %d em working copy de state pack (seguro)", sec.PackVersioned)
 		}
 		r.add("engine-config", OK, detail, "")
 	default:
@@ -143,6 +161,13 @@ func (s *EngineConfigSection) summaryLine() string {
 	if s.RemovedLocalTotal > 0 {
 		parts = append(parts, fmt.Sprintf("%d local(is) removido(s) do disco", s.RemovedLocalTotal))
 	}
+	if s.PackVersioned > 0 {
+		parts = append(parts, fmt.Sprintf("%d em working copy de state pack (seguro)", s.PackVersioned))
+	}
+	if s.PackDirty > 0 {
+		parts = append(parts, fmt.Sprintf("%d mudança(s) não-commitada(s) em state pack(s) (%s)",
+			s.PackDirty, strings.Join(s.PackDirtyDirs, ", ")))
+	}
 	if s.GitRepo && s.GitDirty > 0 {
 		parts = append(parts, fmt.Sprintf("%d mudança(s) não-commitada(s)", s.GitDirty))
 	}
@@ -157,6 +182,9 @@ func (s *EngineConfigSection) summaryLine() string {
 // git init && git add -A && git commit OU mover para zona/pack). Pessoal
 // por design NÃO gera fix — é isento por decisão do usuário.
 func (s *EngineConfigSection) fixText() string {
+	if s.PackDirty > 0 {
+		return "commite ou publique o WIP do state pack — 'golmet pack publish <origem>' (commit + push) ou git commit no working copy; o kit nunca descarta acumulação"
+	}
 	if !s.GitRepo && s.AtRisk() > 0 {
 		return fmt.Sprintf("config não versionado — %d arquivo(s) não-reconstrutíveis; versione com 'git init && git add -A && git commit' em %s, ou mova o conteúdo para a zona do workspace (.golmet/) ou para um pack", s.AtRisk(), s.Root)
 	}
@@ -271,11 +299,13 @@ func analyzeEngineConfig(root string) (*EngineConfigSection, error) {
 }
 
 // classifyDisk percorre o config root (EXCLUINDO .git/, .golmet/ e o
-// próprio manifest de conteúdo) e classifica cada arquivo regular contra o
-// manifest: gerido-igual conta, gerido divergente é customização (a
-// designação pessoal NÃO isenta gerido — divergência de conteúdo gerido
-// nunca é encoberta), sem proveniência vai para untracked EXCETO quando
-// casa uma designação pessoal (bucket isento), ilegível fica anotado.
+// próprio manifest de conteúdo; subárvores packs/<id> de state packs são
+// classificadas à parte — versionadas no repo do pack) e classifica cada
+// arquivo regular contra o manifest: gerido-igual conta, gerido divergente
+// é customização (a designação pessoal NÃO isenta gerido — divergência de
+// conteúdo gerido nunca é encoberta), sem proveniência vai para untracked
+// EXCETO quando casa uma designação pessoal (bucket isento), ilegível fica
+// anotado.
 func classifyDisk(root string, managed map[string]content.FileEntry, personal *personalDesignations, gitRepo bool, gitTracked map[string]bool, sec *EngineConfigSection, untracked *[]string) error {
 	return filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -283,6 +313,20 @@ func classifyDisk(root string, managed map[string]content.FileEntry, personal *p
 		}
 		if d.IsDir() {
 			if d.Name() == ".git" || d.Name() == ".golmet" {
+				return filepath.SkipDir
+			}
+			// state pack working copy: packs/<id> com pack.yaml kind:state —
+			// o conteúdo é versionado no repo Git do PRÓPRIO pack (seguro,
+			// não entra na classificação do config); só o WIP local conta
+			// como risco. Subárvore inteira skipada.
+			if rel, rerr := filepath.Rel(root, p); rerr == nil && isStatePackDir(filepath.ToSlash(rel)) {
+				packDir := p
+				versioned, dirty := scanStateWorkingCopy(packDir)
+				sec.PackVersioned += versioned
+				sec.PackDirty += dirty
+				if dirty > 0 {
+					sec.PackDirtyDirs = append(sec.PackDirtyDirs, filepath.ToSlash(rel))
+				}
 				return filepath.SkipDir
 			}
 			return nil
@@ -323,6 +367,65 @@ func classifyDisk(root string, managed map[string]content.FileEntry, personal *p
 		}
 		return nil
 	})
+}
+
+// isStatePackDir — rel path é um diretório packs/<id> (um único segmento
+// sob packs/)? É nesse nível que mora o working copy de um state pack.
+func isStatePackDir(rel string) bool {
+	i := strings.IndexByte(rel, '/')
+	return i > 0 && rel[:i] == "packs" && !strings.Contains(rel[i+1:], "/")
+}
+
+// isStateWorkingCopy — dir contém pack.yaml com kind: state? Ilegível/sem
+// spec → não é (o diretório cai na classificação padrão).
+func isStateWorkingCopy(dir string) bool {
+	data, err := os.ReadFile(filepath.Join(dir, "pack.yaml"))
+	if err != nil {
+		return false
+	}
+	spec, err := pack.ParseSpec(data)
+	return err == nil && spec.Kind == pack.KindState
+}
+
+// scanStateWorkingCopy conta, num working copy de state pack, os arquivos
+// VERSIONADOS no repo do pack (seguros — não AtRisk) e as mudanças não-
+// commitadas (risco). Versionado = git ls-files (arquivo untracked é WIP,
+// não versionado); git indisponível → best-effort total de arquivos. O walk
+// exclui .git/; o status é melhor-esforço (nunca bloqueia o check).
+func scanStateWorkingCopy(dir string) (versioned, dirty int) {
+	total := 0
+	_ = filepath.WalkDir(dir, func(p string, d os.DirEntry, err error) error {
+		if err != nil {
+			return nil // ilegível no working copy — contabiliza o que der
+		}
+		if d.IsDir() {
+			if d.Name() == ".git" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if d.Type().IsRegular() {
+			total++
+		}
+		return nil
+	})
+	versioned = total
+	if out, err := exec.Command("git", "-C", dir, "-c", "core.quotepath=false", "ls-files").Output(); err == nil {
+		versioned = 0
+		for _, line := range strings.Split(string(out), "\n") {
+			if strings.TrimSpace(line) != "" {
+				versioned++
+			}
+		}
+	}
+	if out, err := exec.Command("git", "-C", dir, "status", "--porcelain", "--untracked-files=all").Output(); err == nil {
+		for _, line := range strings.Split(string(out), "\n") {
+			if strings.TrimSpace(line) != "" {
+				dirty++
+			}
+		}
+	}
+	return versioned, dirty
 }
 
 // removedLocalEntries devolve os caminhos registrados com layer local que
@@ -487,6 +590,12 @@ func (s *EngineConfigSection) renderLines(b *strings.Builder) {
 	}
 	for _, p := range s.Personal {
 		fmt.Fprintf(b, "     pessoal-por-design (isento): %s\n", p)
+	}
+	if s.PackVersioned > 0 {
+		fmt.Fprintf(b, "     versionado no repo do pack (working copy): %d arquivo(s) — seguro\n", s.PackVersioned)
+	}
+	for _, d := range s.PackDirtyDirs {
+		fmt.Fprintf(b, "     state pack com mudanças não-commitadas: %s\n", d)
 	}
 	if s.PersonalTotal > len(s.Personal) {
 		fmt.Fprintf(b, "     … +%d pessoal-por-design\n", s.PersonalTotal-len(s.Personal))

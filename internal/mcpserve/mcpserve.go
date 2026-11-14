@@ -85,12 +85,12 @@ func NewServer() *mcp.Server {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "gm_pack_update",
-		Description: "Adiciona ou atualiza um pack no engine; exige confirm=true e suporta dry_run",
+		Description: "Adiciona ou atualiza um pack no engine (arquétipos overlay e state — state preserva acumulação local com commit automático + rebase); exige confirm=true e suporta dry_run",
 	}, gmPackUpdate)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "gm_pack_list",
-		Description: "Lista packs já sincronizados no cache local sem escrever",
+		Description: "Lista packs já sincronizados (overlay no cache; state packs aparecem com kind e caminho do working copy) sem escrever",
 	}, gmPackList)
 
 	return server

@@ -69,7 +69,7 @@ registers the MCP server and runs the doctor in a single pass.
 | `tools`    | Installs kit-native tools (code graph) with supply-chain verification (SHA-256 + attestation)                                                                                  |
 | `mcp`      | Serves the kit as an MCP server over stdio — validation, update and packs                                                                                                      |
 | `index`    | Rebuilds `golmet.index.json` from the prose (the prose is canonical; the index is a cache)                                                                                     |
-| `pack`     | Manages L2 packs (`add` / `update` / `list`) without destroying local customizations                                                                                           |
+| `pack`     | Manages L2 packs (`add` / `update` / `publish` / `list`) without destroying local customizations — two archetypes: `overlay` (read-only cache) and `state` (bidirectional Git working copy)          |
 | `db`       | Database services (the `gm-dba` layer): DATA_MODEL ↔ migrations/snapshot drift                                                                                                 |
 
 The normative contract behind all of this is [FORMATO.md](FORMATO.md) v1.
@@ -89,8 +89,8 @@ The normative contract behind all of this is [FORMATO.md](FORMATO.md) v1.
 | `gm_eval_reports` | Lists eval reports stored in `~/.golmet/eval-reports` (newest first)  |
 | `gm_jev_classify` | Calibrated classification (TypeSafe System One)                       |
 | `gm_update`       | Content update (embedded FULL or external `--core`); supports dry-run |
-| `gm_pack_update`  | Re-syncs and applies a pack overlay                                   |
-| `gm_pack_list`    | Lists installed packs                                                 |
+| `gm_pack_update`  | Re-syncs and applies a pack (overlay or state — state preserves local accumulation with auto-commit + rebase) |
+| `gm_pack_list`    | Lists installed packs (with `kind`: overlay or state)                |
 
 Example registration in `opencode.json`:
 
@@ -115,7 +115,7 @@ Installed content follows four layers, weakest to strongest
 | ------------ | ----------------------------------------------------------------------------------------------------------------- |
 | **L0 BASE**  | Minimal skill subset embedded in the binary — offline by default                                                  |
 | **L1 FULL**  | The 93 canonical components rendered from the registry, embedded (or an external core via `--core`, Git or local) |
-| **L2 packs** | Organization/community overlays (`pack.yaml`, `provides`, `no-override`, `requires-core`)                         |
+| **L2 packs** | Organization/community overlays (`pack.yaml`, `provides`, `no-override`, `requires-core`) — archetype `overlay` (read-only cache) or `state` (bidirectional working copy at `<config>/packs/<id>`: skills/agents materialize by overlay while `knowledge/`, `accumulation/` and `rules/` live in the clone; `pack publish` pushes the operator's accumulation) |
 | **L3 local** | Operator creations and customizations                                                                             |
 
 **Precedence: `local > pack > full > base`.** The content manifest records
