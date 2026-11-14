@@ -20,7 +20,7 @@ items:
     mode: primary
     temperature: 0.3
     delegates: [gm-next, gm-progress, gm-cr-propagation-guard, gm-tasks-pending, gm-intake-orchestrator, gm-requirements-orchestrator, gm-governance-orchestrator, gm-github-orchestrator, gm-azure-orchestrator, gm-figma-orchestrator, gm-workflow-builder, gm-workflow-improver, gm-onboarding-orchestrator, gm-compliance-orchestrator]
-    invokes: [gm-handover, gm-core-update, gm-core-publish, gm-core-port, gm-setup, gm-agent-health-monitor, gm-drift-detector, gm-mcp-playwright-setup, gm-prompt-gate, gm-azure-workitem-creator, gm-detect-onboarding, gm-task-spec]
+    invokes: [gm-handover, gm-setup, gm-agent-health-monitor, gm-drift-detector, gm-mcp-playwright-setup, gm-prompt-gate, gm-azure-workitem-creator, gm-detect-onboarding, gm-task-spec]
     requires: [file, edit, glob, grep, shell, ask, subagent, skill, tracker, websearch]
     degrades: [webfetch, lsp, graph]
     tracker: true   # conteúdo de tracker github/azure mantido com nota de capacidade
@@ -1332,3 +1332,406 @@ items:
     requires: [file, glob, grep, shell, ask, skill]
     degrades: [edit, write]
     body: sources/gm-pack-orchestrator.md
+
+  # ---- G2: componentes pessoais embedados (onda M3 "config morre de vez") ----
+  # fontes: runtime config (~/.config/opencode) - 21 skills + 5 agents;
+  # ids coexistentes skill+agent apontam para bodies distintos
+  # (sources/<id>.md vs sources/<id>.agent.md)
+
+  - id: gm-setup
+    kind: skill
+    description: >-
+      Wizard de primeira configuração do workflow numa máquina nova —
+      idempotente e executado por demanda. Pergunta o diretório padrão de
+      projetos, coleta os defaults do cliente (org Azure, projeto, repos,
+      usuário) e grava `rules/client-profile.md` (IMP-103), coleta a identidade
+      do operador (nome, e-mail, papel, contas git/GitHub) e grava
+      `rules/operator-profile.md` (IMP-136), cria/repara o AGENTS.md local A
+      PARTIR do `AGENTS.template.md` versionado (neutro — IMP-105), repõe o
+      índice lazy de `rules/` (IMP-048), aplica os overrides de permissão dos
+      subagents de dev (gm-dev-backend, gm-dev-frontend) no opencode.jsonc,
+      instala os packs declarados no perfil (`packs:` — clone em `packs/<id>/`,
+      instala `provides`, grava `sources.yaml`), delega para gm-azure-setup,
+      gm-gh-setup, gm-aws-setup e gm-jev-setup (opcionais) e, quando presente na
+      instalação (skill de pack opcional — IMP-105), gm-pia-connect-setup;
+      valida o ambiente conforme o **perfil de adoção** — **core-only** (só o
+      workflow: sem tracker/infra, valida só gh/git) ou **completo** (tracker
+      Azure + infra + packs + validações de stack). Use quando o usuário pedir
+      "configurar o workflow", "setup do workflow", "primeira configuração",
+      "onboarding do workflow" ou ao migrar de máquina.
+    requires: [file, edit, glob, grep, shell, ask]
+    invokes: [gm-aws-setup, gm-azure-setup, gm-clarify, gm-decision-audit, gm-decision-log, gm-dev-backend, gm-dev-frontend, gm-gh-issue-creator, gm-gh-pr-creator, gm-gh-setup, gm-jev-classifier, gm-jev-setup, gm-next, gm-onboarding-orchestrator, gm-prompt-gate, gm-quality-gates]
+    body: sources/gm-setup.md
+
+  - id: gm-aws-setup
+    kind: skill
+    description: >-
+      Wizard de configuração do acesso AWS para o workflow — verifica a AWS CLI
+      v2 instalada (winget id `Amazon.AWSCLI`; path padrão `C:\Program
+      Files\Amazon\AWSCLIV2\aws.exe` quando o PATH não atualizou), valida a
+      PRESENÇA do MCP server oficial `aws-mcp` no opencode.jsonc (só valida —
+      não instala nem edita a config), orienta a criação do par de access keys
+      no console IAM (passo executado pelo OPERADOR no console web), configura
+      credenciais SEMPRE via `aws configure --profile <nome>` interativo no
+      terminal do operador (nunca recebe, imprime, loga ou grava senha de
+      console nem access keys), valida com `aws sts get-caller-identity
+      --profile <nome>` e fecha com higiene obrigatória (MFA no usuário IAM,
+      rotação de senha exposta, `~/.aws` nunca dentro de repo). Idempotente e
+      executado por demanda; delegado pelo gm-setup. Use quando o usuário pedir
+      "configurar aws", "setup aws", "aws cli", "credenciais aws", "perfil aws"
+      ou "onboarding aws".
+    requires: [file, edit, glob, grep, shell, ask]
+    invokes: [gm-gh-setup, gm-setup]
+    body: sources/gm-aws-setup.md
+
+  - id: gm-azure-setup
+    kind: skill
+    description: >-
+      Wizard de configuração do MCP Azure DevOps para o workflow — verifica o
+      server `azure-devops` no opencode.jsonc global, orienta o cadastro do PAT
+      na env var de usuário ADO_PAT_B64 (nunca imprime, loga ou comita o token),
+      habilita enabled: true, valida conexão com a org/projeto definidos no
+      perfil do cliente (rules/client-profile.md) e confirma as tools do MCP.
+      Idempotente e executado por demanda; delegado pelo gm-setup. Use quando o
+      usuário pedir "configurar MCP Azure DevOps", "setup azure devops mcp",
+      "configurar PAT do azure", "token do azure devops", "conectar azure boards
+      ao opencode" ou "onboarding azure".
+    requires: [file, edit, glob, grep, shell, ask]
+    invokes: [gm-azure-orchestrator, gm-azure-workitem-creator, gm-gh-setup, gm-setup]
+    body: sources/gm-azure-setup.md
+
+  - id: gm-gh-setup
+    kind: skill
+    description: >-
+      Wizard de configuração da GitHub CLI (gh) para o workflow — verifica
+      instalação, autentica via gh auth login e valida o acesso à org GitHub do
+      perfil (`org_github` em `rules/client-profile.md` — IMP-103/IMP-105).
+      Idempotente e executado por demanda; delegado pelo gm-setup. Use quando o
+      usuário pedir "configurar gh", "setup do gh", "autenticar github cli",
+      "instalar gh" ou "onboarding github".
+    requires: [file, edit, glob, grep, shell, ask]
+    invokes: [gm-gh-issue-creator, gm-gh-pr-creator, gm-github-orchestrator, gm-setup]
+    body: sources/gm-gh-setup.md
+
+  - id: gm-jev-setup
+    kind: skill
+    description: >-
+      Wizard de verificação do runtime Jev (TypeSafe System One) para o workflow
+      — confirma a presença da tool `jev_classify` no catálogo da sessão,
+      executa smoke test com input trivial (resposta JSON tipada com
+      probabilidades = runtime funcional) e, se ausente, diagnostica a causa
+      (plugin jev-tool.js ausente no runtime OU TYPESAFE_API_KEY não definida) e
+      registra pendência NÃO bloqueante (padrão IMP-080) com a remediação
+      correta — copiar `plugins/jev-tool.js` (versionado no core desde
+      28/10/2026) e/ou criar a key em console.typesafe.ai/keys — listando os
+      consumidores que degradam para fallback (gm-decision-audit,
+      gm-quality-gates, gm-prompt-gate). Idempotente e executado por demanda;
+      delegado pelo gm-setup (Passo 5d). Use quando o usuário pedir "configurar
+      o jev", "setup jev", "verificar o jev" ou reportar "jev_classify ausente".
+    requires: [file, edit, glob, grep, shell, ask]
+    invokes: [gm-aws-setup, gm-decision-audit, gm-jev-classifier, gm-prompt-gate, gm-quality-gates, gm-setup, gm-typesafe-ai]
+    body: sources/gm-jev-setup.md
+
+  - id: gm-mcp-codegraph-setup
+    kind: skill
+    description: >-
+      Wizard de configuração do MCP codebase-memory-mcp (DeusData — grafo de
+      conhecimento de código via tree-sitter + Hybrid LSP) no OpenCode — detecta
+      instalação existente (idempotente), baixa a release oficial com
+      verificação OBRIGATÓRIA de supply-chain (SHA-256 do checksums.txt + gh
+      attestation verify SLSA L3 + scan Windows Defender), configura MANUALMENTE
+      no opencode.jsonc global (escopo corrente desta máquina — servidor
+      agnóstico a repo, decisão do operador 2026-10-23; escopo de projeto só se
+      pedido; install.ps1 NUNCA executado) e valida com smoke test. Use quando o
+      usuário pedir "configurar MCP codegraph", "setup codebase-memory",
+      "codegraph mcp", "grafo de código via MCP", "indexar repo no grafo" ou
+      "codebase-memory-mcp".
+    requires: [file, edit, glob, grep, shell, ask]
+    invokes: [gm-gh-setup, gm-reverse-orchestrator]
+    body: sources/gm-mcp-codegraph-setup.md
+
+  - id: gm-mcp-figma-setup
+    kind: skill
+    description: >-
+      Wizard de configuração do MCP Figma (figma-developer-mcp / Framelink) para
+      o OpenCode — verifica o server no opencode.jsonc global ou cria entrada no
+      escopo do projeto (.opencode/opencode.json), orienta o cadastro da env var
+      FIGMA_API_KEY (nunca imprime, loga ou comita o token), habilita enabled:
+      true e valida a conexão com a API Figma. Idempotente e executado por
+      demanda. Use quando o usuário pedir "configurar MCP Figma", "setup figma
+      mcp", "conectar figma ao opencode", "token do figma" ou "configurar figma
+      developer mcp".
+    requires: [file, edit, glob, grep, shell, ask]
+    invokes: [gm-figma-tasks]
+    body: sources/gm-mcp-figma-setup.md
+
+  - id: gm-mcp-hostinger-setup
+    kind: skill
+    description: >-
+      Wizard de configuração do MCP oficial da Hostinger no OpenCode — servidor
+      REMOTE (Streamable HTTP em https://mcp.hostinger.com) com OAuth (tokens
+      fora da config, refresh via PKCE — NUNCA pedir API token no chat),
+      instalação via CLI `opencode mcp add --global` (formato V2, preserva
+      config existente), sign-in pelo TUI /mcps e smoke test com
+      billing_subscriptions_list. Dá ao workflow a API Hostinger completa (~410
+      operações em 13 grupos: VPS, hosting, domains, dns, billing, mail,
+      wordpress e outros) via 3 ferramentas (search/execute/multi-execute).
+      Idempotente, executado por demanda; consumidor natural: gm-devops. Use
+      quando o usuário pedir "configurar MCP Hostinger", "mcp hostinger",
+      "hostinger api no opencode" ou "conectar hostinger".
+    requires: [file, edit, glob, grep, shell, ask]
+    invokes: [gm-vps-setup, gm-vps-troubleshoot]
+    body: sources/gm-mcp-hostinger-setup.md
+
+  - id: gm-mcp-playwright-setup
+    kind: skill
+    description: >-
+      Guia completo para configurar o MCP Playwright (@playwright/mcp) em
+      projetos OpenCode, sempre no escopo do projeto (.opencode/opencode.json).
+      Use quando o usuário pedir "configurar MCP Playwright", "setup playwright
+      mcp", "adicionar MCP de browser", "conectar playwright ao opencode",
+      "criar profile de conexão playwright".
+    requires: [file, edit, glob, grep, shell, ask]
+    body: sources/gm-mcp-playwright-setup.md
+
+  - id: gm-mcp-postgres-setup
+    kind: skill
+    description: >-
+      Guia completo para configurar o MCP PostgreSQL (@microsoft/postgres-mcp)
+      em projetos OpenCode, sempre no escopo do projeto
+      (.opencode/opencode.json). Use quando o usuário pedir "configurar MCP
+      postgres", "setup postgres mcp", "adicionar MCP de banco", "conectar
+      postgres ao opencode", "criar profile de conexão postgres".
+    requires: [file, edit, glob, grep, shell, ask]
+    body: sources/gm-mcp-postgres-setup.md
+
+  - id: gm-mcp-sqlite-setup
+    kind: skill
+    description: >-
+      Guia completo para configurar o MCP SQLite (rusq/mcp-sqlite — binário
+      nativo Go) no OpenCode — baixa o release oficial com verificação SHA256 do
+      checksums.txt (nunca instala binário sem hash conferido), instala em
+      %LOCALAPPDATA%\Programs\mcp-sqlite\, grava o bloco mcp.sqlite no
+      opencode.jsonc global (sem banco fixo — o .db é escolhido por sessão via
+      open_database) e valida com smoke test (handshake MCP + banco descartável
+      no Temp). Idempotente, executado por demanda; delegado pelo gm-setup. Use
+      quando o usuário pedir "configurar MCP SQLite", "setup sqlite mcp",
+      "conectar sqlite ao opencode" ou "mcp de banco sqlite".
+    requires: [file, edit, glob, grep, shell, ask]
+    body: sources/gm-mcp-sqlite-setup.md
+
+  - id: gm-skill-eval
+    kind: skill
+    description: >-
+      Executa testes de regressão (evals) em skills a partir de fixtures
+      armazenadas em evals/<skill>/fixture-N/. Cada fixture contém input de
+      exemplo e criteria.yaml com checks esperados. A skill alvo é invocada com
+      os inputs da fixture, o output gerado é verificado contra os criteria, e
+      um relatório EVAL_REPORT_<skill>_<ts>.md é gerado com PASS/FAIL por check.
+      Use quando o usuário pedir "testar skill X", "rodar evals", "verificar
+      regressão", "golden path", ou automaticamente via @gm-workflow-improver e
+      @gm-workflow-builder após edições em skills.
+    requires: [file, glob, grep, shell]
+    invokes: [gm-datamodel, gm-gh-issue-creator, gm-taskspec]
+    body: sources/gm-skill-eval.md
+
+  - id: gm-next
+    kind: skill
+    description: >-
+      Inspeciona o estado real dos artefatos workflow no filesystem e recomenda
+      a(s) próxima(s) skill(s) a executar. Read-only — nunca escreve, edita ou
+      executa. Prioriza artefatos stale (PROPAGATION_STATUS.md), pendências de
+      cliente (PEND-XXX), artefatos de tradução ausentes, e fases de qualidade.
+      Use quando o usuário pedir "próxima skill", "o que fazer agora", "próximo
+      passo do módulo" ou "auto-routing".
+    requires: [file, glob, grep, shell]
+    invokes: [gm-apicontracts, gm-arch, gm-change-request, gm-charter, gm-clarify, gm-clientreq, gm-criteria, gm-cr-propagation-guard, gm-datamodel, gm-figma-prompt, gm-glossary, gm-howto, gm-init, gm-known-error, gm-migration, gm-progress, gm-requirements, gm-restructure, gm-reverse, gm-scope, gm-taskspec, gm-teststrategy, gm-traceability, gm-uispec, gm-validate]
+    body: sources/gm-next.md
+
+  - id: gm-progress
+    kind: skill
+    description: >-
+      Dashboard de progresso do pipeline. Consolida dados de TRACEABILITY.md,
+      PROPAGATION_STATUS.md, PEND-XXX e artefatos da DAG em 5 blocos: cobertura
+      de requisitos, drift, pendências de cliente, resultado (outcome) e fase
+      atual. Read-only — não edita nada. Use quando o usuário pedir "dashboard
+      de progresso", "status do projeto", "onde estamos" ou "relatório para
+      reunião".
+    requires: [file, glob, grep, shell]
+    invokes: [gm-charter, gm-clarify, gm-cr-propagation-guard, gm-next, gm-requirements, gm-restructure, gm-traceability, gm-validate]
+    body: sources/gm-progress.md
+
+  - id: gm-tasks-pending
+    kind: skill
+    description: >-
+      Lista as tasks que falta concluir (pendentes/em andamento) no pipeline,
+      agrupadas por sistema → feature (RN-âncora) → tasks (ID RN-NNN-M, título,
+      status, tipo, repo). Fontes: front matter `status` dos arquivos "RN-NNN —
+      <título> — Feature.md" (IMP-093; fallback `— Tasks.md` pré-rename IMP-092)
+      localizados por glob recursivo delivery/**/ (IMP-092 — agnóstico ao
+      delivery_style da CONSTITUTION.md §9), fallbacks legados (pasta IMP-040
+      com 2 arquivos, RN-*.md, TASKS*.md / TASKS.md) e, opcionalmente, issues
+      abertas do GitHub via gh CLI (complemento, nunca bloqueante). Âncoras
+      `PEND-NNN` em features são legado pré-IMP-094 (leitura ok — IMP-094); nada
+      gera feature PEND. Read-only — nunca edita artefato, cria issue ou
+      commita. Se o sistema NÃO for informado de antemão, questiona o operador
+      antes de listar (cada sistema detectado + "Todos os sistemas") — nunca
+      assume escopo por omissão (IMP-031). Use quando o usuário pedir "tasks
+      pendentes", "listar tasks", "o que falta fazer", "backlog de tasks",
+      "tasks em andamento" ou "tasks pendentes do <sistema>".
+    requires: [file, glob, grep, shell]
+    invokes: [gm-charter, gm-dev, gm-gh-issue-creator, gm-github-orchestrator, gm-next, gm-progress, gm-quality-orchestrator, gm-taskspec, gm-validate]
+    body: sources/gm-tasks-pending.md
+
+  - id: gm-cr-propagation-guard
+    kind: skill
+    description: >-
+      Detecta artefatos técnicos desatualizados (stale) após aprovação ou
+      implementação de Change Requests. Varre CHANGE_REQUESTS.md, identifica RNs
+      afetadas, verifica presença nos downstreams e persiste o estado em
+      PROPAGATION_STATUS.md. Não bloqueia — apenas sinaliza. Use quando o
+      usuário pedir "propagação de CR", "verificar artefatos stale", "detectar
+      staleness" ou "atualizar PROPAGATION_STATUS".
+    requires: [file, glob, grep, shell]
+    invokes: [gm-restructure, gm-validate]
+    body: sources/gm-cr-propagation-guard.md
+
+  - id: gm-decision-audit
+    kind: skill
+    description: >-
+      Valida integridade semântica de DECISIONS.md: verifica se decisões novas
+      contradizem decisões anteriores, se IDs são sequenciais, se RNs/PENDs
+      referenciados existem, e se há decisões órfãs. Complementa gm-validate
+      (que valida integridade estrutural da DAG) com foco em conflitos de
+      decisões. Use quando o usuário pedir "auditar decisões", "verificar
+      conflitos de decisões", "decision audit" ou "validar DECISIONS.md".
+      Entradas legadas `DEC-XXX` são reconhecidas como imutáveis (não falham a
+      auditoria).
+    requires: [file, glob, grep, shell]
+    invokes: [gm-decision-log, gm-jev-classifier, gm-restructure, gm-skill-eval, gm-validate]
+    body: sources/gm-decision-audit.md
+
+  - id: gm-governance
+    kind: skill
+    description: >-
+      Revisa CONSTITUTION.md e PRODUCT_GOAL.md. Baixa frequência — só quando os
+      princípios do produto precisam ser atualizados. Não cria do zero, apenas
+      revisa o existente. Use quando o usuário pedir "revisar CONSTITUTION",
+      "atualizar princípios do produto", "governança do workflow" ou "revisar
+      PRODUCT_GOAL".
+    requires: [file, edit, glob, grep, ask]
+    body: sources/gm-governance.md
+
+  - id: gm-adopt
+    kind: skill
+    description: >-
+      Conduz a adoção do formato GOLMET por um workspace existente — handshake
+      de 7 passos com o kit (dry-run → julgamento → gates → apply → validate
+      tolerant → correção → strict), agente conduz e kit executa.
+    requires: [file, edit, glob, grep, shell, ask]
+    body: sources/gm-adopt.md
+
+  - id: gm-validate
+    kind: skill
+    description: >-
+      Percorre o grafo de documentos do projeto e valida integridade: RN sem
+      downstream esperado, ID quebrado, CR aprovado sem reflexo. Gera relatório
+      VALIDATION_REPORT.md. Suporta flag --fix para auto-correção. Use quando o
+      usuário pedir "validar integridade", "checar a DAG", "validar referências
+      cruzadas" ou "validação do módulo".
+    requires: [file, glob, grep, shell]
+    invokes: [gm-apicontracts, gm-compliance, gm-compliance-orchestrator, gm-datamodel, gm-doc, gm-drift-detector, gm-jev-classifier, gm-requirements, gm-restructure]
+    body: sources/gm-validate.md
+
+  - id: gm-wiki-lint
+    kind: skill
+    description: >-
+      Audita integridade dos artefatos workflow: contradições entre seções,
+      artefatos órfãos, referências cruzadas quebradas, links internos inválidos
+      e drift de estrutura. Complementa gm-validate (que valida a DAG de RNs →
+      downstreams) e gm-decision-audit (que valida DECISIONS.md) com foco em
+      integridade documental dos artefatos individualmente. Use quando o usuário
+      pedir "lint dos documentos", "verificar integridade dos artefatos", "wiki
+      lint", "contradições nos docs" ou "validar estrutura".
+    requires: [file, glob, grep, shell]
+    invokes: [gm-decision-audit, gm-drift-detector, gm-registry-render, gm-restructure, gm-validate]
+    body: sources/gm-wiki-lint.md
+
+  - id: gm-next
+    kind: subagent
+    description: >-
+      Recomenda a próxima ação no pipeline, com base no estado atual de
+      artefatos, drift (PROPAGATION_STATUS.md) e pendências de cliente
+      (PEND-XXX). Não executa nada, apenas diagnostica e recomenda. Invocar no
+      início de uma sessão de trabalho para saber o que fazer.
+    mode: subagent
+    temperature: 0.1
+    requires: [file, glob, grep, shell]
+    invokes: [gm-apicontracts, gm-charter, gm-clarify, gm-datamodel, gm-init, gm-requirements, gm-teststrategy, gm-traceability, gm-validate]
+    body: sources/gm-next.agent.md
+
+  - id: gm-progress
+    kind: subagent
+    description: >-
+      Dashboard de status do projeto workflow — cobertura de requisitos
+      (TRACEABILITY.md), drift (PROPAGATION_STATUS.md), pendências de cliente
+      (PEND-XXX), fase atual da DAG, gate de qualidade (VALIDATION_REPORT.md) e
+      progresso de tasks (TASKS.md). Opcionalmente salva relatório em
+      PROGRESS_REPORT.md com --save. Invocar para reuniões de status ou diff
+      semanal de evolução.
+    mode: subagent
+    temperature: 0.1
+    requires: [file, glob, grep, shell]
+    invokes: [gm-clarify, gm-cr-propagation-guard, gm-next, gm-traceability]
+    body: sources/gm-progress.agent.md
+
+  - id: gm-tasks-pending
+    kind: subagent
+    description: >-
+      Lista tasks pendentes/em andamento do pipeline por sistema — front matter
+      dos arquivos "RN-NNN — <título> — Feature.md" em delivery/**/ (IMP-093,
+      glob recursivo agnóstico ao delivery_style da §9 da CONSTITUTION),
+      fallbacks `— Tasks.md` IMP-092 (pré-rename) e legados (pasta IMP-040 com 2
+      arquivos, TASKS.md/RN-*.md) e issues GitHub via gh (opcional,
+      não-bloqueante). Read-only; se o sistema não for informado de antemão,
+      questiona o operador (cada sistema detectado + "Todos os sistemas") —
+      nunca assume escopo por omissão (IMP-031). Use para "tasks pendentes",
+      "listar tasks", "o que falta fazer", "backlog de tasks", "tasks em
+      andamento".
+    mode: subagent
+    temperature: 0.1
+    requires: [file, glob, grep, shell]
+    invokes: [gm-charter, gm-taskspec]
+    body: sources/gm-tasks-pending.agent.md
+
+  - id: gm-cr-propagation-guard
+    kind: subagent
+    description: >-
+      Detecta artefatos técnicos desatualizados (stale) quando um
+      CHANGE_REQUESTS.md muda de estado. Varre os artefatos, identifica RNs
+      afetadas por CRs aprovados/implementados, persiste o estado em
+      PROPAGATION_STATUS.md, e sugere re-execução das skills de Fase 2
+      associadas. Invocar após aprovar ou implementar um CR, ou para reconciliar
+      o estado a qualquer momento.
+    mode: subagent
+    temperature: 0.1
+    requires: [file, glob, grep, shell]
+    invokes: [gm-apicontracts, gm-arch, gm-criteria, gm-datamodel, gm-glossary, gm-requirements, gm-uispec]
+    body: sources/gm-cr-propagation-guard.agent.md
+
+  - id: gm-jev-classifier
+    kind: subagent
+    description: >-
+      Classifica textos usando o modelo Jev (TypeSafe System One) via API REST,
+      com respostas tipadas e probabilidades calibradas. Segunda camada de
+      validação das skills: contradições semânticas no gm-decision-audit,
+      triagem de severidade no gm-quality-gates, e qualquer decisão que se
+      beneficie de saída probability-aware. Invocar quando uma skill workflow
+      solicitar calibração Jev ou quando o usuário pedir "classificar com jev".
+    mode: subagent
+    temperature: 0.1
+    requires: []
+    degrades: []
+    invokes: [gm-decision-audit, gm-quality-gates]
+    body: sources/gm-jev-classifier.agent.md
+

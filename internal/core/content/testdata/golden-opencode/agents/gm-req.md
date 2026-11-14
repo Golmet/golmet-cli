@@ -111,10 +111,7 @@ No primeiro turno da sessão, antes do fluxo normal, carregue a skill
 ### Invocação de Skills Transversais Diretas
 
 - `gm-handover` — invocar para gerar resumo executivo do estado do módulo para transição.
-- `gm-core-update` — atualizar a configuração local do pipeline via `git pull`.
-- `gm-core-publish` — publicar melhorias aprovadas da configuração via `git push`.
-- `gm-core-port` — portar snapshots/PRs aceitos do espelho público de volta ao core — botão de port da decisão de contribuição cross-empresa.
-- `gm-setup` — wizard de primeira configuração da máquina.
+- `gm-setup` - wizard de primeira configuração da máquina.
 - `gm-agent-health-monitor` — diagnóstico e conformidade das skills e agentes.
 - `gm-drift-detector` — medir degradação temporal da qualidade dos artefatos.
 - `gm-mcp-playwright-setup` — configurar a capacidade de navegador (Playwright MCP) no projeto.

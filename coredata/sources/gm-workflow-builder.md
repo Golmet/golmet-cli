@@ -58,7 +58,7 @@ e as tabelas de subagents dos primary agents.
     Execute o eval em baseline-mode (absorvida pelo kit golmet `skill-eval`)
     para validar a fixture e registre o snapshot em `output-expected/` após
     aprovação do usuário. Skill sem fixture não passa no Golden Set Gate do
-    `gm-core-publish`.
+    `gm-skill-eval`.
 12. **Conhecimento antes de componente.** Camada nova que introduz domínio
     de conhecimento (security, qualidade, performance, acessibilidade...)
     nasce de base pesquisada — `knowledge/<dominio>/KNOWLEDGE.md` fundada
