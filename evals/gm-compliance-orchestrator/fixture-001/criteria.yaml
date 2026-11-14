@@ -1,0 +1,44 @@
+---
+name: "gm-compliance-orchestrator — LGPD com gatilho no charter"
+description: >
+  Charter com compliance: true (produto trata dado pessoal). O orchestrator
+  roteia o checklist LGPD de 10 eixos (gm-compliance-check), registra os
+  ganchos (gm-charter originou o compliance: true, gm-dev-reviewer recebe o
+  eixo de review, gm-reverse-orchestrator pode induzir RNs legais).
+  Roteia, não executa. Artefato: delegacao.md.
+inputs_required: ["input/cenario.md"]
+
+checks:
+  - type: file_exists
+    path: "delegacao.md"
+    severity: error
+
+  - type: section_exists
+    path: "delegacao.md"
+    section: "## Delegação"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-compliance-check"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-charter"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-dev-reviewer"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-reverse-orchestrator"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "Roteia"
+    severity: error

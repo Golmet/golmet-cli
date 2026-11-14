@@ -1,0 +1,33 @@
+---
+name: "gm-devops-orchestrator — triagem: setup novo vs sintoma pós-deploy"
+description: >
+  Dois pedidos simultâneos: VPS nova do zero (sem sintoma) e deploy
+  falhando com container unhealthy (sintoma pós-deploy em VPS configurada).
+  O orchestrator roteia, não executa: sintoma pós-deploy vai SEMPRE ao
+  gm-vps-troubleshoot; VPS nova vai ao gm-vps-setup. Artefato: delegacao.md.
+inputs_required: ["input/cenario.md"]
+
+checks:
+  - type: file_exists
+    path: "delegacao.md"
+    severity: error
+
+  - type: section_exists
+    path: "delegacao.md"
+    section: "## Delegação"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-vps-setup"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-vps-troubleshoot"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "Roteia"
+    severity: error

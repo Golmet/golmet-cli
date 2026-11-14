@@ -1,0 +1,43 @@
+---
+name: "gm-doc — roteamento de engenharia reversa multi-repo"
+description: >
+  Operador solicita engenharia reversa de sistema legado multi-repo em
+  produção. O primary delega a varredura pesada ao gm-reverse-orchestrator
+  com fonte congelada (HEAD informado), consolida LEGACY_CONTEXT e specs.
+  Artefato: delegacao.md com o plano.
+inputs_required: ["input/cenario.md"]
+
+checks:
+  - type: file_exists
+    path: "delegacao.md"
+    severity: error
+
+  - type: section_exists
+    path: "delegacao.md"
+    section: "## Delegação"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-reverse-orchestrator"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "congelada"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "LEGACY_CONTEXT"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "engenharia reversa"
+    severity: error
+
+  - type: not_contains
+    path: "delegacao.md"
+    pattern: "varro o código inline"
+    severity: error

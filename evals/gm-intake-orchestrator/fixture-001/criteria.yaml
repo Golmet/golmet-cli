@@ -1,0 +1,43 @@
+---
+name: "gm-intake-orchestrator — intake greenfield com gate de legado"
+description: >
+  Produto novo greenfield (sem legado, sem código existente): o orchestrator
+  roteia charter → gm-charter, CONSTITUTION/estrutura → gm-init, e o gate de
+  legado BLOQUEIA engenharia reversa (legado: false não roteia reverse).
+  Roteia, não executa. Artefato: delegacao.md.
+inputs_required: ["input/cenario.md"]
+
+checks:
+  - type: file_exists
+    path: "delegacao.md"
+    severity: error
+
+  - type: section_exists
+    path: "delegacao.md"
+    section: "## Delegação"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-charter"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-init"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "legado"
+    severity: error
+
+  - type: not_contains
+    path: "delegacao.md"
+    pattern: "gm-reverse"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "Roteia"
+    severity: error

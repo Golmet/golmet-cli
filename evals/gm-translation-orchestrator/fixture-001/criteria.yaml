@@ -1,0 +1,49 @@
+---
+name: "gm-translation-orchestrator — fan-out da tradução técnica"
+description: >
+  REQUIREMENTS fechado (sem PENDs bloqueantes): o orchestrator roteia o
+  fan-out paralelo da tradução técnica — gm-data-model, gm-api-contracts,
+  gm-ui-spec, gm-architecture, gm-glossary, gm-acceptance-criteria e
+  gm-task-spec. Pré-condição: REQUIREMENTS completo sem PENDs bloqueantes.
+  Roteia, não executa. Artefato: delegacao.md.
+inputs_required: ["input/cenario.md"]
+
+checks:
+  - type: file_exists
+    path: "delegacao.md"
+    severity: error
+
+  - type: section_exists
+    path: "delegacao.md"
+    section: "## Delegação"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-data-model"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-api-contracts"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-ui-spec"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-architecture"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-task-spec"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "Roteia"
+    severity: error

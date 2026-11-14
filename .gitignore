@@ -10,3 +10,7 @@ PUBLISH.md
 
 # config local de editor
 .vscode/
+
+# neutralidade: wordlist local do operador (termos reais de org/clientes) e estado de runner - NUNCA commitar
+evals/neutrality/wordlist.local
+evals/trends/

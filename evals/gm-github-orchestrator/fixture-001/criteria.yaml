@@ -1,0 +1,37 @@
+---
+name: "gm-github-orchestrator — issues, PR e pré-condição gh"
+description: >
+  Dois pedidos + pré-condição falha: publicar tasks como issues
+  (gm-gh-issue-creator), abrir PR de task aprovada (gm-gh-pr-creator) e o gh
+  CLI não autenticado (gm-gh-setup). Roteia, não executa. Artefato: delegacao.md.
+inputs_required: ["input/cenario.md"]
+
+checks:
+  - type: file_exists
+    path: "delegacao.md"
+    severity: error
+
+  - type: section_exists
+    path: "delegacao.md"
+    section: "## Delegação"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-gh-issue-creator"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-gh-pr-creator"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-gh-setup"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "Roteia"
+    severity: error
