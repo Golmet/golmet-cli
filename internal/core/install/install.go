@@ -691,13 +691,21 @@ func hasAllEnv(keys []string) bool {
 
 // runDoctor — fechamento do install (o doctor carrega a versão do kit).
 // Err != nil = o doctor não pôde rodar no workspace (o install continua —
-// o resumo reporta como aviso).
+// o resumo reporta como aviso). O check de estado do engine-config roda
+// contra a raiz do engine escolhido — o usuário vê logo após instalar o
+// que o kit não reconstrói naquele config.
 func runDoctor(workspace string, opt *Options) (*DoctorSummary, error) {
 	sum := &DoctorSummary{Workspace: filepath.Base(workspace)}
 	runner := opt.DoctorFn
 	if runner == nil {
+		dopt := doctor.Options{}
+		if home, herr := resolveHome(opt); herr == nil {
+			if root, applies := EngineConfigRootFor(home, opt.EngineID); applies {
+				dopt.EngineConfigRoot = root
+			}
+		} // home indisponível → check não roda (degradação declarada na ausência da seção)
 		runner = func(ws string) (*doctor.Report, error) {
-			return doctor.Run(ws, doctor.Options{})
+			return doctor.Run(ws, dopt)
 		}
 	}
 	rep, err := runner(workspace)

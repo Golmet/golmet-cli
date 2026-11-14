@@ -45,7 +45,7 @@ func NewServer() *mcp.Server {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "gm_doctor",
-		Description: "Checklist de saúde do workspace e ambiente (S2/S3/S5, zona do kit, kit.jev/kit.graph) — sem smoke de rede",
+		Description: "Checklist de saúde do workspace e ambiente (S2/S3/S5, zona do kit, kit.jev/kit.graph) + estado do engine-config (customizações/não-reconstrutíveis/pessoal-por-design — param engine, default opencode) — sem smoke de rede",
 	}, gmDoctor)
 
 	mcp.AddTool(server, &mcp.Tool{
@@ -108,6 +108,16 @@ type wsParams struct {
 	Workspace string `json:"workspace" jsonschema:"caminho do workspace (default: .)"`
 }
 
+// doctorParams — gm_doctor. Engine (default opencode) resolve a raiz do
+// config do engine para o check de estado (cache reconstrutível vs dado do
+// usuário + designações pessoal-por-design); home é injetável p/ testes
+// (default UserHomeDir).
+type doctorParams struct {
+	Workspace string `json:"workspace" jsonschema:"caminho do workspace (default: .)"`
+	Engine    string `json:"engine,omitempty" jsonschema:"engine para o check de engine-config: opencode | claude-code | cursor | gemini-cli | codex | copilot-cli (default: opencode; vscode-copilot é workspace-scoped — check não se aplica)"`
+	Home      string `json:"home,omitempty" jsonschema:"home do usuário (default: UserHomeDir)"`
+}
+
 type classifyParams struct {
 	Text      string `json:"text" jsonschema:"texto a classificar"`
 	Questions string `json:"questions" jsonschema:"critérios TypeSafe (JSON string, formato questions do System One)"`
@@ -166,9 +176,19 @@ func gmValidate(ctx context.Context, req *mcp.CallToolRequest, in wsParams) (*mc
 	return nil, out, nil
 }
 
-func gmDoctor(ctx context.Context, req *mcp.CallToolRequest, in wsParams) (*mcp.CallToolResult, any, error) {
+func gmDoctor(ctx context.Context, req *mcp.CallToolRequest, in doctorParams) (*mcp.CallToolResult, any, error) {
 	ws := defaultWS(in.Workspace)
-	rep, err := doctor.Run(ws, doctor.Options{})
+	opt := doctor.Options{}
+	engine := in.Engine
+	if engine == "" {
+		engine = "opencode"
+	}
+	if home, herr := mcpHome(in.Home); herr == nil {
+		if root, applies := coreinstall.EngineConfigRootFor(home, engine); applies {
+			opt.EngineConfigRoot = root
+		}
+	} // home indisponível → check não roda (payload sem a seção engine_config)
+	rep, err := doctor.Run(ws, opt)
 	if err != nil {
 		// workspace inválido: o checklist já coletado volta como payload
 		if rep != nil {

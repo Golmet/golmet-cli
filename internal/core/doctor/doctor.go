@@ -478,6 +478,11 @@ func (r *Report) Human() string {
 	mark := map[Status]string{OK: "✅", Warn: "⚠️ ", Fail: "❌"}
 	for _, c := range r.Checks {
 		fmt.Fprintf(&b, "%s %-14s %s\n", mark[c.Status], c.Item, c.Detail)
+		// findings do engine-config: paths/resumo logo abaixo da linha do
+		// check (o fix comum já vem na linha seguinte, estilo existente).
+		if c.Item == "engine-config" && r.EngineConfig != nil {
+			r.EngineConfig.renderLines(&b)
+		}
 		// fix: só faz sentido quando há o que corrigir — status OK não carrega hint.
 		if c.Fix != "" && c.Status != OK {
 			fmt.Fprintf(&b, "     fix: %s\n", c.Fix)

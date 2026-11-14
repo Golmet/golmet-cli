@@ -126,7 +126,8 @@ func TestGmDoctorAndNextViaMCP(t *testing.T) {
 	ws := scaffoldWS(t)
 	cs := session(t, context.Background())
 
-	_, out := callTool(t, cs, "gm_doctor", map[string]any{"workspace": ws})
+	// home injetável (hermético — nunca varre o config REAL do operador)
+	_, out := callTool(t, cs, "gm_doctor", map[string]any{"workspace": ws, "home": t.TempDir()})
 	if !strings.Contains(out, `"checks"`) || !strings.Contains(out, `"golmet.yaml"`) {
 		t.Errorf("gm_doctor payload inesperado: %s", out)
 	}
@@ -142,6 +143,34 @@ func TestGmDoctorAndNextViaMCP(t *testing.T) {
 	_, out3 := callTool(t, cs, "gm_next", map[string]any{"workspace": ws})
 	if !strings.Contains(out3, "nada pendente") {
 		t.Errorf("gm_next pós-update deveria estar em dia: %s", out3)
+	}
+}
+
+// param engine do gm_doctor resolve a raiz do config via o mesmo helper do
+// CLI — arquivos sem proveniência no manifest aparecem como não-
+// reconstrutíveis na seção engine_config do payload.
+func TestGmDoctorEngineConfigViaMCP(t *testing.T) {
+	ws := scaffoldWS(t)
+	cs := session(t, context.Background())
+
+	home := t.TempDir()
+	cfgRoot := filepath.Join(home, ".config", "opencode")
+	plugins := filepath.Join(cfgRoot, "plugins")
+	if err := os.MkdirAll(plugins, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"a.js", "b.js", "c.js"} {
+		if err := os.WriteFile(filepath.Join(plugins, name), []byte("plugin\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	_, out := callTool(t, cs, "gm_doctor", map[string]any{"workspace": ws, "home": home})
+	if !strings.Contains(out, `"engine_config"`) {
+		t.Fatalf("seção engine_config ausente do payload: %s", out)
+	}
+	if !strings.Contains(out, `plugins`) || !strings.Contains(out, `"untracked"`) {
+		t.Errorf("plugins não apareceu como não-reconstrutível: %s", out)
 	}
 }
 
