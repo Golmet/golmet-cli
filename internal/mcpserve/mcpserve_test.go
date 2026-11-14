@@ -15,6 +15,7 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core/indexstate"
 	"github.com/Golmet/golmet-cli/internal/core/scaffold"
 	"github.com/Golmet/golmet-cli/internal/core/update"
+	"github.com/Golmet/golmet-cli/internal/core/upgrade"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -86,7 +87,7 @@ func TestHandshakeAndServerInfo(t *testing.T) {
 	for _, tl := range lt.Tools {
 		names[tl.Name] = true
 	}
-	for _, want := range []string{"gm_validate", "gm_doctor", "gm_next", "gm_jev_classify", "gm_update", "gm_pack_update", "gm_pack_list", "gm_eval_reports"} {
+	for _, want := range []string{"gm_validate", "gm_doctor", "gm_next", "gm_jev_classify", "gm_update", "gm_pack_update", "gm_pack_list", "gm_eval_reports", "gm_upgrade"} {
 		if !names[want] {
 			t.Errorf("tool %s não anunciada (%v)", want, names)
 		}
@@ -149,6 +150,38 @@ func TestGmDoctorAndNextViaMCP(t *testing.T) {
 // param engine do gm_doctor resolve a raiz do config via o mesmo helper do
 // CLI — arquivos sem proveniência no manifest aparecem como não-
 // reconstrutíveis na seção engine_config do payload.
+// gm_upgrade: sem confirm e sem check é erro (padrão gm_update); check
+// read-only devolve {current, latest, has_update} sem baixar nada (a
+// API do GitHub é injetada via upgrade.DefaultAPIBase → httptest).
+func TestGmUpgradeViaMCP(t *testing.T) {
+	cs := session(t, context.Background())
+
+	// sem confirm e sem check → tool-error com a mensagem canônica
+	res, text := callTool(t, cs, "gm_upgrade", map[string]any{})
+	if !res.IsError || !strings.Contains(text, "gm_upgrade exige confirm=true; nenhuma alteração foi aplicada") {
+		t.Fatalf("gate de confirm ausente/mensagem errada: isError=%v texto=%s", res.IsError, text)
+	}
+
+	// check read-only contra release fake (v9.9.9) — sem tocar em nada
+	release := map[string]any{
+		"tag_name": "v9.9.9",
+		"assets":   []map[string]string{},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(release)
+	}))
+	t.Cleanup(srv.Close)
+	prevAPI := upgrade.DefaultAPIBase
+	upgrade.DefaultAPIBase = srv.URL
+	t.Cleanup(func() { upgrade.DefaultAPIBase = prevAPI })
+
+	_, out := callTool(t, cs, "gm_upgrade", map[string]any{"check": true})
+	if !strings.Contains(out, `"has_update":true`) || !strings.Contains(out, `"latest":"v9.9.9"`) || !strings.Contains(out, `"applied":false`) {
+		t.Errorf("check gm_upgrade payload inesperado: %s", out)
+	}
+}
+
 func TestGmDoctorEngineConfigViaMCP(t *testing.T) {
 	ws := scaffoldWS(t)
 	cs := session(t, context.Background())

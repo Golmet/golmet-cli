@@ -8,7 +8,6 @@ import (
 	"io"
 
 	"github.com/Golmet/golmet-cli/internal/core"
-	"github.com/Golmet/golmet-cli/internal/core/indexstate"
 	"github.com/Golmet/golmet-cli/internal/core/scan"
 	"github.com/spf13/cobra"
 )
@@ -34,7 +33,7 @@ func newRootCmd() *cobra.Command {
 		Use:     "golmet",
 		Short:   "The stone guardian of your product's documented truth",
 		Long:    "golmet valida workspaces contra o FORMATO v1: requisitos, specs e evidência congruentes com o código.",
-		Version: indexstate.KitVersion,
+		Version: Version, // binVersion — ldflags no release; "dev" no build local
 		CompletionOptions: cobra.CompletionOptions{
 			DisableDefaultCmd: true,
 		},
@@ -49,6 +48,7 @@ func newRootCmd() *cobra.Command {
 		newDoctorCmd(),
 		newInstallCmd(),
 		newUpdateCmd(),
+		newUpgradeCmd(),
 		newPackCmd(),
 		newToolsCmd(),
 		newMcpCmd(),

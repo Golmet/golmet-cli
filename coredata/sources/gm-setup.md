@@ -379,3 +379,32 @@ Próximo passo sugerido: @gm-next no módulo em que vai trabalhar.
 - **Perfil do cliente ausente ou stale (IMP-103):** reexecute o Passo 2b antes do Passo 4 (Azure) — nunca rode tracker com defaults hardcoded.
 - **Perfil do operador ausente (IMP-136):** skills consumidoras (gm-clarify, gm-decision-log, registro de IMPs) caem no fallback manual — pedem os dados ao operador na hora; reexecute o Passo 2c para eliminar o fallback.
 - **Blocos `azure-devops` no AGENTS.md (legado):** continuam suportados por compatibilidade, mas a fonte de verdade do wizard passa a ser `rules/client-profile.md` (IMP-103); sincronize o bloco a partir do perfil quando divergirem.
+
+## Atualização do kit (self-update)
+
+O binário `golmet` tem self-update próprio e a tool MCP `gm_upgrade` o
+expõe aos engines. **Gatilhos explícitos:** o operador pedir "atualizar o
+Golmet CLI", "tem nova atualização do Golmet CLI?", "upgrade do kit" ou
+relatar comportamento que pareça corrigido numa versão nova.
+
+Fluxo orientado (a tool cobre o determinístico; esta skill orienta o
+julgamento sobre quando checar, quando pular versão e como reagir a
+erro de checksum):
+
+1. **Cheque read-only primeiro:** `golmet upgrade --check` (ou MCP
+   `gm_upgrade` com `check=true`) e **reporte** versão local vs latest ao
+   operador (`{current, latest, has_update}`) — nunca baixe nada nesta
+   etapa. Versão local `dev` (build local) não é semver: a tool reporta
+   update disponível — confirme com o operador antes de aplicar.
+2. **Só aplique com confirmação explícita do operador** — o MCP exige
+   `confirm=true` e o CLI aplica direto: lembre que a substituição troca
+   o binário em execução (o anterior fica em `<bin>.old`).
+3. **Após aplicar, re-materialize os geridos:** `golmet install --engine
+   <id> --profile completo --yes` (ou MCP `gm_update` com `confirm=true`)
+   para o conteúdo (agents/skills/registry) seguir o binário novo — o
+   config é CACHE do kit, o update de binário não re-materializa sozinho.
+4. **Informe o rollback:** o binário anterior fica em `<bin>.old` — o
+   operador restaura renomeando de volta. Erro de checksum SHA-256
+   (ausente/divergente) ABORTA sem tocar no binário — reporte o erro e
+   sugira repetir mais tarde ou instalar manualmente da release; nunca
+   force a aplicação sem checksum válido.

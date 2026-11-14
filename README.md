@@ -71,17 +71,40 @@ registers the MCP server and runs the doctor in a single pass.
 | `index`    | Rebuilds `golmet.index.json` from the prose (the prose is canonical; the index is a cache)                                                                                     |
 | `pack`     | Manages L2 packs (`add` / `update` / `publish` / `list`) without destroying local customizations — two archetypes: `overlay` (read-only cache) and `state` (bidirectional Git working copy)          |
 | `db`       | Database services (the `gm-dba` layer): DATA_MODEL ↔ migrations/snapshot drift                                                                                                 |
+| `upgrade`  | Self-update of the binary from the latest GitHub release (SHA-256 verified; `--check` read-only; rollback via `<bin>.old`)                                                      |
 
 The normative contract behind all of this is [FORMATO.md](FORMATO.md) v1.
 
+## Updating
+
+Self-update the binary from the latest GitHub release (tag `v*`; assets are
+cross-compiled per platform and SHA-256-verified against the release's
+`checksums.txt` — a missing or mismatched checksum aborts without touching
+the binary):
+
+```bash
+golmet upgrade --check   # read-only: reports local vs latest (exit 0 either way)
+golmet upgrade           # downloads, verifies and replaces the binary
+```
+
+Rollback: the previous binary is kept at `<bin>.old` — restore it by
+renaming back (each upgrade replaces the `.old`, so copy it somewhere safe
+if you need to keep it). After upgrading the binary, re-materialize the
+managed content so the engine follows the new kit:
+`golmet install --engine <id> --profile completo --yes` (or MCP `gm_update`
+with `confirm=true`). HTTP(S)_PROXY is respected; `GITHUB_TOKEN`/`GH_TOKEN`
+is used when present (API rate limit) — never required. Agentic engines can
+drive the same flow via the MCP `gm_upgrade` tool (`check=true` /
+`confirm=true`).
+
 ## MCP server
 
-`golmet mcp` exposes the kit to any agentic engine over stdio, with 11 tools:
+`golmet mcp` exposes the kit to any agentic engine over stdio, with 12 tools:
 
 | Tool              | Purpose                                                               |
 | ----------------- | --------------------------------------------------------------------- |
 | `gm_validate`     | Validates the workspace against FORMATO v1                            |
-| `gm_doctor`       | Soft checks (S1–S5) and environment health                            |
+| `gm_doctor`       | Soft checks (S1-S5) and environment health                            |
 | `gm_next`         | Next-action recommendation (p1..p9)                                   |
 | `gm_status`       | Read-only entity-state dashboard                                      |
 | `gm_index`        | Rebuilds the state index from prose                                   |
@@ -89,8 +112,9 @@ The normative contract behind all of this is [FORMATO.md](FORMATO.md) v1.
 | `gm_eval_reports` | Lists eval reports stored in `~/.golmet/eval-reports` (newest first)  |
 | `gm_jev_classify` | Calibrated classification (TypeSafe System One)                       |
 | `gm_update`       | Content update (embedded FULL or external `--core`); supports dry-run |
-| `gm_pack_update`  | Re-syncs and applies a pack (overlay or state — state preserves local accumulation with auto-commit + rebase) |
+| `gm_pack_update`  | Re-syncs and applies a pack (overlay or state - state preserves local accumulation with auto-commit + rebase) |
 | `gm_pack_list`    | Lists installed packs (with `kind`: overlay or state)                |
+| `gm_upgrade`      | Self-update of the binary (`check=true` read-only; applying requires `confirm=true`) |
 
 Example registration in `opencode.json`:
 

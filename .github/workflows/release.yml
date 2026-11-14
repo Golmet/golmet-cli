@@ -1,0 +1,100 @@
+# Release do golmet — disparado por tag v*: build cross-compile das 5
+# plataformas alvo (actions oficiais apenas, sem GoReleaser), checksums
+# SHA-256 e GitHub Release com os assets + notas do CHANGELOG.
+# Publicação npm NÃO faz parte deste workflow — o package.json atual é um
+# placeholder (bin/golmet.js só imprime aviso; não despacha o binário Go).
+# Revisitar quando o launcher JS por plataforma existir.
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build cross-compile matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          VERSION="${GITHUB_REF_NAME}"
+          LDFLAGS="-s -w -X github.com/Golmet/golmet-cli/internal/cli.Version=${VERSION}"
+          targets=(
+            "windows/amd64"
+            "linux/amd64"
+            "linux/arm64"
+            "darwin/amd64"
+            "darwin/arm64"
+          )
+          for target in "${targets[@]}"; do
+            goos="${target%%/*}"
+            goarch="${target##*/}"
+            name="golmet_${goos}_${goarch}"
+            if [ "${goos}" = "windows" ]; then
+              name="${name}.exe"
+            fi
+            echo "build ${name}"
+            CGO_ENABLED=0 GOOS="${goos}" GOARCH="${goarch}" \
+              go build -trimpath -ldflags "${LDFLAGS}" \
+              -o "dist/${name}" ./cmd/golmet
+            if [ "${goos}" != "windows" ]; then
+              chmod 755 "dist/${name}"
+            fi
+          done
+
+      - name: Checksums (SHA-256)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum * > checksums.txt
+          cat checksums.txt
+
+      - name: Release notes (seção da versão no CHANGELOG)
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          NOTES_FILE="dist/RELEASE_NOTES.md"
+          {
+            echo "# golmet ${GITHUB_REF_NAME}"
+            echo
+            # extrai a seção "## [X.Y.Z] ..." correspondente ao CHANGELOG;
+            # sem seção → aponta para o CHANGELOG (o release nunca falha por nota)
+            awk -v ver="${VERSION}" '
+              $0 ~ "^## \\[" ver "\\]" { found = 1; next }
+              /^## \[/ && found { exit }
+              found { print }
+            ' CHANGELOG.md > /tmp/section.md
+            if [ -s /tmp/section.md ]; then
+              cat /tmp/section.md
+            else
+              echo "Notas completas em [CHANGELOG.md](https://github.com/Golmet/golmet-cli/blob/main/CHANGELOG.md)."
+            fi
+          } > "${NOTES_FILE}"
+          echo "NOTES_FILE=${NOTES_FILE}" >> "${GITHUB_ENV}"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "golmet ${GITHUB_REF_NAME}" \
+            --notes-file "${NOTES_FILE}" \
+            dist/*

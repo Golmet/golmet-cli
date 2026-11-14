@@ -23,6 +23,7 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core/pack"
 	"github.com/Golmet/golmet-cli/internal/core/scan"
 	"github.com/Golmet/golmet-cli/internal/core/status"
+	"github.com/Golmet/golmet-cli/internal/core/upgrade"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -93,6 +94,11 @@ func NewServer() *mcp.Server {
 		Description: "Lista packs já sincronizados (overlay no cache; state packs aparecem com kind e caminho do working copy) sem escrever",
 	}, gmPackList)
 
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "gm_upgrade",
+		Description: "Self-update do binário golmet a partir da última release do GitHub — check=true read-only ({current, latest, has_update}); aplicar exige confirm=true (SHA-256 obrigatório do checksums.txt; rollback manual via <bin>.old)",
+	}, gmUpgrade)
+
 	return server
 }
 
@@ -144,6 +150,16 @@ type packUpdateParams struct {
 
 type packListParams struct {
 	Home string `json:"home,omitempty" jsonschema:"home do usuário (default: UserHomeDir)"`
+}
+
+// upgradeParams — gm_upgrade. check=true read-only ({current, latest,
+// has_update}); aplicar exige confirm=true (padrão gm_update — sem
+// confirm e sem check é erro). Home é reservado: o upgrade opera sobre o
+// binário corrente do processo (os.Executable), não sobre a home.
+type upgradeParams struct {
+	Confirm bool   `json:"confirm,omitempty" jsonschema:"deve ser true para autorizar a substituição do binário"`
+	Check   bool   `json:"check,omitempty" jsonschema:"read-only: reporta versão local vs latest sem baixar nada"`
+	Home    string `json:"home,omitempty" jsonschema:"reservado — o upgrade opera sobre o binário corrente do processo"`
 }
 
 // ---- handlers ----
@@ -450,6 +466,34 @@ func gmPackList(ctx context.Context, req *mcp.CallToolRequest, in packListParams
 		return nil, packListOut{}, err
 	}
 	return nil, packListOut{Tool: "gm_pack_list", Home: home, Packs: packs}, nil
+}
+
+// ---- gm_upgrade ----
+
+type upgradeOut struct {
+	Tool       string              `json:"tool"`
+	Check      upgrade.CheckResult `json:"check"`
+	Applied    bool                `json:"applied"`
+	BinPath    string              `json:"bin_path,omitempty"`
+	BackupPath string              `json:"backup_path,omitempty"`
+}
+
+func gmUpgrade(ctx context.Context, req *mcp.CallToolRequest, in upgradeParams) (*mcp.CallToolResult, upgradeOut, error) {
+	if !in.Confirm && !in.Check {
+		return nil, upgradeOut{}, fmt.Errorf("gm_upgrade exige confirm=true; nenhuma alteração foi aplicada")
+	}
+	res, err := upgrade.Run(ctx, upgrade.Options{CheckOnly: in.Check}, upgrade.BinaryVersion)
+	if err != nil {
+		return nil, upgradeOut{}, err
+	}
+	out := upgradeOut{
+		Tool:       "gm_upgrade",
+		Check:      res.Check,
+		Applied:    res.Applied,
+		BinPath:    res.BinPath,
+		BackupPath: res.BackupPath,
+	}
+	return nil, out, nil
 }
 
 func mcpHome(home string) (string, error) {
