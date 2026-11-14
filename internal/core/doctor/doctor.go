@@ -44,20 +44,25 @@ type Check struct {
 // Options controla o doctor. O smoke do kit.jev é POR DEFAULT quando a
 // key existe (health = o Jev FUNCIONA, não só "key presente"); NoNetwork
 // pula o smoke (CI/offline); Network é alias de compatibilidade --network
-// (o smoke já é default — sem efeito extra).
+// (o smoke já é default — sem efeito extra). EngineConfigRoot é a raiz do
+// config do engine (ex.: ~/.config/opencode) para o check de estado
+// (cache reconstrutível vs dado do usuário) — vazio = check não roda
+// (compatibilidade total com chamadas workspace-only).
 type Options struct {
-	Network   bool // alias de compatibilidade (--network) — sem efeito extra
-	NoNetwork bool // --no-network: pula o smoke do kit.jev (CI/offline)
+	Network          bool   // alias de compatibilidade (--network) — sem efeito extra
+	NoNetwork        bool   // --no-network: pula o smoke do kit.jev (CI/offline)
+	EngineConfigRoot string // raiz do config do engine; vazio = check não roda
 }
 
 // Report agrega o checklist.
 type Report struct {
-	Workspace string  `json:"workspace"`
-	Version   string  `json:"version"` // versão do kit servindo — diagnóstico instantâneo de binário velho (MCP/CLI --json)
-	Checks    []Check `json:"checks"`
-	OKs       int     `json:"ok"`
-	Warns     int     `json:"warns"`
-	Fails     int     `json:"fails"`
+	Workspace    string               `json:"workspace"`
+	Version      string               `json:"version"` // versão do kit servindo — diagnóstico instantâneo de binário velho (MCP/CLI --json)
+	Checks       []Check              `json:"checks"`
+	OKs          int                  `json:"ok"`
+	Warns        int                  `json:"warns"`
+	Fails        int                  `json:"fails"`
+	EngineConfig *EngineConfigSection `json:"engine_config,omitempty"` // presente só quando o check rodou (EngineConfigRoot)
 }
 
 func (r *Report) add(item string, st Status, detail, fix string) {
@@ -395,6 +400,14 @@ func Run(dir string, opt Options) (*Report, error) {
 		rep.add("git", OK, "git disponível", "")
 	} else {
 		rep.add("git", Warn, "git indisponível — H7/S2 degradam", "instale o git no PATH")
+	}
+
+	// 9. estado do engine-config — cache reconstrutível vs dado do usuário
+	// (customização em gerido, sem proveniência, layer local removida).
+	// Roda contra o CONFIG ROOT do engine, não contra o workspace; vazio =
+	// check não roda (compatibilidade total com chamadas workspace-only).
+	if opt.EngineConfigRoot != "" {
+		rep.runEngineConfig(opt.EngineConfigRoot)
 	}
 
 	return rep, nil
