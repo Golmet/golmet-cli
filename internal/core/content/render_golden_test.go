@@ -44,6 +44,23 @@ func TestRenderGoldenOpencodeByteEquality(t *testing.T) {
 	}
 
 	goldenRoot := filepath.Join("testdata", "golden-opencode")
+
+	// Regeneração de goldens: GOLMET_UPDATE_GOLDEN=1 sobrescreve os goldens
+	// com o render corrente (use após editar coredata/sources e rever o diff).
+	if os.Getenv("GOLMET_UPDATE_GOLDEN") == "1" {
+		for _, r := range rendered {
+			dst := filepath.Join(goldenRoot, filepath.FromSlash(r.Rel))
+			if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+				t.Fatalf("mkdir %s: %v", filepath.Dir(dst), err)
+			}
+			if err := os.WriteFile(dst, []byte(r.Content), 0o644); err != nil {
+				t.Fatalf("gravar golden %s: %v", dst, err)
+			}
+		}
+		t.Logf("goldens regenerados: %d arquivos", len(rendered))
+		return
+	}
+
 	var goldenFiles []string
 	err = filepath.WalkDir(goldenRoot, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {

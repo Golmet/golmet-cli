@@ -168,7 +168,7 @@ literais; sem grafo, degradação `grep-fallback` declarada na seção 1.
 - Migrations de banco de dados, DDLs, schemas SQL.
 - Arquivos de configuração de entidades e mapeamentos ORM (EF Core, JPA/Panache, SQLx, etc.).
 - Playbooks de stack (`gm-stack-*` na config do engine) para consultar comandos e padrões.
-- **Base de conhecimento do domínio (T1):** `knowledge/reverse-engineering/KNOWLEDGE.md`
+- **Base de conhecimento do domínio (T1):** `packs/<pack-ativo>/domains/reverse-engineering/KNOWLEDGE.md`
   (princípios P-01..P-18, anti-patterns AP-01..AP-13, checklist do domínio,
   ferramenta validada (grafo de código) e estrutura de artefatos reverse/migration;
   critérios de ancoragem, verificação mecânica de citações, completude, autoverificação

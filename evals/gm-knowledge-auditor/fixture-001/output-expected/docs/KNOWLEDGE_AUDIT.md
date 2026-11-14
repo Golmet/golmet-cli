@@ -49,7 +49,7 @@ METRICS.md **não é executado** (relatório sem dados nunca faz merge).
 
 | Store | Local | Hits | Sessões com hit |
 |---|---|---|---|
-| T1 | `knowledge/**` | N/A (sem dados) | N/A (sem dados) |
+| T1 | `packs/org-pack/domains/**` | N/A (sem dados) | N/A (sem dados) |
 | T2 | `patterns/INDEX.md` + `**/PATTERN.md` | N/A (sem dados) | N/A (sem dados) |
 | T3 | `rules/**.md` | N/A (sem dados) | N/A (sem dados) |
 
@@ -69,6 +69,6 @@ N/A (sem dados) — nenhum dia observável na janela.
   os contadores são zerados explícitos e nenhuma métrica é inventada.
 - Interpretação contra P-09/P-11/AP-11/AP-13 exige 2 ciclos medidos (D17):
   decisão de infraestrutura NÃO é tomada com este relatório.
-- Stores existentes no sandbox (T1 `knowledge/api-design/`, T2
+- Stores existentes no sandbox (T1 `packs/org-pack/domains/api-design/`, T2
   `accumulation/patterns/`, T3 `rules/stack-playbook.md`) foram mapeados
   para os globs do proxy — sem dados de leitura, nenhum hit é afirmado.

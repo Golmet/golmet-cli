@@ -13,7 +13,7 @@
 
 ## Observações
 
-- `knowledge/INDEX.md` já existe com o domínio `code-quality` fundado —
+- `packs/org-pack/domains/INDEX.md` já existe com o domínio `code-quality` fundado —
   o merge é incremental: a entrada existente deve ser preservada e a
   nova entrada do `event-sourcing` adicionada.
 - Usar fontes primárias atuais com URL + data de acesso (documentação

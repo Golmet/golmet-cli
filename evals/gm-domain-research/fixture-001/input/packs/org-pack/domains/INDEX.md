@@ -6,6 +6,6 @@
 
 ### code-quality
 - **Escopo**: revisão de qualidade de código (Clean Code, SOLID, design patterns)
-- **Base**: knowledge/code-quality/KNOWLEDGE.md (v1.0.0)
+- **Base**: packs/org-pack/domains/code-quality/KNOWLEDGE.md (v1.0.0)
 - **data_pesquisa**: 2026-08-15 · **proxima_revisao**: 2027-02-15
 - **Fontes principais**: livros canônicos (Clean Code; Agile Software Development) · refactoring.guru

@@ -15,7 +15,7 @@ reporta `db-introspect: não disponível` e as métricas ficam `N/A (sem
 dados)` — cláusula de fallback padrão (IMP-080), nunca números inventados.
 
 Mede o **PAR de métricas** do princípio P-09 da base de conhecimento
-(`knowledge/knowledge-management/KNOWLEDGE.md` v1.5.0 — Lê upstream): **(1)
+(`packs/<pack-ativo>/domains/knowledge-management/KNOWLEDGE.md` v1.5.0 — Lê upstream): **(1)
 hit rate** — fração de tarefas que de fato carregaram conhecimento
 relevante — e **(2) tokens de conhecimento por tarefa** — quanto custa
 acertar. Instrumentação barata PRECEDE decisão de infraestrutura (D8 do
@@ -103,11 +103,11 @@ Regras de contagem:
 ## Lê (upstream)
 
 - Banco SQLite do runtime (read-only — via `node:sqlite`; capacidade `db-introspect` FULL-only)
-- `knowledge/knowledge-management/KNOWLEDGE.md` — **base de fundação do
+- `packs/<pack-ativo>/domains/knowledge-management/KNOWLEDGE.md` — **base de fundação do
   domínio (T1)** (v1.5.0): P-09 (par de métricas), P-10 (granularidade), P-11
   (hit rate por modelo), AP-11 (biblioteca morta), AP-13 (gatilho otimista)
   — fonte canônica de critérios de interpretação
-- `packs/<pack-ativo>/accumulation/knowledge/plano-arquitetura-conhecimento.md`
+- `packs/<pack-ativo>/accumulation/nuances/plano-arquitetura-conhecimento.md`
   — plano v5 (D8/D12/D15/D17/D18, §6 spec desta skill)
 - `packs/<pack-ativo>/accumulation/metrics/METRICS.md` — alvo do merge incremental
 - `gm-perf-auditor` — precedente do padrão de acesso ao db

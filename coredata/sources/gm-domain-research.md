@@ -11,29 +11,29 @@ improviso embutidos no prompt.
 
 | Skill | Faz |
 |-------|-----|
-| `gm-domain-research` | Funda a BASE de conhecimento de um domínio (`knowledge/<dominio>/KNOWLEDGE.md`) |
+| `gm-domain-research` | Funda a BASE de conhecimento de um domínio (`packs/<pack-ativo>/domains/<dominio>/KNOWLEDGE.md`) |
 | `gm-skill-creator` | Cria a skill/componente que CONSUME a base |
 | `gm-pattern-extractor` | Extrai padrões de retrospectivas de projetos (acúmulo pós-projeto, não fundação) |
 
 ## Lê (upstream)
 
 - Pedido do operador/builder: **nome do domínio + escopo** (ex: "security review de código/solução", "qualidade de código", "revisão de acessibilidade")
-- `knowledge/INDEX.md` — bases existentes (reuso de domínio já fundado; merge incremental)
-- `knowledge/<dominio>/KNOWLEDGE.md` — base anterior (quando re-pesquisa por staleness)
+- `packs/<pack-ativo>/domains/INDEX.md` — bases existentes (reuso de domínio já fundado; merge incremental)
+- `packs/<pack-ativo>/domains/<dominio>/KNOWLEDGE.md` — base anterior (quando re-pesquisa por staleness)
 - Regra de pesquisa de docs oficiais do ambiente (context7) — não confie na memória
 - Fontes externas via `websearch` / `find-docs` / `ctx7` — sempre fontes primárias e atuais
 
 ## Gera (downstream)
 
-- `knowledge/<dominio>/KNOWLEDGE.md` — a base (template fixo abaixo)
-- `knowledge/INDEX.md` — entrada do domínio (merge incremental — nunca deleta entradas; cria o arquivo se for a primeira fundação)
-- (Opcional, só com confirmação) `packs/<pack-ativo>/accumulation/knowledge/<dominio>-nuances.md` — nuances/aplicação da organização no clone do pack; lembre o operador de publicar via `gm-pack-publish` (esta skill NÃO publica)
+- `packs/<pack-ativo>/domains/<dominio>/KNOWLEDGE.md` — a base (template fixo abaixo)
+- `packs/<pack-ativo>/domains/INDEX.md` — entrada do domínio (merge incremental — nunca deleta entradas; cria o arquivo se for a primeira fundação)
+- (Opcional, só com confirmação) `packs/<pack-ativo>/accumulation/nuances/<dominio>-nuances.md` — nuances/aplicação da organização no clone do pack; lembre o operador de publicar via `golmet pack publish` (a skill `gm-pack-publish` orienta; esta skill NÃO publica)
 
 ## Nunca edita
 
 - Componentes do workflow (`agents/`, `skills/`, `registry.yaml`, `ARCHITECTURE.md`, `AGENTS.md`)
 - Artefatos de módulo (REQUIREMENTS.md, DATA_MODEL.md, etc.) e código de aplicação
-- Bases de OUTROS domínios em `knowledge/` (só o domínio alvo + INDEX)
+- Bases de OUTROS domínios em `packs/<pack-ativo>/domains/` (só o domínio alvo + INDEX)
 - `evals/golden-human/` — golden set humano, intocado por agents
 
 ## Tools disponíveis
@@ -41,12 +41,13 @@ improviso embutidos no prompt.
 - `websearch` (pesquisar fontes atuais — allow)
 - `file` / `glob` / `grep` (ler INDEX, base anterior e regra de docs — allow)
 - `shell` (somente leitura — ex: `Get-Date` para data de pesquisa/revisão)
-- `write` / `edit` (restritos a `knowledge/**` no config; pack da organização sob ask)
+- `write` / `edit` (restritos a `packs/<pack-ativo>/domains/**` no working copy do pack — o dado sobe via publicação manual)
 - `ask` (esclarecer escopo ambíguo; confirmar gravação no pack)
 
 Perfil de permissão (menor privilégio, aplicado no agente invocador):
 read/glob/grep/websearch allow; edit/write só em
-`knowledge/**` do config (+ `packs/**/accumulation/knowledge/**`
+`packs/<pack-ativo>/domains/**` do working copy do pack
+(+ `packs/<pack-ativo>/accumulation/nuances/**`
 sob ask); shell só leitura. Nenhuma outra escrita é permitida.
 
 ## Modo de erro
@@ -67,7 +68,7 @@ validou o gatilho na fase de Fundação de Conhecimento):
    `code-quality`, `acessibilidade`), ≤ 64 chars.
 2. **Escopo**: 1-2 frases do que a camada fará com a base (ex: "security
    review de código/solução" — a base orienta triagem de findings).
-3. Consulte `knowledge/INDEX.md`: se o domínio já existe e
+3. Consulte `packs/<pack-ativo>/domains/INDEX.md`: se o domínio já existe e
    `proxima_revisao` está no futuro, **ENCERRE em modo reuso** — reporte o
    caminho da base, sem escrita.
 
@@ -99,10 +100,10 @@ sem fonte citada.
 
 ### Passo 4 — Gravar a base e atualizar o INDEX
 
-1. Escreva `knowledge/<dominio>/KNOWLEDGE.md` — em
+1. Escreva `packs/<pack-ativo>/domains/<dominio>/KNOWLEDGE.md` — em
    re-pesquisa, merge incremental (nunca delete seções sem substituição
    explícita; incremente `versao`).
-2. Atualize `knowledge/INDEX.md` (crie com o template do
+2. Atualize `packs/<pack-ativo>/domains/INDEX.md` (crie com o template do
    INDEX se for a primeira fundação do ambiente) — adicione a entrada do
    domínio; **nunca remova entradas existentes**.
 3. Defina `proxima_revisao` (padrão: `data_pesquisa` + 6 meses; domínios
@@ -116,7 +117,7 @@ listar o KNOWLEDGE.md na seção "Lê (upstream)" dele como fonte canônica de
 critérios. Nuances da organização: só grave no pack com confirmação
 explícita do operador e lembre que a publicação é via `gm-pack-publish`.
 
-## Template — knowledge/<dominio>/KNOWLEDGE.md
+## Template — packs/<pack-ativo>/domains/<dominio>/KNOWLEDGE.md
 
 ```markdown
 ---
@@ -169,12 +170,12 @@ quando `proxima_revisao` vencer.
 1. <título> — <URL> (acessado em AAAA-MM-DD)
 ```
 
-## Template — entrada em knowledge/INDEX.md
+## Template — entrada em packs/<pack-ativo>/domains/INDEX.md
 
 ```markdown
 ### <dominio>
 - **Escopo**: <escopo em 1 linha>
-- **Base**: knowledge/<dominio>/KNOWLEDGE.md (v<versao>)
+- **Base**: packs/<pack-ativo>/domains/<dominio>/KNOWLEDGE.md (v<versao>)
 - **data_pesquisa**: AAAA-MM-DD · **proxima_revisao**: AAAA-MM-DD
 - **Fontes principais**: <1-3 fontes>
 ```
@@ -182,11 +183,14 @@ quando `proxima_revisao` vencer.
 ## Formato de commit/registro
 
 ```
-chore(knowledge): add <dominio> knowledge base
+chore(domains): add <dominio> knowledge base
 ```
 
-O INDEX.md é atualizado pela própria skill (merge incremental). O registro
-estrutural no `registry.yaml` NÃO é papel desta skill — é do
+A base vive no working copy do state pack da organização
+(`packs/<pack-ativo>/domains/`) e fica versionada no repo do pack — a
+publicação para o remoto é MANUAL (`golmet pack publish`), decisão do
+operador. O INDEX.md é atualizado pela própria skill (merge incremental).
+O registro estrutural no `registry.yaml` NÃO é papel desta skill — é do
 gm-workflow-builder: a skill é fundação de conteúdo, não componente novo
 da árvore de delegação.
 
@@ -208,6 +212,7 @@ da árvore de delegação.
 - **Pedido para pular a pesquisa**: recuse — sem fundação não há camada
   (contrato do gatilho do builder). Só o operador pode decidir diferente,
   e aí o componente nasce com débito de fundação declarado.
-- **Escrita fora de `knowledge/`**: bloqueada pelo menor privilégio — em
-  eval/sandbox, escreva relativo ao module root do sandbox
-  (`knowledge/<dominio>/KNOWLEDGE.md` dentro do sandbox).
+- **Escrita fora de `packs/<pack-ativo>/domains/`**: bloqueada pelo menor
+  privilégio — em eval/sandbox, escreva relativo ao module root do sandbox
+  (`packs/org-pack/domains/<dominio>/KNOWLEDGE.md` dentro do sandbox —
+  `org-pack` é o dir literal neutro do pack no ambiente de eval).

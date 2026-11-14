@@ -37,7 +37,7 @@ de acúmulo (`<!-- gm-pack-accumulation -->`) do AGENTS.md global:
 - Retrospectivas de projetos (`RETROSPECTIVE.md` de cada projeto documentado) — fonte de padrões
 - `accumulation/patterns/INDEX.md` do pack ativo — índice atual de padrões
 - `accumulation/patterns/<tipo>/*/PATTERN.md` — padrões existentes (para merge)
-- Fundação do domínio (T1): `knowledge/knowledge-management/KNOWLEDGE.md` — (MP-03: staleness é atributo do ITEM, não da store)
+- Fundação do domínio (T1): `packs/<pack-ativo>/domains/knowledge-management/KNOWLEDGE.md` - (MP-03: staleness é atributo do ITEM, não da store)
 
 ## Gera (downstream)
 
