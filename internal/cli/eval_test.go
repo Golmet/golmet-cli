@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -33,14 +34,27 @@ func evalFixture(t *testing.T) (string, string) {
 	return fx, ws
 }
 
+// redirectHome aponta UserHomeDir para um diretório temporário — o eval
+// grava relatórios em ~/.golmet/eval-reports e os testes NUNCA tocam a
+// home real (home injetável por env: USERPROFILE no Windows, HOME no unix).
+func redirectHome(t *testing.T) string {
+	t.Helper()
+	home := t.TempDir()
+	t.Setenv("USERPROFILE", home) // windows
+	t.Setenv("HOME", home)        // unix
+	return home
+}
+
 func TestEvalCmdSinglePassJSON(t *testing.T) {
+	redirectHome(t)
 	fx, ws := evalFixture(t)
 	out, err := runCmd(t, "eval", fx, "--workspace", ws, "--json")
 	if err != nil {
 		t.Fatalf("eval: %v\n%s", err, out)
 	}
+	// decoder tolera a linha "relatório: <path>" (stderr) após o JSON
 	var res map[string]any
-	if err := json.Unmarshal([]byte(out), &res); err != nil {
+	if err := json.NewDecoder(strings.NewReader(out)).Decode(&res); err != nil {
 		t.Fatalf("json inválido: %v\n%s", err, out)
 	}
 	if res["status"] != eval.StatusPass {
@@ -49,6 +63,7 @@ func TestEvalCmdSinglePassJSON(t *testing.T) {
 }
 
 func TestEvalCmdSingleFailExit1(t *testing.T) {
+	redirectHome(t)
 	fx, ws := evalFixture(t)
 	os.Remove(filepath.Join(ws, "specs", "DATA_MODEL.md")) // file_exists quebra
 	_, err := runCmd(t, "eval", fx, "--workspace", ws)
@@ -80,6 +95,7 @@ func TestEvalCmdUsageErrors(t *testing.T) {
 }
 
 func TestEvalCmdAllSuite(t *testing.T) {
+	redirectHome(t)
 	fx, ws := evalFixture(t)
 	base := filepath.Dir(filepath.Dir(filepath.Dir(fx))) // <base>
 	wsRoot := filepath.Dir(filepath.Dir(filepath.Dir(ws)))
@@ -90,20 +106,61 @@ func TestEvalCmdAllSuite(t *testing.T) {
 	if !strings.Contains(out, "gm-datamodel/fixture-001") || !strings.Contains(out, "geral:") {
 		t.Errorf("saída da suite inesperada:\n%s", out)
 	}
-	// --json da suite
+	// --json da suite (decoder tolera as linhas "relatório:" no buffer)
 	out2, err := runCmd(t, "eval", "--all", filepath.Join(base, "fx"), "--workspaces-root", wsRoot, "--json")
 	if err != nil {
 		t.Fatalf("eval --all --json: %v\n%s", err, out2)
 	}
 	var suite map[string]any
-	if err := json.Unmarshal([]byte(out2), &suite); err != nil {
+	if err := json.NewDecoder(strings.NewReader(out2)).Decode(&suite); err != nil {
 		t.Fatalf("suite json inválida: %v", err)
+	}
+}
+
+// o eval grava o relatório canônico em ~/.golmet/eval-reports da home
+// injetada (estado de máquina do kit — o workspace não recebe relatório).
+func TestEvalCmdWritesReport(t *testing.T) {
+	home := redirectHome(t)
+	fx, ws := evalFixture(t)
+	out, err := runCmd(t, "eval", fx, "--workspace", ws)
+	if err != nil {
+		t.Fatalf("eval: %v\n%s", err, out)
+	}
+	if !strings.Contains(out, "relatório: ") {
+		t.Errorf("linha do relatório ausente:\n%s", out)
+	}
+	dir := filepath.Join(home, ".golmet", "eval-reports")
+	entries, rerr := os.ReadDir(dir)
+	if rerr != nil {
+		t.Fatalf("diretório de relatórios não criado na home injetada: %v", rerr)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("esperava 1 relatório, há %d", len(entries))
+	}
+	if !regexp.MustCompile(`^eval-gm-datamodel-fixture-001-\d{8}-\d{6}\.md$`).MatchString(entries[0].Name()) {
+		t.Errorf("nome fora do padrão: %s", entries[0].Name())
+	}
+	data, err := os.ReadFile(filepath.Join(dir, entries[0].Name()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := string(data)
+	for _, want := range []string{"# Eval Report — gm-datamodel/fixture-001", "- status: PASS"} {
+		if !strings.Contains(content, want) {
+			t.Errorf("relatório sem %q:\n%s", want, content)
+		}
+	}
+	// o workspace não recebe relatório (não polui o versionado)
+	matches, _ := filepath.Glob(filepath.Join(ws, "**", "eval-*.md"))
+	if len(matches) != 0 {
+		t.Errorf("relatório vazou para o workspace: %v", matches)
 	}
 }
 
 // corpus do repo passa no checker via single-fixture quando os workspaces
 // são semeados (smoke estrutural com uma fixture real versionada).
 func TestEvalCmdCorpusFixtureSmoke(t *testing.T) {
+	redirectHome(t)
 	base := inTempDir(t)
 	src := filepath.Join("..", "..", "evals", "gm-datamodel", "fixture-001")
 	if _, err := os.Stat(src); err != nil {

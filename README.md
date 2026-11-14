@@ -65,7 +65,7 @@ registers the MCP server and runs the doctor in a single pass.
 | `next`     | Recommends the next action on the workspace (priorities p1..p9)                                                                                                                |
 | `doctor`   | Soft checks (S1–S5) plus environment health, with remediation hints                                                                                                            |
 | `adopt`    | Adopts FORMATO v1 in an existing workspace (classified dry-run → deterministic apply)                                                                                          |
-| `eval`     | Deterministic eval checker: scores `criteria.yaml` fixtures against the workspace                                                                                              |
+| `eval`     | Deterministic eval checker: scores `criteria.yaml` fixtures against the workspace; writes a markdown report per fixture to `~/.golmet/eval-reports` (50-report retention)      |
 | `tools`    | Installs kit-native tools (code graph) with supply-chain verification (SHA-256 + attestation)                                                                                  |
 | `mcp`      | Serves the kit as an MCP server over stdio — validation, update and packs                                                                                                      |
 | `index`    | Rebuilds `golmet.index.json` from the prose (the prose is canonical; the index is a cache)                                                                                     |
@@ -76,7 +76,7 @@ The normative contract behind all of this is [FORMATO.md](FORMATO.md) v1.
 
 ## MCP server
 
-`golmet mcp` exposes the kit to any agentic engine over stdio, with 10 tools:
+`golmet mcp` exposes the kit to any agentic engine over stdio, with 11 tools:
 
 | Tool              | Purpose                                                               |
 | ----------------- | --------------------------------------------------------------------- |
@@ -85,7 +85,8 @@ The normative contract behind all of this is [FORMATO.md](FORMATO.md) v1.
 | `gm_next`         | Next-action recommendation (p1..p9)                                   |
 | `gm_status`       | Read-only entity-state dashboard                                      |
 | `gm_index`        | Rebuilds the state index from prose                                   |
-| `gm_eval`         | Scores eval fixtures against `criteria.yaml`                          |
+| `gm_eval`         | Scores eval fixtures against `criteria.yaml`; returns `report_path`   |
+| `gm_eval_reports` | Lists eval reports stored in `~/.golmet/eval-reports` (newest first)  |
 | `gm_jev_classify` | Calibrated classification (TypeSafe System One)                       |
 | `gm_update`       | Content update (embedded FULL or external `--core`); supports dry-run |
 | `gm_pack_update`  | Re-syncs and applies a pack overlay                                   |

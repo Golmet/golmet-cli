@@ -70,8 +70,13 @@ func NewServer() *mcp.Server {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "gm_eval",
-		Description: "Checker determinístico de evals — pontua criteria.yaml de fixture contra o workspace (DR-017)",
+		Description: "Checker determinístico de evals — pontua criteria.yaml de fixture contra o workspace (DR-017); grava o relatório markdown em ~/.golmet/eval-reports e devolve report_path",
 	}, gmEval)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "gm_eval_reports",
+		Description: "Lista os relatórios de eval gravados em ~/.golmet/eval-reports (mais recentes primeiro, cap 50) — leia o file com file tools para o relatório humano",
+	}, gmEvalReports)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "gm_update",
@@ -249,19 +254,21 @@ func gmIndex(ctx context.Context, req *mcp.CallToolRequest, in indexParams) (*mc
 	}, nil
 }
 
-// ---- gm_eval ----
+// ---- gm_eval / gm_eval_reports ----
 
 type evalParams struct {
+	Home       string `json:"home,omitempty" jsonschema:"home do usuário (default: UserHomeDir)"`
 	FixtureDir string `json:"fixture_dir" jsonschema:"caminho da fixture (criteria.yaml + input/)"`
 	Workspace  string `json:"workspace" jsonschema:"caminho do workspace com os artefatos produzidos"`
 }
 
 type evalOut struct {
-	Pass   int                `json:"pass"`
-	Fail   int                `json:"fail"`
-	Warn   int                `json:"warn"`
-	Skip   int                `json:"skip"`
-	Checks []eval.CheckResult `json:"checks"`
+	Pass       int                `json:"pass"`
+	Fail       int                `json:"fail"`
+	Warn       int                `json:"warn"`
+	Skip       int                `json:"skip"`
+	Checks     []eval.CheckResult `json:"checks"`
+	ReportPath string             `json:"report_path,omitempty"` // relatório gravado em ~/.golmet/eval-reports
 }
 
 func gmEval(ctx context.Context, req *mcp.CallToolRequest, in evalParams) (*mcp.CallToolResult, evalOut, error) {
@@ -269,14 +276,47 @@ func gmEval(ctx context.Context, req *mcp.CallToolRequest, in evalParams) (*mcp.
 	if err != nil {
 		return nil, evalOut{}, err
 	}
+	home, herr := mcpHome(in.Home)
+	if herr != nil {
+		return nil, evalOut{}, herr
+	}
+	skill, fixture := eval.SkillFixture(in.FixtureDir)
+	reportPath, werr := eval.WriteReport(skill, fixture, in.Workspace, res, eval.ReportDirDefault(home))
+	if werr != nil {
+		return nil, evalOut{}, werr
+	}
 	out := evalOut{
 		Pass:   res.Passed,
 		Fail:   res.Failed,
 		Warn:   res.Warned,
 		Skip:   res.Skipped,
 		Checks: res.Checks,
+		// o runtime nunca gerencia a pasta: recebe o path e lê o arquivo
+		// quando quiser o relatório humano
+		ReportPath: reportPath,
 	}
 	return nil, out, nil
+}
+
+type evalReportsParams struct {
+	Home string `json:"home,omitempty" jsonschema:"home do usuário (default: UserHomeDir)"`
+}
+
+type evalReportsOut struct {
+	Tool    string             `json:"tool"`
+	Reports []eval.ReportEntry `json:"reports"`
+}
+
+func gmEvalReports(ctx context.Context, req *mcp.CallToolRequest, in evalReportsParams) (*mcp.CallToolResult, evalReportsOut, error) {
+	home, err := mcpHome(in.Home)
+	if err != nil {
+		return nil, evalReportsOut{}, err
+	}
+	reports, err := eval.ListReports(eval.ReportDirDefault(home))
+	if err != nil {
+		return nil, evalReportsOut{}, err
+	}
+	return nil, evalReportsOut{Tool: "gm_eval_reports", Reports: reports}, nil
 }
 
 type mutationOut struct {

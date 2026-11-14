@@ -26,16 +26,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `golmet next` — deterministic recommendation of the next action, prioritized `p1..p9`.
 - `golmet doctor` — environment health checks (9 checks) with remediation hints; runs a Jev smoke test by default (`--no-network` skips it).
 - `golmet adopt` — FORMATO adoption handshake for existing workspaces: classified dry-run first, then deterministic apply, preserving legacy layouts.
-- `golmet eval` — deterministic eval checker (15 checks) over a fixture suite, with JSON output for CI.
+- `golmet eval` — deterministic eval checker (15 checks) over a fixture suite, with JSON output for CI; every evaluated fixture also gets a markdown report in `~/.golmet/eval-reports/` (kit machine state, 50-report retention), with the path printed as `relatório: <path>`.
 - `golmet tools` — installs supporting tooling (e.g. `tools install codegraph`) with supply-chain verification (SHA-256 checksums + attestation).
-- `golmet mcp` — stdio MCP server exposing 10 tools (see below).
+- `golmet mcp` — stdio MCP server exposing 11 tools (see below).
 - `golmet index` — rebuilds `golmet.index.json` (the kit-written state index) after merges or corruption.
 - `golmet pack` — manages L2 content packs: `pack add`, `pack update` (sync + overlay, engine required), and `pack list`.
 - `golmet db` — database layer commands; `db drift` deterministically compares `DATA_MODEL.md` entities against the EF Core `ModelSnapshot` (migrations drift for the `gm-dba` layer).
 
 #### MCP server
 
-- `golmet mcp` serves 10 tools over stdio: `gm_validate`, `gm_doctor`, `gm_next`, `gm_status`, `gm_index`, `gm_eval`, `gm_jev_classify`, `gm_update`, `gm_pack_update`, and `gm_pack_list` — so agent engines drive the kit without shelling out.
+- `golmet mcp` serves 11 tools over stdio: `gm_validate`, `gm_doctor`, `gm_next`, `gm_status`, `gm_index`, `gm_eval`, `gm_eval_reports`, `gm_jev_classify`, `gm_update`, `gm_pack_update`, and `gm_pack_list` — so agent engines drive the kit without shelling out.
+- Eval reports are kit machine state: the kit writes each eval's markdown report to `~/.golmet/eval-reports/` (same machine-state convention as `~/.golmet/packs` and `~/.golmet/sources`; 50 most-recent retention by mtime) — the workspace never receives reports. `gm_eval` exposes the absolute `report_path` in its payload, and the new `gm_eval_reports` tool lists the stored reports (newest first, capped at 50, with `skill`/`fixture` parsed from the filename) — the runtime never manages the folder: it runs `gm_eval` and reads the file via file tools when it wants the human report.
 - Jev client integration (TypeSafe System One classification) via the `/v1/systemone` route with typed `state`+`model` payloads and question specs.
 
 #### Content

@@ -2,6 +2,7 @@ package mcpserve
 
 import (
 	"context"
+	"encoding/json"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -85,7 +86,7 @@ func TestHandshakeAndServerInfo(t *testing.T) {
 	for _, tl := range lt.Tools {
 		names[tl.Name] = true
 	}
-	for _, want := range []string{"gm_validate", "gm_doctor", "gm_next", "gm_jev_classify", "gm_update", "gm_pack_update", "gm_pack_list"} {
+	for _, want := range []string{"gm_validate", "gm_doctor", "gm_next", "gm_jev_classify", "gm_update", "gm_pack_update", "gm_pack_list", "gm_eval_reports"} {
 		if !names[want] {
 			t.Errorf("tool %s não anunciada (%v)", want, names)
 		}
@@ -300,4 +301,77 @@ func TestGmPackListViaMCP(t *testing.T) {
 	if !strings.Contains(out, `"tool":"gm_pack_list"`) || !strings.Contains(out, `"packs":[]`) {
 		t.Fatalf("lista de packs inesperada: %s", out)
 	}
+}
+
+// gm_eval grava o relatório canônico na home injetada e devolve
+// report_path existente; gm_eval_reports lista o relatório gravado com
+// skill/fixture parseados. A home real nunca é tocada (home injetável).
+func TestGmEvalReportAndReportsList(t *testing.T) {
+	home := t.TempDir()
+	base := t.TempDir()
+	fx := filepath.Join(base, "fx", "gm-datamodel", "fixture-001")
+	ws := filepath.Join(base, "ws")
+	os.MkdirAll(fx, 0o755)
+	os.MkdirAll(filepath.Join(ws, "specs"), 0o755)
+	os.WriteFile(filepath.Join(fx, "criteria.yaml"),
+		[]byte("checks:\n  - type: file_exists\n    path: \"specs/DATA_MODEL.md\"\n"), 0o644)
+	os.WriteFile(filepath.Join(ws, "specs", "DATA_MODEL.md"), []byte("# DM\nPRODUTOR\n"), 0o644)
+
+	cs := session(t, context.Background())
+	res, out := callTool(t, cs, "gm_eval", map[string]any{
+		"home": home, "fixture_dir": fx, "workspace": ws,
+	})
+	if res.IsError || !strings.Contains(out, `"report_path"`) {
+		t.Fatalf("gm_eval sem report_path: error=%v out=%s", res.IsError, out)
+	}
+	var payload struct {
+		Pass       int    `json:"pass"`
+		ReportPath string `json:"report_path"`
+	}
+	if err := extractJSON(out, &payload); err != nil {
+		t.Fatalf("payload gm_eval inválido: %v\n%s", err, out)
+	}
+	if payload.Pass != 1 {
+		t.Errorf("pass = %d, want 1", payload.Pass)
+	}
+	if st, err := os.Stat(payload.ReportPath); err != nil || st.IsDir() {
+		t.Fatalf("report_path inexistente: %v (%s)", err, payload.ReportPath)
+	}
+	if !strings.Contains(filepath.Base(payload.ReportPath), "eval-gm-datamodel-fixture-001-") {
+		t.Errorf("nome fora do padrão: %s", payload.ReportPath)
+	}
+
+	// gm_eval_reports lista o relatório gravado
+	_, out2 := callTool(t, cs, "gm_eval_reports", map[string]any{"home": home})
+	if !strings.Contains(out2, `"tool":"gm_eval_reports"`) ||
+		!strings.Contains(out2, `"skill":"gm-datamodel"`) ||
+		!strings.Contains(out2, `"fixture":"fixture-001"`) ||
+		!strings.Contains(out2, `"modified"`) {
+		t.Fatalf("lista de relatórios inesperada: %s", out2)
+	}
+	var list struct {
+		Reports []struct {
+			File    string `json:"file"`
+			Skill   string `json:"skill"`
+			Fixture string `json:"fixture"`
+		} `json:"reports"`
+	}
+	if err := extractJSON(out2, &list); err != nil {
+		t.Fatalf("payload gm_eval_reports inválido: %v\n%s", err, out2)
+	}
+	if len(list.Reports) != 1 || list.Reports[0].File != payload.ReportPath {
+		t.Errorf("relatório listado diverge: %+v (want %s)", list.Reports, payload.ReportPath)
+	}
+
+	// home sem relatórios → lista vazia (não erro)
+	_, out3 := callTool(t, cs, "gm_eval_reports", map[string]any{"home": t.TempDir()})
+	if !strings.Contains(out3, `"reports":[]`) {
+		t.Errorf("home vazia deveria listar []: %s", out3)
+	}
+}
+
+// extractJSON decodifica o primeiro valor JSON do conteúdo da tool.
+func extractJSON(text string, v any) error {
+	dec := json.NewDecoder(strings.NewReader(text))
+	return dec.Decode(v)
 }
