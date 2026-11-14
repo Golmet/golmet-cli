@@ -1,0 +1,72 @@
+---
+name: "Handover — módulo em andamento persiste em HANDOVER_LOG.md"
+description: >
+  Workspace MeuApp com charter, REQUIREMENTS.md (PEND-001 aberta), 4 specs,
+  quality/TRACEABILITY.md com gap em RN-003, DECISIONS.md com ADR-001 e
+  delivery/TASKS.md com RN-003-1 em andamento. Nenhum [bloqueado] e nenhum
+  drift stale — veredito determinístico "em andamento" persistido no
+  formato append-only do HANDOVER_LOG.md (front matter + entrada única).
+inputs_required: [PROJECT_CHARTER.md, REQUIREMENTS.md, quality/TRACEABILITY.md, DECISIONS.md]
+
+checks:
+  - type: file_exists
+    path: "delivery/HANDOVER_LOG.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "delivery/HANDOVER_LOG.md"
+    severity: error
+
+  # --- formato append-only do log ---
+  - type: contains
+    path: "delivery/HANDOVER_LOG.md"
+    pattern: "## Handover —"
+    severity: error
+
+  - type: contains
+    path: "delivery/HANDOVER_LOG.md"
+    pattern: "**Módulo:** MeuApp"
+    severity: error
+
+  - type: contains
+    path: "delivery/HANDOVER_LOG.md"
+    pattern: "**Veredito:** em andamento"
+    severity: error
+
+  # --- veredito determinístico: com gaps e PEND aberta não é finalizado ---
+  - type: not_contains
+    path: "delivery/HANDOVER_LOG.md"
+    pattern: "FINALIZADO"
+    severity: error
+
+  # --- justificativa com evidências dos artefatos lidos ---
+  - type: contains
+    path: "delivery/HANDOVER_LOG.md"
+    pattern: "RN-003"
+    severity: error
+
+  - type: contains
+    path: "delivery/HANDOVER_LOG.md"
+    pattern: "PEND-001"
+    severity: error
+
+  - type: contains
+    path: "delivery/HANDOVER_LOG.md"
+    pattern: "UI_SPEC"
+    severity: error
+
+  - type: cross_ref
+    path: "delivery/HANDOVER_LOG.md"
+    pattern: "RN-(\\d+)"
+    sources: ["REQUIREMENTS.md", "quality/TRACEABILITY.md"]
+    severity: error
+
+  - type: no_todos
+    path: "delivery/HANDOVER_LOG.md"
+    patterns: ["TODO", "FIXME"]
+    severity: warning
+
+  - type: reference_match
+    path: "delivery/HANDOVER_LOG.md"
+    expected: "output-expected/HANDOVER_LOG.md"
+    severity: error

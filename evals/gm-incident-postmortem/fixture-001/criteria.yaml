@@ -1,0 +1,76 @@
+---
+name: "Post-mortem — relato de incidente em meetings/"
+description: >
+  MeuApp com relato de incidente (deploy v1.8.0 que esgotou o pool de
+  conexões) em meetings/ e REQUIREMENTS com RN-001/RN-002. Verifica o
+  post-mortem do gm-incident-postmortem em support/: timeline, causa
+  raiz, impacto, ações corretivas e follow-up de known error.
+inputs_required: [PROJECT_CHARTER.md, REQUIREMENTS.md, meetings/2026-01-01-relato-incidente.md]
+
+checks:
+  - type: file_exists
+    path: "support/INCIDENT_MEUAPP_2026-01-01-1100.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "support/INCIDENT_MEUAPP_2026-01-01-1100.md"
+    severity: error
+
+  - type: section_exists
+    path: "support/INCIDENT_MEUAPP_2026-01-01-1100.md"
+    section: "## 2. Timeline do Incidente"
+    severity: error
+
+  - type: section_exists
+    path: "support/INCIDENT_MEUAPP_2026-01-01-1100.md"
+    section: "## 4. Causa Raiz"
+    severity: error
+
+  - type: table_has_columns
+    path: "support/INCIDENT_MEUAPP_2026-01-01-1100.md"
+    columns: ["Hora", "Evento", "Responsável"]
+    severity: error
+
+  - type: section_order
+    path: "support/INCIDENT_MEUAPP_2026-01-01-1100.md"
+    sections:
+      - "## 1. Resumo Executivo"
+      - "## 2. Timeline do Incidente"
+      - "## 3. Impacto"
+      - "## 4. Causa Raiz"
+      - "## 5. Ações Corretivas"
+      - "## 6. Lições Aprendidas"
+      - "## 7. Follow-up: Known Error"
+    severity: error
+
+  - type: contains
+    path: "support/INCIDENT_MEUAPP_2026-01-01-1100.md"
+    pattern: "pool de conexões"
+    severity: error
+
+  - type: contains
+    path: "support/INCIDENT_MEUAPP_2026-01-01-1100.md"
+    pattern: "gm-known-error"
+    severity: error
+
+  - type: cross_ref
+    path: "support/INCIDENT_MEUAPP_2026-01-01-1100.md"
+    pattern: "RN-(\\d+)"
+    sources: ["REQUIREMENTS.md"]
+    severity: error
+
+  - type: no_todos
+    path: "support/INCIDENT_MEUAPP_2026-01-01-1100.md"
+    patterns: ["TODO", "FIXME", "PEND-"]
+    severity: warning
+
+  - type: line_count_range
+    path: "support/INCIDENT_MEUAPP_2026-01-01-1100.md"
+    min: 60
+    max: 220
+    severity: warning
+
+  - type: reference_match
+    path: "support/INCIDENT_MEUAPP_2026-01-01-1100.md"
+    expected: "output-expected/support/INCIDENT_MEUAPP_2026-01-01-1100.md"
+    severity: error

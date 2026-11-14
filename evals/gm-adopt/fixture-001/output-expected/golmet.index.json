@@ -1,0 +1,39 @@
+{
+  "format": 1,
+  "generated_at": "2026-11-13T01:57:47Z",
+  "workspace": "MeuApp",
+  "entities": {
+    "adr": {},
+    "cand": {},
+    "charter": {
+      "PROJECT_CHARTER.md": {
+        "status": "draft"
+      }
+    },
+    "cr": {},
+    "feature": {},
+    "pend": {},
+    "rn": {
+      "RN-001": {
+        "estado": "draft",
+        "secao_hash": "0449706febe1d9ca16723a0d7ae5cb7d0bf91f68be15e0f98fab66871dcb19c4"
+      },
+      "RN-002": {
+        "estado": "draft",
+        "secao_hash": "8b3b700c29f39bb02e8128b3152477bdfe422962f8e553ef942fc7722be37147"
+      }
+    },
+    "spec": {}
+  },
+  "counts": {
+    "adr": 0,
+    "cand": 0,
+    "cr": 0,
+    "feature": 0,
+    "features_done": 0,
+    "pend": 0,
+    "rn": 2,
+    "rn_draft": 2,
+    "spec": 0
+  }
+}

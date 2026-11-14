@@ -1,0 +1,62 @@
+---
+name: "Pipeline de deploy — build → GHCR → ssh-action → deploy.sh"
+description: >
+  Perfil de infra descrito em docs (VPS, registry GHCR, domínio) para o
+  MeuApp-API. Verifica o deploy.yml padrão da organização (gatilho na main,
+  push para ghcr.io/meuapp/meuapp-api, deploy via ssh-action consumindo
+  scripts/deploy.sh com git pull + docker compose).
+inputs_required: [docs/INFRA_PROFILE.md, docs/REPO_STATE.md]
+
+checks:
+  - type: file_exists
+    path: ".github/workflows/deploy.yml"
+    severity: error
+
+  - type: file_exists
+    path: "scripts/deploy.sh"
+    severity: error
+
+  - type: contains
+    path: ".github/workflows/deploy.yml"
+    pattern: "ghcr.io/meuapp/meuapp-api"
+    severity: error
+
+  - type: contains
+    path: ".github/workflows/deploy.yml"
+    pattern: "ssh-action"
+    severity: error
+
+  - type: contains
+    path: ".github/workflows/deploy.yml"
+    pattern: "SSH_PRIVATE_KEY"
+    severity: error
+
+  - type: contains
+    path: ".github/workflows/deploy.yml"
+    pattern: "branches: [main]"
+    severity: error
+
+  - type: contains
+    path: ".github/workflows/deploy.yml"
+    pattern: "deploy.sh"
+    severity: error
+
+  - type: contains
+    path: "scripts/deploy.sh"
+    pattern: "docker compose"
+    severity: error
+
+  - type: contains
+    path: "scripts/deploy.sh"
+    pattern: "git pull"
+    severity: error
+
+  - type: no_todos
+    path: ".github/workflows/deploy.yml"
+    patterns: ["TODO", "FIXME", "PLACEHOLDER"]
+    severity: warning
+
+  - type: reference_match
+    path: ".github/workflows/deploy.yml"
+    expected: "output-expected/.github/workflows/deploy.yml"
+    severity: error

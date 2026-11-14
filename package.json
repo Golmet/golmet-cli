@@ -1,0 +1,30 @@
+{
+  "name": "golmet-cli",
+  "version": "1.0.0",
+  "description": "Installable CLI for GOLMET — the workflow platform that keeps your product's documented truth alive. Placeholder release; full CLI ships at milestone F1.",
+  "bin": {
+    "golmet": "./bin/golmet.js"
+  },
+  "keywords": [
+    "golmet",
+    "golmet-cli",
+    "cli",
+    "spec-driven",
+    "documentation",
+    "traceability",
+    "ai-agents"
+  ],
+  "author": "Victor Souza",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Golmet/golmet-cli.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin/",
+    "README.md"
+  ]
+}

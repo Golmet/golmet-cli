@@ -1,0 +1,51 @@
+# Registry de amostra da fixture — manifesto canônico mínimo e
+# autoconsistente (toda referência delegates/invokes resolve).
+version: fixture-1
+
+items:
+  # ---- PRIMARY ----
+  - id: gm-req
+    kind: primary
+    description: >-
+      Agente principal para elicitação de requisitos, descoberta de
+      negócio e intake greenfield.
+    mode: primary
+    temperature: 0.3
+    delegates: [gm-next, gm-intake-orchestrator]
+    invokes: [gm-charter]
+
+  # ---- SUBAGENTS ----
+  - id: gm-next
+    kind: subagent
+    description: >-
+      Recomenda a próxima ação determinística a partir do estado real dos
+      artefatos no filesystem.
+    mode: subagent
+    temperature: 0.1
+    owner: gm-req
+    available_to: [gm-req]
+    invokes: [gm-charter]
+
+  - id: gm-intake-orchestrator
+    kind: subagent
+    description: >-
+      Orquestrador da fase de Intake — centraliza o mapa de skills de
+      charter, init e requisitos iniciais.
+    mode: subagent
+    temperature: 0.1
+    owner: gm-req
+    available_to: [gm-req]
+    invokes: [gm-charter]
+
+  # ---- SKILLS ----
+  - id: gm-charter
+    kind: skill
+    domain: intake
+    description: >-
+      PROJECT_CHARTER.md a partir da primeira conversa — modos completo e
+      simplificado.
+
+domains:
+  intake:
+    orchestrator: gm-intake-orchestrator
+    skills: [gm-charter]

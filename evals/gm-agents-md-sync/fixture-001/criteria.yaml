@@ -1,0 +1,70 @@
+---
+name: "Sincronização de AGENTS.md — PRODUCT_COMMON/REPO_SPECIFIC"
+description: >
+  Dois repos do produto MeuApp (repo-a = MeuApp-API, repo-b = MeuApp-FE)
+  com AGENTS.md divergentes e base comum aprovada em docs. Verifica que os
+  AGENTS.md sincronizados adotam blocos delimitados, promovem as regras
+  comuns aprovadas e preservam as regras específicas de cada repo — sem
+  vazamento de regra específica para o outro repo.
+inputs_required: [docs/PRODUTO.md, repo-a/AGENTS.md, repo-b/AGENTS.md]
+
+checks:
+  - type: contains
+    path: "repo-a/AGENTS.md"
+    pattern: "<!-- BEGIN PRODUCT_COMMON -->"
+    severity: error
+
+  - type: contains
+    path: "repo-b/AGENTS.md"
+    pattern: "<!-- BEGIN PRODUCT_COMMON -->"
+    severity: error
+
+  - type: contains
+    path: "repo-a/AGENTS.md"
+    pattern: "<!-- BEGIN REPO_SPECIFIC -->"
+    severity: error
+
+  - type: contains
+    path: "repo-b/AGENTS.md"
+    pattern: "<!-- BEGIN REPO_SPECIFIC -->"
+    severity: error
+
+  - type: contains
+    path: "repo-a/AGENTS.md"
+    pattern: "Conventional Commits"
+    severity: error
+
+  - type: contains
+    path: "repo-b/AGENTS.md"
+    pattern: "Conventional Commits"
+    severity: error
+
+  - type: contains
+    path: "repo-a/AGENTS.md"
+    pattern: "Cobertura mínima de testes: 80%"
+    severity: error
+
+  - type: contains
+    path: "repo-a/AGENTS.md"
+    pattern: "8080"
+    severity: error
+
+  - type: contains
+    path: "repo-b/AGENTS.md"
+    pattern: "npm run build"
+    severity: error
+
+  - type: not_contains
+    path: "repo-a/AGENTS.md"
+    pattern: "npm run build"
+    severity: error
+
+  - type: reference_match
+    path: "repo-a/AGENTS.md"
+    expected: "output-expected/repo-a/AGENTS.md"
+    severity: error
+
+  - type: reference_match
+    path: "repo-b/AGENTS.md"
+    expected: "output-expected/repo-b/AGENTS.md"
+    severity: error

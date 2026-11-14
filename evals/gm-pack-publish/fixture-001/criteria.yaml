@@ -1,0 +1,65 @@
+---
+name: "Publish do pack meuapp — bump de versão, push e movimento de pin"
+description: >
+  gm-pack-publish sobre o clone neutro do pack meuapp: publica o WIP da
+  skill gm-resumo (commit por path explícito, push origin main, nunca força),
+  faz bump de `version` no pack.yaml (0.1.0 → 0.2.0, SemVer), reaplica o
+  overlay no engine (`golmet pack update <repo> --engine <id>` ou MCP
+  `gm_pack_update` com confirm) e move o pin do `golmet.yaml` para o SHA
+  novo. Artefatos congelados da baseline autorada: pack.yaml com bump e
+  golmet.yaml com pin novo.
+inputs_required: [golmet.yaml, packs/meuapp/pack.yaml, packs/meuapp/skills/gm-resumo/SKILL.md]
+
+checks:
+  - type: file_exists
+    path: "golmet.yaml"
+    severity: error
+
+  - type: contains
+    path: "golmet.yaml"
+    pattern: "meuapp"
+    severity: error
+
+  - type: contains
+    path: "golmet.yaml"
+    pattern: "pin: 3fca9d1e2b3c4d5e6f7081a2b3c4d5e6f708192a"
+    severity: error
+
+  - type: not_contains
+    path: "golmet.yaml"
+    pattern: "pin: 9e8b"
+    severity: error
+
+  - type: contains
+    path: "packs/meuapp/pack.yaml"
+    pattern: "version: 0.2.0"
+    severity: error
+
+  - type: not_contains
+    path: "packs/meuapp/pack.yaml"
+    pattern: "version: 0.1.0"
+    severity: error
+
+  - type: contains
+    path: "packs/meuapp/pack.yaml"
+    pattern: "provides:"
+    severity: error
+
+  - type: file_exists
+    path: "packs/meuapp/skills/gm-resumo/SKILL.md"
+    severity: error
+
+  - type: not_contains
+    path: "golmet.yaml"
+    pattern: "accumulation"
+    severity: error
+
+  - type: no_todos
+    path: "packs/meuapp/pack.yaml"
+    patterns: ["TODO", "FIXME"]
+    severity: warning
+
+  - type: reference_match
+    path: "golmet.yaml"
+    expected: "output-expected/golmet.yaml"
+    severity: error

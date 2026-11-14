@@ -1,0 +1,64 @@
+---
+name: "Prompt do Figma Make — completo + delta em FIGMA_PROMPTS.md"
+description: >
+  REQUIREMENTS.md e specs/UI_SPEC.md do produto MeuApp. Verifica o
+  specs/FIGMA_PROMPTS.md append-only: front matter, entrada em modo completo
+  com contexto/atores/telas/fluxo/regras globais/seção "Não incluir",
+  entrada delta subsequente e ausência de identificadores técnicos no
+  corpo do prompt.
+inputs_required: [REQUIREMENTS.md, specs/UI_SPEC.md]
+
+checks:
+  - type: file_exists
+    path: "specs/FIGMA_PROMPTS.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "specs/FIGMA_PROMPTS.md"
+    severity: error
+
+  - type: contains
+    path: "specs/FIGMA_PROMPTS.md"
+    pattern: "(modo: completo)"
+    severity: error
+
+  - type: contains
+    path: "specs/FIGMA_PROMPTS.md"
+    pattern: "(modo: delta)"
+    severity: error
+
+  - type: contains
+    path: "specs/FIGMA_PROMPTS.md"
+    pattern: "### 4. Fluxo de navegação"
+    severity: error
+
+  - type: contains
+    path: "specs/FIGMA_PROMPTS.md"
+    pattern: "Não incluir"
+    severity: error
+
+  - type: contains
+    path: "specs/FIGMA_PROMPTS.md"
+    pattern: "Lista de Tarefas"
+    severity: error
+
+  - type: not_contains
+    path: "specs/FIGMA_PROMPTS.md"
+    pattern: "RN-"
+    severity: error
+
+  - type: no_todos
+    path: "specs/FIGMA_PROMPTS.md"
+    patterns: ["TODO", "FIXME", "PEND-"]
+    severity: warning
+
+  - type: line_count_range
+    path: "specs/FIGMA_PROMPTS.md"
+    min: 60
+    max: 400
+    severity: warning
+
+  - type: reference_match
+    path: "specs/FIGMA_PROMPTS.md"
+    expected: "output-expected/specs/FIGMA_PROMPTS.md"
+    severity: error

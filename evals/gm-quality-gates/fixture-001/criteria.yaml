@@ -1,0 +1,66 @@
+---
+name: "Quality gate — relatório com métricas declaradas"
+description: >
+  MeuApp-API com código-fonte e testes da RN-001. Verifica o relatório
+  de quality gate do gm-quality-gates em quality/QUALITY_GATE.md:
+  veredito PASS/FAIL, métricas declaradas (complexidade, cobertura,
+  duplicação) e checklist A-E com rastreabilidade da RN.
+inputs_required: [REQUIREMENTS.md, src/PedidoService.cs, tests/PedidoServiceTests.cs]
+
+checks:
+  - type: file_exists
+    path: "quality/QUALITY_GATE.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "quality/QUALITY_GATE.md"
+    severity: error
+
+  - type: contains
+    path: "quality/QUALITY_GATE.md"
+    pattern: "Veredito"
+    severity: error
+
+  - type: contains
+    path: "quality/QUALITY_GATE.md"
+    pattern: "Complexidade ciclomática"
+    severity: error
+
+  - type: contains
+    path: "quality/QUALITY_GATE.md"
+    pattern: "85%"
+    severity: error
+
+  - type: table_has_columns
+    path: "quality/QUALITY_GATE.md"
+    columns: ["Métrica", "Valor", "Limite"]
+    severity: error
+
+  - type: section_order
+    path: "quality/QUALITY_GATE.md"
+    sections:
+      - "## Métricas"
+      - "## Checklist (A-E)"
+      - "## Veredito"
+    severity: error
+
+  - type: contains
+    path: "quality/QUALITY_GATE.md"
+    pattern: "RN-001"
+    severity: error
+
+  - type: cross_ref
+    path: "quality/QUALITY_GATE.md"
+    pattern: "RN-(\\d+)"
+    sources: ["REQUIREMENTS.md"]
+    severity: error
+
+  - type: no_todos
+    path: "quality/QUALITY_GATE.md"
+    patterns: ["TODO", "FIXME", "PEND-"]
+    severity: warning
+
+  - type: reference_match
+    path: "quality/QUALITY_GATE.md"
+    expected: "output-expected/quality/QUALITY_GATE.md"
+    severity: error

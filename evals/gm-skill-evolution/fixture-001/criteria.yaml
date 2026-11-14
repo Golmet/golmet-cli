@@ -1,0 +1,70 @@
+---
+name: "Evolução de skill — padrão recorrente em 3 retrospectivas"
+description: >
+  3 retrospectivas (projetos alfa, beta, gama) apontando o mesmo problema
+  na gm-criteria — blocos "Dado" sem massa de dados explícita. 3+
+  ocorrências = prioridade alta. Verifica WORKFLOW_IMPROVEMENTS.md com
+  IMP no formato do workflow (Alvo/Problema/Causa raiz/Correção/
+  Projetos/Status) e o relatório de evolução com a proposta.
+inputs_required: [projetos/alfa/RETROSPECTIVE.md, projetos/beta/RETROSPECTIVE.md, projetos/gama/RETROSPECTIVE.md]
+
+checks:
+  - type: file_exists
+    path: "WORKFLOW_IMPROVEMENTS.md"
+    severity: error
+
+  - type: contains
+    path: "WORKFLOW_IMPROVEMENTS.md"
+    pattern: "## IMP-042 —"
+    severity: error
+
+  - type: contains
+    path: "WORKFLOW_IMPROVEMENTS.md"
+    pattern: "**Alvo:** `gm-criteria`"
+    severity: error
+
+  - type: contains
+    path: "WORKFLOW_IMPROVEMENTS.md"
+    pattern: "**Status:** aplicada"
+    severity: error
+
+  # rastreabilidade aos projetos que motivaram a mudança
+  - type: contains
+    path: "WORKFLOW_IMPROVEMENTS.md"
+    pattern: "**Projetos que motivaram:** alfa, beta, gama"
+    severity: error
+
+  - type: id_sequence
+    path: "WORKFLOW_IMPROVEMENTS.md"
+    pattern: "IMP-(\\d+)"
+    allow_gaps: true
+    severity: error
+
+  - type: no_todos
+    path: "WORKFLOW_IMPROVEMENTS.md"
+    patterns: ["TODO", "FIXME", "PEND-"]
+    severity: warning
+
+  - type: file_exists
+    path: "EVOLUTION_REPORT.md"
+    severity: error
+
+  - type: contains
+    path: "EVOLUTION_REPORT.md"
+    pattern: "Padrão detectado:"
+    severity: error
+
+  - type: contains
+    path: "EVOLUTION_REPORT.md"
+    pattern: "Ocorrências: 3 projetos"
+    severity: error
+
+  - type: contains
+    path: "EVOLUTION_REPORT.md"
+    pattern: "gm-criteria"
+    severity: error
+
+  - type: reference_match
+    path: "WORKFLOW_IMPROVEMENTS.md"
+    expected: "output-expected/WORKFLOW_IMPROVEMENTS.md"
+    severity: error

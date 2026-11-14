@@ -1,0 +1,95 @@
+---
+name: "gm-dba drift — DATA_MODEL ↔ Migrations em 3 direções"
+description: >
+  Serviço drift do gm-dba num workspace MeuApp self-contained: o repo
+  fictício vive DENTRO do workspace em `repo/` (fixture de eval não
+  depende de clone externo). O engine semeia input/ e roda o drift
+  (equivalente a `golmet db drift <ws> --repo <ws>/repo --dialect dotnet
+  --write`), que compara DATA_MODEL.md documentado (4 tabelas) com o
+  ModelSnapshot EF (4 entidades de produto + Identity de infra) e 2
+  migrations. Cenário cobre as TRÊS direções do relatório: `CuponsDesconto`
+  documentada sem schema, `ConfiguracaoEmail` no schema sem documentação e
+  3 pares de naming entidade singular ↔ tabela plural
+  (Cliente→Clientes · ItemPedido→ItensPedidos · Pedido→Pedidos — plural
+  composto por token, não +s global). O relatório é fato determinístico;
+  interpretação/correção é do gm-dba (regra 9 — drift nunca auto-corrigido).
+inputs_required: [specs/DATA_MODEL.md, repo/MeuApp.Infrastructure/Migrations/AppDbContextModelSnapshot.cs]
+
+checks:
+  - type: file_exists
+    path: "specs/DB_DRIFT.md"
+    severity: error
+
+  - type: section_exists
+    path: "specs/DB_DRIFT.md"
+    section: "## 1. Documentado sem backing de schema (1)"
+    severity: error
+
+  - type: section_exists
+    path: "specs/DB_DRIFT.md"
+    section: "## 2. Schema sem documentação (1)"
+    severity: error
+
+  - type: section_exists
+    path: "specs/DB_DRIFT.md"
+    section: "## 3. Naming entidade ↔ tabela (3 pares)"
+    severity: error
+
+  # --- pares de naming: entidade (snapshot) ↔ tabela (migração/DB) ---
+  - type: contains
+    path: "specs/DB_DRIFT.md"
+    pattern: "| `Cliente` | `Clientes` |"
+    severity: error
+
+  - type: contains
+    path: "specs/DB_DRIFT.md"
+    pattern: "| `ItemPedido` | `ItensPedidos` |"
+    severity: error
+
+  - type: contains
+    path: "specs/DB_DRIFT.md"
+    pattern: "| `Pedido` | `Pedidos` |"
+    severity: error
+
+  # --- direção 1: spec à frente (documentada, sem migration) ---
+  - type: contains
+    path: "specs/DB_DRIFT.md"
+    pattern: "CuponsDesconto"
+    severity: error
+
+  # --- direção 2: infra de framework citada à parte, não vira pendência ---
+  - type: contains
+    path: "specs/DB_DRIFT.md"
+    pattern: "IdentityUser"
+    severity: warning
+
+  # --- resumo determinístico das contagens ---
+  - type: contains
+    path: "specs/DB_DRIFT.md"
+    pattern: "matched: 3 · documented-without-schema: 1 · schema-without-docs: 1 · naming-pairs: 3"
+    severity: error
+
+  - type: section_order
+    path: "specs/DB_DRIFT.md"
+    sections:
+      - "# DB DRIFT — DATA_MODEL ↔ Migrations"
+      - "## 1. Documentado sem backing de schema (1)"
+      - "## 2. Schema sem documentação (1)"
+      - "## 3. Naming entidade ↔ tabela (3 pares)"
+      - "## Resumo"
+    severity: error
+
+  - type: no_todos
+    path: "specs/DB_DRIFT.md"
+    patterns: ["TODO", "FIXME"]
+    severity: warning
+
+  - type: not_contains
+    path: "specs/DB_DRIFT.md"
+    pattern: "ORGEX"
+    severity: warning
+
+  - type: reference_match
+    path: "specs/DB_DRIFT.md"
+    expected: "output-expected/DB_DRIFT.md"
+    severity: error

@@ -1,0 +1,68 @@
+mode: manual
+---
+name: "Requirements L2 — RN duplicada e referência quebrada ABORTAM o merge"
+description: >
+  NEGATIVO: transcrição nova traz DUAS candidatas rotuladas RN-001 (ID que
+  já existe confirmado no REQUIREMENTS) e cita a "seção 12 — Anexos e
+  Glossário", seção que não existe no documento. Regra da skill: não
+  corrija contradição em silêncio — use ask; sem ask nativo, pergunte no
+  chat e PARE; modo de erro strict — se REQUIREMENTS.md não for
+  atualizado, o fluxo para. Esperado: merge ABORTA — REQUIREMENTS.md
+  permanece IGUAL ao semeado (nenhum marcador que o merge teria
+  adicionado: RN-003 nem conteúdo das candidatas), nenhum efeito colateral
+  (DECISIONS.md, CHANGELOG.md) e nenhum checkpoint novo
+  (meetings/2026-10-06-02.md).
+inputs_required: [REQUIREMENTS.md, meetings/2026-10-06-01.md]
+
+checks:
+  # --- abort: nenhum efeito colateral do merge ---
+  - type: not_file_exists
+    path: "meetings/2026-10-06-02.md"
+    severity: error
+
+  - type: not_file_exists
+    path: "DECISIONS.md"
+    severity: error
+
+  - type: not_file_exists
+    path: "CHANGELOG.md"
+    severity: error
+
+  # --- REQUIREMENTS permanece igual ao semeado ---
+  - type: not_contains
+    path: "REQUIREMENTS.md"
+    pattern: "RN-003"
+    severity: error
+
+  - type: not_contains
+    path: "REQUIREMENTS.md"
+    pattern: "Lembrete automático"
+    severity: error
+
+  - type: contains
+    path: "REQUIREMENTS.md"
+    pattern: "### RN-001 [confirmado] (01/10/2026)"
+    severity: error
+
+  # --- o input de fato tem os dois defeitos ---
+  #     (1) DUAS candidatas com o rótulo RN-001
+  - type: contains
+    path: "meetings/2026-10-06-01.md"
+    pattern: "### C1 — Lembrete automático de reserva (rotulada: RN-001)"
+    severity: error
+
+  - type: contains
+    path: "meetings/2026-10-06-01.md"
+    pattern: "### C2 — Recorrência semanal de reserva (rotulada: RN-001)"
+    severity: error
+
+  #     (2) referência de seção quebrada: cita §12, que não existe no doc
+  - type: contains
+    path: "meetings/2026-10-06-01.md"
+    pattern: "seção 12 — Anexos e Glossário"
+    severity: error
+
+  - type: not_contains
+    path: "REQUIREMENTS.md"
+    pattern: "## 12."
+    severity: error

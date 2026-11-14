@@ -1,0 +1,67 @@
+---
+name: "Init pós-charter — CONSTITUTION.md e INDEX.md nascem com o projeto registrado"
+description: >
+  Workspace com PROJECT_CHARTER.md confirmado (MeuApp, greenfield) e SEM
+  CONSTITUTION.md/INDEX.md. gm-init deve criar ambos na raiz do repositório:
+  Constituição com §6 (projeto registrado) e §9 de Organização de Delivery e
+  Análise com os defaults (delivery_style: monthly, tracker: github), e INDEX
+  invariants-only com o projeto no Mapa de Projetos. Charter é upstream —
+  nunca editado.
+inputs_required: [PROJECT_CHARTER.md]
+
+checks:
+  - type: file_exists
+    path: "CONSTITUTION.md"
+    severity: error
+
+  - type: file_exists
+    path: "INDEX.md"
+    severity: error
+
+  - type: file_exists
+    path: "PROJECT_CHARTER.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "CONSTITUTION.md"
+    severity: error
+
+  - type: section_exists
+    path: "CONSTITUTION.md"
+    section: "## 6. Projetos"
+    severity: error
+
+  - type: section_exists
+    path: "CONSTITUTION.md"
+    section: "## 9. Organização de Delivery e Análise"
+    severity: error
+
+  - type: contains
+    path: "CONSTITUTION.md"
+    pattern: "delivery_style: monthly"
+    severity: error
+
+  - type: contains
+    path: "CONSTITUTION.md"
+    pattern: "tracker: github"
+    severity: error
+
+  - type: contains
+    path: "CONSTITUTION.md"
+    pattern: "MeuApp-API"
+    severity: error
+
+  - type: contains
+    path: "INDEX.md"
+    pattern: "## Mapa de Projetos"
+    severity: error
+
+  - type: contains
+    path: "INDEX.md"
+    pattern: "MeuApp"
+    severity: error
+
+  - type: no_todos
+    path: "CONSTITUTION.md"
+    patterns: ["TODO", "FIXME"]
+    severity: warning

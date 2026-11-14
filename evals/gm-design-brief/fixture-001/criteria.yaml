@@ -1,0 +1,74 @@
+---
+name: "Brief de design — identidade, estilo e constraints do MeuApp"
+description: >
+  PROJECT_CHARTER.md (greenfield), REQUIREMENTS.md e specs/UI_SPEC.md do
+  produto MeuApp. Verifica o specs/DESIGN_BRIEF.md com as 8 seções do
+  template (identidade, públicos, identidade visual, design system, estado
+  atual da UI, constraints, telas prioritárias, instruções para o Figma
+  Make), com estado greenfield detectado nos docs, itens de identidade
+  visual não confirmados marcados como "a definir" e o out-of-scope
+  propagado como não prototipar.
+inputs_required: [PROJECT_CHARTER.md, REQUIREMENTS.md, specs/UI_SPEC.md]
+
+checks:
+  - type: file_exists
+    path: "specs/DESIGN_BRIEF.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "specs/DESIGN_BRIEF.md"
+    severity: error
+
+  - type: section_exists
+    path: "specs/DESIGN_BRIEF.md"
+    section: "## 1. Identidade do produto"
+    severity: error
+
+  - type: section_order
+    path: "specs/DESIGN_BRIEF.md"
+    sections:
+      - "## 1. Identidade do produto"
+      - "## 2. Propósito e públicos"
+      - "## 3. Identidade visual"
+      - "## 4. Design system / padrões visuais"
+      - "## 5. Estado atual da UI"
+      - "## 6. Constraints de design"
+      - "## 7. Telas prioritárias"
+      - "## 8. Instruções para o Figma Make"
+    severity: error
+
+  - type: contains
+    path: "specs/DESIGN_BRIEF.md"
+    pattern: "greenfield"
+    severity: error
+
+  - type: contains
+    path: "specs/DESIGN_BRIEF.md"
+    pattern: "a definir"
+    severity: error
+
+  - type: contains
+    path: "specs/DESIGN_BRIEF.md"
+    pattern: "relatórios e dashboards analíticos"
+    severity: error
+
+  - type: contains
+    path: "specs/DESIGN_BRIEF.md"
+    pattern: "Administrador"
+    severity: error
+
+  - type: no_todos
+    path: "specs/DESIGN_BRIEF.md"
+    patterns: ["TODO", "FIXME", "PEND-"]
+    severity: warning
+
+  - type: line_count_range
+    path: "specs/DESIGN_BRIEF.md"
+    min: 60
+    max: 250
+    severity: warning
+
+  - type: reference_match
+    path: "specs/DESIGN_BRIEF.md"
+    expected: "output-expected/specs/DESIGN_BRIEF.md"
+    severity: error

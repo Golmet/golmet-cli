@@ -1,0 +1,13 @@
+# registry mínimo do workspace MeuApp (fixture de eval)
+skills:
+  - name: calc-frete
+    path: config/skills/calc-frete/SKILL.md
+    owner: gm-dev
+  - name: calc-imposto
+    path: config/skills/calc-imposto/SKILL.md
+    owner: gm-dev
+agents:
+  - name: revisor-pedidos
+    path: config/agents/revisor-pedidos.md
+    mode: subagent
+    owner: gm-dev

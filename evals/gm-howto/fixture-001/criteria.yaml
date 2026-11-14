@@ -1,0 +1,75 @@
+---
+name: "Howto — feature done gera documentação de suporte/usuário final"
+description: >
+  REQUIREMENTS.md com RN-001 (exportação em PDF, marcada [done] em
+  delivery/TASKS.md), specs/UI_SPEC.md (fluxo da tela) e specs/US001.md
+  (linguagem do usuário). Verifica o howto orientado a tarefas em
+  docs/howto/exportar-relatorio.md no formato do template gm-howto:
+  audiência [suporte, usuario_final], Objetivo, Passo a Passo, Dicas e
+  tabela de Erros Comuns.
+inputs_required: [REQUIREMENTS.md, specs/UI_SPEC.md, specs/US001.md, delivery/TASKS.md]
+
+checks:
+  - type: file_exists
+    path: "docs/howto/exportar-relatorio.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "docs/howto/exportar-relatorio.md"
+    severity: error
+
+  - type: contains
+    path: "docs/howto/exportar-relatorio.md"
+    pattern: "audience: [suporte, usuario_final]"
+    severity: error
+
+  - type: section_exists
+    path: "docs/howto/exportar-relatorio.md"
+    section: "## Objetivo"
+    severity: error
+
+  - type: section_exists
+    path: "docs/howto/exportar-relatorio.md"
+    section: "## Passo a Passo"
+    severity: error
+
+  - type: section_exists
+    path: "docs/howto/exportar-relatorio.md"
+    section: "## Dicas"
+    severity: error
+
+  - type: section_exists
+    path: "docs/howto/exportar-relatorio.md"
+    section: "## Erros Comuns"
+    severity: error
+
+  - type: section_order
+    path: "docs/howto/exportar-relatorio.md"
+    sections:
+      - "## Objetivo"
+      - "## Passo a Passo"
+      - "## Dicas"
+      - "## Erros Comuns"
+    severity: error
+
+  - type: table_has_columns
+    path: "docs/howto/exportar-relatorio.md"
+    columns: ["Problema", "Causa", "Solução"]
+    severity: error
+
+  # --- linguagem do usuário, sem jargão técnico de implementação ---
+  - type: contains
+    path: "docs/howto/exportar-relatorio.md"
+    pattern: "Exportar PDF"
+    severity: error
+
+  - type: cross_ref
+    path: "docs/howto/exportar-relatorio.md"
+    pattern: "RN-(\\d+)"
+    sources: ["REQUIREMENTS.md"]
+    severity: error
+
+  - type: reference_match
+    path: "docs/howto/exportar-relatorio.md"
+    expected: "output-expected/exportar-relatorio.md"
+    severity: error

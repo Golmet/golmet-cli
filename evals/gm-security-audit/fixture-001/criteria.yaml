@@ -1,0 +1,72 @@
+---
+name: "Security audit baseline — código com anti-patterns"
+description: >
+  MeuApp-API com 2 arquivos-fonte contendo anti-patterns de segurança
+  (concatenação de SQL, segredo hardcoded, MD5) e specs/SECURITY.md.
+  Verifica o relatório baseline do gm-security-audit em quality/ com
+  timestamp normalizável 2026-01-01-0000.
+inputs_required: [src/PedidoController.cs, src/TokenService.cs, specs/SECURITY.md]
+
+checks:
+  - type: file_exists
+    path: "quality/SECURITY_AUDIT_2026-01-01-0000.md"
+    severity: error
+
+  - type: contains
+    path: "quality/SECURITY_AUDIT_2026-01-01-0000.md"
+    pattern: "# SECURITY AUDIT"
+    severity: error
+
+  - type: contains
+    path: "quality/SECURITY_AUDIT_2026-01-01-0000.md"
+    pattern: "modo: baseline"
+    severity: error
+
+  - type: section_order
+    path: "quality/SECURITY_AUDIT_2026-01-01-0000.md"
+    sections:
+      - "## Findings"
+      - "## Não verificado"
+      - "## Observações"
+    severity: error
+
+  - type: contains
+    path: "quality/SECURITY_AUDIT_2026-01-01-0000.md"
+    pattern: "AP-01"
+    severity: error
+
+  - type: contains
+    path: "quality/SECURITY_AUDIT_2026-01-01-0000.md"
+    pattern: "AP-03"
+    severity: error
+
+  - type: contains
+    path: "quality/SECURITY_AUDIT_2026-01-01-0000.md"
+    pattern: "Crítico"
+    severity: error
+
+  - type: contains
+    path: "quality/SECURITY_AUDIT_2026-01-01-0000.md"
+    pattern: "PedidoController.cs"
+    severity: error
+
+  - type: not_contains
+    path: "quality/SECURITY_AUDIT_2026-01-01-0000.md"
+    pattern: "Sup3rS3cr3t"
+    severity: warning
+
+  - type: no_todos
+    path: "quality/SECURITY_AUDIT_2026-01-01-0000.md"
+    patterns: ["TODO", "FIXME", "PEND-"]
+    severity: warning
+
+  - type: line_count_range
+    path: "quality/SECURITY_AUDIT_2026-01-01-0000.md"
+    min: 20
+    max: 120
+    severity: warning
+
+  - type: reference_match
+    path: "quality/SECURITY_AUDIT_2026-01-01-0000.md"
+    expected: "output-expected/quality/SECURITY_AUDIT_2026-01-01-0000.md"
+    severity: error

@@ -1,0 +1,72 @@
+---
+name: "Known Error — incidente real vira KE-002 com merge incremental"
+description: >
+  support/KNOWN_ERRORS.md com KE-001 resolvido + specs/ERROR_CATALOG.md
+  com os erros previstos em contrato (EXP-422, EXP-401, EXP-404).
+  Incidente real novo (exportação travada em 100%) vira KE-002 via merge
+  incremental: KE-001 preservado, próximo ID sequencial, causa em
+  investigação com status aberto, workaround presente e referência ao
+  catálogo em vez de duplicação.
+inputs_required: [REQUIREMENTS.md, specs/ERROR_CATALOG.md, support/KNOWN_ERRORS.md]
+
+checks:
+  - type: file_exists
+    path: "support/KNOWN_ERRORS.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "support/KNOWN_ERRORS.md"
+    severity: error
+
+  - type: section_exists
+    path: "support/KNOWN_ERRORS.md"
+    section: "# Known Errors"
+    severity: error
+
+  # --- merge incremental: KE anterior preservado, novo ID sequencial ---
+  - type: contains
+    path: "support/KNOWN_ERRORS.md"
+    pattern: "## [KE-001] —"
+    severity: error
+
+  - type: contains
+    path: "support/KNOWN_ERRORS.md"
+    pattern: "## [KE-002] —"
+    severity: error
+
+  - type: id_sequence
+    path: "support/KNOWN_ERRORS.md"
+    pattern: "KE-(\\d+)"
+    severity: error
+
+  # --- formato do template: sintoma, causa, workaround, status ---
+  - type: contains
+    path: "support/KNOWN_ERRORS.md"
+    pattern: "**Status:** aberto"
+    severity: error
+
+  - type: contains
+    path: "support/KNOWN_ERRORS.md"
+    pattern: "Em investigação"
+    severity: error
+
+  - type: contains
+    path: "support/KNOWN_ERRORS.md"
+    pattern: "**Workaround:**"
+    severity: error
+
+  # --- referenciou o catálogo em vez de duplicar erro previsto ---
+  - type: contains
+    path: "support/KNOWN_ERRORS.md"
+    pattern: "EXP-422"
+    severity: error
+
+  - type: not_contains
+    path: "support/KNOWN_ERRORS.md"
+    pattern: "## [EXP-422]"
+    severity: error
+
+  - type: reference_match
+    path: "support/KNOWN_ERRORS.md"
+    expected: "output-expected/KNOWN_ERRORS.md"
+    severity: error

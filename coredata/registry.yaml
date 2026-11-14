@@ -1,0 +1,1334 @@
+# F3_PILOTO — registry de amostra do lote FULL (5 de 61 skills + 29 agents)
+# Fonte da verdade do piloto: metadados + ponteiro para o corpo canônico
+# (sources/<id>.md) na linguagem de CAPACIDADES (ask/subagent/parallel —
+# sem nomes de tools de engine). O emitter (render-agents.mjs) projeta
+# este registry + corpo para o formato de cada engine.
+version: pilot-1
+engines:
+  opencode: templates/opencode.mjs
+  claude-code: templates/claude-code.mjs
+
+items:
+  # ---- 1. PRIMARY (o mais caro do lote: 15 delegações) ----
+  - id: gm-req
+    kind: primary
+    description: >-
+      Agente principal para elicitação de requisitos, descoberta de negócio
+      e intake greenfield na letra R (Requirements). Conduz reuniões,
+      clarificação de ambiguidades, REQUIREMENTS.md, acordos de escopo e
+      Change Requests.
+    mode: primary
+    temperature: 0.3
+    delegates: [gm-next, gm-progress, gm-cr-propagation-guard, gm-tasks-pending, gm-intake-orchestrator, gm-requirements-orchestrator, gm-governance-orchestrator, gm-github-orchestrator, gm-azure-orchestrator, gm-figma-orchestrator, gm-workflow-builder, gm-workflow-improver, gm-onboarding-orchestrator, gm-compliance-orchestrator]
+    invokes: [gm-handover, gm-core-update, gm-core-publish, gm-core-port, gm-setup, gm-agent-health-monitor, gm-drift-detector, gm-mcp-playwright-setup, gm-prompt-gate, gm-azure-workitem-creator, gm-detect-onboarding, gm-task-spec]
+    requires: [file, edit, glob, grep, shell, ask, subagent, skill, tracker, websearch]
+    degrades: [webfetch, lsp, graph]
+    tracker: true   # conteúdo de tracker github/azure mantido com nota de capacidade
+    body: sources/gm-req.md
+
+  # ---- 2. SUBAGENT orquestrador (mapa estático da fase) ----
+  - id: gm-requirements-orchestrator
+    kind: subagent
+    description: >-
+      Orquestrador da fase de Requisitos: centraliza o mapa de skills de
+      clarify, requirements, change requests, scope agreement, sync com
+      cliente e relatórios. Documento de referência — roteia, não executa.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-clarify, gm-requirements, gm-change-request, gm-scope-agreement, gm-client-requirements, gm-client-report, gm-decision-log, gm-decision-audit]
+    requires: [file, glob, grep, ask, skill]
+    degrades: [edit]
+    body: sources/gm-requirements-orchestrator.md
+
+  # ---- 3. SUBAGENT executor backend ----
+  - id: gm-dev-backend
+    kind: subagent
+    description: >-
+      Executor genérico de código backend — detecta a stack do repo via
+      glob, carrega o playbook correspondente e implementa a task a partir
+      de specs e RNs. Spec antes de código, rastreabilidade RN, testes
+      verdes, relatório compacto. Nunca edita specs do módulo nem commita
+      sem pedido.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-stack-java-quarkus, gm-stack-rust, gm-stack-dotnet-csharp, gm-quality-gates]
+    requires: [file, edit, glob, grep, skill, graph, shell]
+    degrades: [webfetch]
+    graph: true     # orientação estrutural opcional via capacidade graph
+    body: sources/gm-dev-backend.md
+
+  # ---- 4. SKILL com twin BASE (edição FULL — converge com gm-requirements BASE) ----
+  - id: gm-requirements
+    kind: skill
+    twin: gm-requirements   # twin BASE já publicada no kit — esta é a edição FULL
+    description: >-
+      Gera ou atualiza REQUIREMENTS.md a partir da transcrição de reunião
+      de negócios: criação inicial e merge incremental, promoção de PEND a
+      RN (a RN ancora feature; PEND nunca), decisões em DECISIONS.md e
+      CHANGELOG.md como efeito colateral.
+    requires: [file, edit, ask, tracker]
+    degrades: []
+    body: sources/gm-requirements.md
+
+  # ---- 5. AGENT revisor (sem twin — divergência da spec: era listado como
+  #         skill no pedido; na árvore real é agent. Pipeline idêntico.) ----
+  - id: gm-dev-reviewer
+    kind: subagent
+    description: >-
+      Revisão formal pré-PR do diff da task: RNs cobertas no diff, quality
+      gates, security audit contra a base de segurança, docs vivas e eixo
+      compliance quando a task toca dado pessoal. Veredito approve /
+      request-changes com lista acionável. Nunca edita nem commita.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-quality-gates, gm-security-audit]
+    requires: [file, glob, grep, skill, shell-readonly]
+    degrades: [edit, write, webfetch]
+    body: sources/gm-dev-reviewer.md
+
+  # ================= ONDA 1 (8 itens sem-twin) =================
+
+  - id: gm-dev-orchestrator
+    kind: subagent
+    description: >-
+      Orquestrador do domínio Dev: roteia o ciclo de fechamento da task
+      (boilerplate → executor backend/frontend → QA independente → revisão
+      formal pré-PR → PR só de task aprovada). Roteia, não executa.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-stack-boilerplate, gm-quality-gates]
+    requires: [file, glob, grep, shell, tracking, ask]
+    degrades: [edit, write]
+    evals: [fixture-001]
+    body: sources/gm-dev-orchestrator.md
+
+  - id: gm-dev-qa
+    kind: subagent
+    description: >-
+      QA independente do domínio Dev — roda as suítes conforme o playbook da
+      stack, mede cobertura e compara contra TEST_STRATEGY/DEFINITION_OF_DONE.
+      Veredito binário APROVADA/REPROVADA. Read-only: só executa e reporta.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-stack-java-quarkus, gm-stack-dotnet-csharp, gm-stack-rust, gm-stack-angular]
+    requires: [file, glob, grep, skill, shell]
+    degrades: [edit, write, webfetch]
+    body: sources/gm-dev-qa.md
+
+  - id: gm-devops-orchestrator
+    kind: subagent
+    description: >-
+      Orquestrador da fase de DevOps: roteia infraestrutura e deploy —
+      setup de VPS, troubleshooting por sintoma, pipeline GitHub Actions e
+      observabilidade. Roteia, não executa; modo guiado inegociável.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-vps-setup, gm-vps-troubleshoot, gm-cicd-workflow, gm-observability]
+    requires: [file, glob, grep, shell, skill, ask, tracking]
+    degrades: [edit, write]
+    evals: [fixture-001]
+    body: sources/gm-devops-orchestrator.md
+
+  - id: gm-quality-orchestrator
+    kind: subagent
+    description: >-
+      Orquestrador da fase de Qualidade e Entrega (convergência da DAG):
+      test strategy, rastreabilidade, validação da DAG, lint documental e
+      auditoria de performance. Documento de referência — não executa nada.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-test-strategy, gm-traceability, gm-validate, gm-wiki-lint]
+    requires: [file, glob, grep, skill, ask]
+    degrades: [edit, write]
+    body: sources/gm-quality-orchestrator.md
+
+  - id: gm-vps-setup
+    kind: skill
+    description: >-
+      Wizard guiado de setup de VPS nova: sistema, Docker+Compose+buildx,
+      registry, deploy keys, chave SSH do GitHub Actions, tunnel Cloudflare
+      EXCLUSIVO por servidor, systemd, logging, pipeline de deploy e backup
+      RClone. Modo guiado — o operador executa na VPS. 12 fases na ordem.
+    requires: [file, glob, grep, ask, shell, ssh]
+    degrades: [edit, write]
+    evals: [fixture-001]
+    body: sources/gm-vps-setup.md
+
+  - id: gm-vps-troubleshoot
+    kind: skill
+    description: >-
+      Diagnóstico guiado por sintoma para VPS já configurada: container
+      unhealthy, GHCR denied, SSH action falhando, services duplicados,
+      tunnel compartilhado, porta ocupada, banco vazio. Modo guiado com
+      triagem por tabela de sintomas (runbook).
+    requires: [file, glob, grep, ask, shell, ssh]
+    degrades: [edit, write]
+    evals: [fixture-001]
+    body: sources/gm-vps-troubleshoot.md
+
+  - id: gm-cicd-workflow
+    kind: skill
+    description: >-
+      Cria e mantém o pipeline de deploy GitHub Actions dos repos de produto
+      (build → registry → ssh-action → deploy.sh). Dois modos: gerar
+      workflow novo e auditar workflow existente por matriz de sintomas.
+    requires: [file, glob, grep, write, edit, shell, ask, websearch, webfetch]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-cicd-workflow.md
+
+  - id: gm-observability
+    kind: skill
+    description: >-
+      Configura verificação de saúde e alertas para APIs em VPS:
+      healthcheck do compose, endpoint /health, watchdog com canal de
+      alerta do perfil, cron e logs com rotação. Escopo mínimo KISS — sem
+      stack de métricas sem demanda validada.
+    requires: [file, glob, grep, write, edit, shell, ask]
+    degrades: []
+    body: sources/gm-observability.md
+
+  # ================= ONDA 2 (8 itens com-twin: FULL = BASE + extras) =================
+
+  - id: gm-clarify
+    kind: skill
+    twin: gm-clarify
+    description: >-
+      Questiona ambiguidades com score 0-100 por item (>= 70 vira RN/CR,
+      < 70 vira PEND com follow-up); reavaliação incremental; triagem de
+      PENDs existentes com Ambiguidade Zero; checkpoint em meetings/.
+    requires: [file, ask]
+    degrades:
+      ask: chat-stop
+    evals: [fixture-001, fixture-002, fixture-003]
+    body: sources/gm-clarify.md
+
+  - id: gm-charter
+    kind: skill
+    twin: gm-charter
+    description: >-
+      PROJECT_CHARTER.md a partir da primeira conversa: modos completo e
+      simplificado (projetos existentes), campos legado/sistema_existente/
+      compliance, repos com HEAD congelado, regra de localização de
+      artefatos.
+    requires: [file, ask]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-charter.md
+
+  - id: gm-taskspec
+    kind: skill
+    twin: gm-taskspec
+    description: >-
+      Gera a análise funcional + spec técnica pura (analysis/) e o arquivo
+      de feature (delivery/) com a RN como âncora; templates canônicos e
+      checkpoint post-write validate. PEND nunca ancora feature.
+    requires: [file, edit, write, ask]
+    degrades: []
+    evals: [fixture-001, fixture-002, fixture-003]
+    body: sources/gm-taskspec.md
+
+  - id: gm-uispec
+    kind: skill
+    twin: gm-uispec
+    description: >-
+      UI_SPEC.md a partir das RNs: atores e telas, conteúdo por tela,
+      fluxo de navegação e regras de UI globais. Propagação de confiança
+      para RNs de legado.
+    requires: [file, edit, write]
+    degrades: []
+    evals: [fixture-001, fixture-002]
+    body: sources/gm-uispec.md
+
+  - id: gm-datamodel
+    kind: skill
+    twin: gm-datamodel
+    description: >-
+      DATA_MODEL.md a partir das RNs (§6): ER, tabelas com tipos de banco
+      (nunca tipos de aplicação) e decisão de armazenamento. Documenta
+      APENAS tabelas — colunas não usadas marcadas "(não usado)".
+    requires: [file, edit, write, ask]
+    degrades: []
+    evals: [fixture-001, fixture-002]
+    body: sources/gm-datamodel.md
+
+  - id: gm-apicontracts
+    kind: skill
+    twin: gm-apicontracts
+    description: >-
+      API_CONTRACTS.md (endpoints por grupo, convenções) e ERROR_CATALOG.md
+      (validação 400 / negócio 422 / recurso 404) a partir do DATA_MODEL e
+      das RNs.
+    requires: [file, edit, write]
+    degrades: []
+    evals: [fixture-001, fixture-002]
+    body: sources/gm-apicontracts.md
+
+  - id: gm-criteria
+    kind: skill
+    twin: gm-criteria
+    description: >-
+      ACCEPTANCE_CRITERIA.md a partir das RNs: cada RN vira um ou mais
+      critérios Dado-Quando-Então (Gherkin) pela tabela de derivação EARS → Gherkin.
+    requires: [file, edit, write]
+    degrades: []
+    evals: [fixture-001, fixture-002]
+    body: sources/gm-criteria.md
+
+  - id: gm-arch
+    kind: skill
+    twin: gm-arch
+    description: >-
+      ARCHITECTURE.md (stack, diagrama, padrões, módulos, fluxo de dados)
+      e SECURITY.md (autenticação, autorização, dados sensíveis, auditoria)
+      a partir do DATA_MODEL e das RNs técnicas. Propagação de confiança
+      para RNs de legado.
+    requires: [file, edit, write]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-arch.md
+
+  # ================= ONDA 3 (6 itens com-twin — FECHA a classe) =================
+
+  - id: gm-glossary
+    kind: skill
+    twin: gm-glossary
+    description: >-
+      Gera/atualiza os 3 glossários (DEV técnico, BUSINESS negócio, USER
+      usuário final) com merge incremental — nunca deleta termos;
+      definição conflitante vai para ask.
+    requires: [file, write, ask]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-glossary.md
+
+  - id: gm-clientreq
+    kind: skill
+    twin: gm-clientreq
+    description: >-
+      CLIENT_REQUIREMENTS.md a partir do REQUIREMENTS.md — vista filtrada
+      para o cliente, sem vocabulário de implementação; sincronização por
+      delta do Git; pendências de decisão do cliente em Open Questions.
+    requires: [file, glob, grep, write, edit, shell]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-clientreq.md
+
+  - id: gm-scope
+    kind: skill
+    twin: gm-scope
+    description: >-
+      SCOPE_AGREEMENT.md — acordo de escopo com o cliente em linguagem de
+      negócio: unifica escopo, RNs confirmadas, mudanças em andamento e
+      status de aprovação. Atualiza a cada novo lote ou CR aprovado.
+    requires: [file, write, grep]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-scope.md
+
+  - id: gm-teststrategy
+    kind: skill
+    twin: gm-teststrategy
+    description: >-
+      TEST_STRATEGY.md (níveis, ferramentas, dados de teste, CI/CD) e
+      DEFINITION_OF_DONE.md (checklist) a partir dos critérios de aceitação
+      e da arquitetura.
+    requires: [file, write, ask]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-teststrategy.md
+
+  - id: gm-compliance
+    kind: skill
+    twin: gm-compliance
+    description: >-
+      Checklist LGPD em specs/COMPLIANCE.md com os 10 eixos (levantamento,
+      base legal, consentimento, minimização, retenção, direitos do titular,
+      segurança, registros, terceiros, internacionalização), plano de
+      lacunas e candidatos a RN/CR.
+    requires: [file, glob, grep, write, ask]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-compliance.md
+
+  - id: gm-reverse
+    kind: skill
+    twin: gm-reverse
+    description: >-
+      Gera LEGACY_CONTEXT.md a partir da análise de sistema/banco existente
+      (stack, arquitetura, banco, APIs, regras, armadilhas, glossário de
+      equivalência). Só executa com legado: true ou sistema_existente: true
+      no charter.
+    requires: [file, grep, glob, write, ask]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-reverse.md
+
+  # ================= ONDA 4 (8 itens sem-twin — suporte/ciclo de vida) =================
+  # Skills ABSORVIDAS pelo kit (validate, next, progress, tasks-pending,
+  # wiki-lint, decision-audit, propagation-guard, scan, skill-eval) não
+  # entram no lote — referências citam "(absorvida pelo kit)".
+
+  - id: gm-known-error
+    kind: skill
+    description: >-
+      Registra incidentes de suporte reais em KNOWN_ERRORS.md — reativo,
+      NUNCA proativo. Cada entrada documenta sintoma, causa, workaround e
+      status. Erro já previsto em contrato é referenciado, não duplicado.
+    requires: [file, write, ask]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-known-error.md
+
+  - id: gm-incident-postmortem
+    kind: skill
+    description: >-
+      Post-mortem estruturado de incidentes reais (timeline, causa raiz,
+      impacto, ações corretivas, lições aprendidas). Upstream do
+      gm-known-error — sugere a entrada de known error como follow-up.
+    requires: [file, glob, write, ask]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-incident-postmortem.md
+
+  - id: gm-migration
+    kind: skill
+    description: >-
+      MIGRATION.md durante o período real de migração de dados: escopo,
+      mapeamento campo a campo, scripts UP/DOWN, cronograma, validação
+      pós-migração e riscos. Condicional a trigger explícito do operador.
+    requires: [file, write, ask]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-migration.md
+
+  - id: gm-howto
+    kind: skill
+    description: >-
+      Documentação orientada a tarefas para suporte/usuário final
+      (docs/howto/<feature>.md) quando uma feature é marcada [done].
+      Modo de erro continue — documentação pós-lançamento não bloqueia.
+    requires: [file, write, ask]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-howto.md
+
+  - id: gm-handover
+    kind: skill
+    description: >-
+      Resumo de estado para assunção de módulo: veredito (finalizado/em
+      andamento/bloqueado/não iniciado) com justificativa, guia de leitura,
+      decisões-chave, stakeholders, pendências. Persiste em HANDOVER_LOG.md.
+    requires: [file, glob, grep, ask]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-handover.md
+
+  - id: gm-decision-log
+    kind: skill
+    description: >-
+      Formaliza decisões em DECISIONS.md (ADR-NNN, formato MADR) com merge
+      incremental, rastreabilidade RN/PEND, supersede e entradas legadas
+      DEC-XXX imutáveis. Modo strict.
+    requires: [file, write, grep, glob, ask]
+    degrades: []
+    body: sources/gm-decision-log.md
+
+  - id: gm-drift-detector
+    kind: skill
+    description: >-
+      Detector de drift de qualidade: mede tendência temporal dos artefatos
+      (tamanho, cobertura RN, IDs quebrados, formato, staleness) contra
+      baseline de 3 medições e gera DRIFT_REPORT com score 0-100 por artefato.
+    requires: [file, glob, grep, write]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-drift-detector.md
+
+  - id: gm-agent-health-monitor
+    kind: skill
+    description: >-
+      Monitor de saúde dos components do workflow: subagents registrados,
+      skills com erros, artefatos órfãos, staleness, propagation status,
+      checklists, índice lazy do AGENTS.md e coerência PERMISSIONS.md.
+      Read-only absoluto; relatório de módulo é commitável, de raiz é efêmero.
+    requires: [file, glob, grep, ask, shell]
+    degrades: []
+    evals: [fixture-001]
+    body: sources/gm-agent-health-monitor.md
+
+  # ================= ONDA 5 (3 primaries + 3 tracker orchestrators — fecha a camada de primaries) =================
+
+  - id: gm-doc
+    kind: primary
+    description: >-
+      Agente principal para documentação técnica de sistemas existentes,
+      engenharia reversa multi-repo e conformidade documental na letra D
+      (Documentation). Conduz a arqueologia de código, extração de specs e
+      indução de requisitos ancorados em evidências.
+    mode: primary
+    temperature: 0.3
+    delegates: [gm-reverse-orchestrator, gm-translation-orchestrator, gm-quality-orchestrator, gm-support-orchestrator, gm-next, gm-progress, gm-cr-propagation-guard, gm-workflow-builder, gm-workflow-improver, gm-onboarding-orchestrator, gm-compliance-orchestrator]
+    invokes: [gm-detect-onboarding, gm-prompt-gate, gm-security-audit, gm-agents-md-sync, gm-mcp-playwright-setup, gm-ui-capture, gm-validate]
+    requires: [file, edit, glob, grep, shell, ask, subagent, skill, websearch]
+    degrades: [webfetch, lsp, graph]
+    body: sources/gm-doc.md
+
+  - id: gm-dev
+    kind: primary
+    description: >-
+      Agente principal para sessões de desenvolvimento de código —
+      implementa features backend e frontend a partir dos artefatos de spec
+      do módulo, delegando execução aos subagents backend/frontend. Nunca
+      edita artefatos de specs.
+    mode: primary
+    temperature: 0.3
+    delegates: [gm-dev-orchestrator, gm-dev-backend, gm-dev-frontend, gm-dev-qa, gm-dev-reviewer, gm-pack-orchestrator, gm-next, gm-progress, gm-cr-propagation-guard, gm-tasks-pending, gm-azure-orchestrator, gm-workflow-builder, gm-workflow-improver, gm-onboarding-orchestrator]
+    invokes: [gm-detect-onboarding, gm-prompt-gate, gm-mcp-playwright-setup, gm-project-retrospective]
+    requires: [file, edit, glob, grep, shell, ask, subagent, skill, websearch]
+    degrades: [webfetch, lsp, graph]
+    body: sources/gm-dev.md
+
+  - id: gm-devops
+    kind: primary
+    description: >-
+      Agente principal da camada DevOps — setup de VPS, infraestrutura de
+      deploy (Docker, GHCR, SSH, Cloudflare tunnels, systemd, backup) e
+      troubleshooting de deploy/produção, conduzido de forma guiada.
+      Nunca executa comandos remotamente por conta própria.
+    mode: primary
+    temperature: 0.3
+    delegates: [gm-devops-orchestrator, gm-next, gm-progress]
+    invokes: [gm-detect-onboarding, gm-prompt-gate, gm-vps-setup, gm-vps-troubleshoot, gm-cicd-workflow, gm-observability, gm-known-error]
+    requires: [file, glob, grep, shell, ask, skill, websearch]
+    degrades: [edit, write, webfetch, lsp, graph]
+    body: sources/gm-devops.md
+
+  - id: gm-github-orchestrator
+    kind: subagent
+    description: >-
+      Centraliza e roteia operações no GitHub: issues a partir das tasks,
+      PRs com template padronizado, milestones. Roteia, não executa.
+      Capacidade tracker FULL-only.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-gh-setup, gm-gh-issue-creator, gm-gh-pr-creator]
+    requires: [file, glob, grep, shell, ask, skill, tracker]
+    degrades: [edit, write]
+    tracker: true
+    body: sources/gm-github-orchestrator.md
+
+  - id: gm-azure-orchestrator
+    kind: subagent
+    description: >-
+      Centraliza e roteia operações no Azure DevOps: setup do MCP (server +
+      PAT) e work items no Boards a partir das tasks do delivery. Roteia,
+      não executa. Capacidade tracker FULL-only.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-azure-setup, gm-azure-workitem-creator]
+    requires: [file, glob, grep, shell, ask, skill, tracker]
+    degrades: [edit, write]
+    tracker: true
+    body: sources/gm-azure-orchestrator.md
+
+  - id: gm-intake-orchestrator
+    kind: subagent
+    description: >-
+      Orquestrador da fase de Intake: charter, CONSTITUTION e INDEX.
+      Fronteira formal: Intake DETECTA legado (flags no charter); a
+      DESCOBERTA de contexto do sistema existente é do domínio
+      Documentação (handoff, não invocação). Roteia, não executa.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-charter, gm-init]
+    requires: [file, glob, grep, ask, skill]
+    degrades: [edit, write]
+    body: sources/gm-intake-orchestrator.md
+
+  # ================= ONDA 6 (11 subagents restantes — fecha o caminho de agents do runtime) =================
+
+  - id: gm-compliance-orchestrator
+    kind: subagent
+    description: >-
+      Orquestrador do domínio Compliance: verificação LGPD de produtos que
+      tratam dado pessoal (checklist de 10 eixos), gatilho no intake (flag
+      compliance do charter), eixo compliance no dev-reviewer e finding no
+      kit golmet validate. Roteia, não executa. Não assessora juridicamente.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-compliance-check]
+    requires: [file, glob, grep, ask, skill]
+    degrades: [edit, write]
+    body: sources/gm-compliance-orchestrator.md
+
+  - id: gm-dev-frontend
+    kind: subagent
+    description: >-
+      Executor genérico de código frontend de qualquer stack: detecta a
+      stack via glob, carrega o playbook de stack e implementa a task a
+      partir de UI_SPEC.md e RNs. Spec visual antes de código, testes
+      verdes, verificação visual browser-in-the-loop (MCP Playwright)
+      quando disponível, relatório compacto. Nunca edita specs nem cria
+      commit/push/PR sem pedido.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-stack-angular, gm-stack-react, gm-quality-gates]
+    requires: [file, edit, glob, grep, shell, ask, skill]
+    degrades: [graph, webfetch]
+    body: sources/gm-dev-frontend.md
+
+  - id: gm-figma-orchestrator
+    kind: subagent
+    description: >-
+      Centraliza e roteia pedidos do domínio Figma: prompts para protótipo
+      no Figma Make (figma-prompt, design-brief) e tasks a partir de design
+      real via MCP (figma-tasks — direção Figma → pipeline). Gate de
+      qualidade VALIDATION_REPORT e bypass consciente.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-figma-prompt, gm-design-brief, gm-figma-tasks, gm-mcp-figma-setup, gm-task-spec]
+    requires: [file, glob, grep, ask]
+    degrades: [edit, write, shell]
+    body: sources/gm-figma-orchestrator.md
+
+  - id: gm-governance-orchestrator
+    kind: subagent
+    description: >-
+      Orquestrador de skills de governança: reestruturação de projetos
+      legados (restructure) e revisão de CONSTITUTION.md/PRODUCT_GOAL.md.
+      Documento de referência — roteia, não executa.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-restructure, gm-governance]
+    requires: [file, glob, grep, ask, skill, shell]
+    degrades: [edit, write]
+    body: sources/gm-governance-orchestrator.md
+
+  - id: gm-onboarding-orchestrator
+    kind: subagent
+    description: >-
+      Orquestrador de onboarding para operadores novos — 4 áreas: setup de
+      ambiente (gm-setup), tour pelo workflow (lazy), primeiro projeto
+      guiado (roteiro para o primary delegar intake → requirements →
+      translation) e assumir módulo existente (gm-handover). Roteia, não
+      executa. Detecção automática no 1º turno pelos primaries.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-setup, gm-handover]
+    requires: [file, glob, grep, ask, skill, shell]
+    degrades: [edit, write]
+    body: sources/gm-onboarding-orchestrator.md
+
+  - id: gm-reverse-orchestrator
+    kind: subagent
+    description: >-
+      Engenharia reversa de código multi-repo em contexto isolado: extrai
+      modelos de dados, contratos de API, telas de UI e induz regras de
+      negócio ancoradas em evidências [arquivo:linha @hash] e eventos de
+      domínio (DDD). 6 fatias, tríade O/I/U, ledger UNKNOWNS, fila
+      CANDIDATES, REVERSE_STATE, sharding por Bounded Context. Escrita
+      restrita à camada reverse/ do produto. Invocado pelo primary gm-doc.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-ui-capture, gm-security-audit]
+    requires: [file, glob, grep, skill, graph, shell, write]
+    degrades: [edit, webfetch]
+    body: sources/gm-reverse-orchestrator.md
+
+  - id: gm-support-orchestrator
+    kind: subagent
+    description: >-
+      Orquestrador de skills de suporte: known-errors, post-mortem de
+      incidentes e migração de dados. Reativo, nunca proativo; migration
+      só com trigger explícito do usuário. Documento de referência —
+      roteia, não executa.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-known-error, gm-migration, gm-incident-postmortem]
+    requires: [file, glob, grep, ask, skill]
+    degrades: [edit, write]
+    body: sources/gm-support-orchestrator.md
+
+  - id: gm-translation-orchestrator
+    kind: subagent
+    description: >-
+      Orquestrador da fase de Tradução Técnica: fan-out paralelo a partir
+      de REQUIREMENTS.md — data-model, api-contracts, ui-spec,
+      architecture, glossary, acceptance-criteria e task-spec. IDs
+      estáveis (RN-XXX nunca renumera). Roteia, não executa.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-data-model, gm-api-contracts, gm-ui-spec, gm-architecture, gm-glossary, gm-acceptance-criteria, gm-task-spec]
+    requires: [file, glob, grep, ask, skill]
+    degrades: [edit, write]
+    body: sources/gm-translation-orchestrator.md
+
+  - id: gm-workflow-builder
+    kind: subagent
+    description: >-
+      Arquiteto de componentes do workflow: projeta e cria novos subagents,
+      primary agents e skills a partir da FUNÇÃO delimitada. Infere a
+      árvore de delegação consultando registry.yaml (T5) e ARCHITECTURE.md,
+      detecta duplicidade, confirma o grafo, cria em cascata bottom-up e
+      fecha o ciclo no registry + gm-registry-render. Knowledge-first:
+      domínio novo/stale exige fundação via gm-domain-research (T1).
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-subagent-creator, gm-primary-agent-creator, gm-skill-creator, gm-domain-research, gm-registry-render]
+    requires: [file, edit, glob, grep, shell, ask, skill, websearch]
+    degrades: [webfetch]
+    body: sources/gm-workflow-builder.md
+
+  - id: gm-workflow-improver
+    kind: subagent
+    description: >-
+      Diagnostica e corrige o workflow quando uma skill ou subagent produz
+      resultado insuficiente: localiza a causa raiz, aplica correção
+      mínima na config do engine sob gate Plan-first incondicional
+      (aprovação não-delegável) e registra a melhoria em
+      WORKFLOW_IMPROVEMENTS.md. Health check pós-edição obrigatório.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-registry-render, gm-agent-health-monitor]
+    requires: [file, edit, glob, grep, shell, ask, skill]
+    degrades: [webfetch]
+    body: sources/gm-workflow-improver.md
+
+  # ================= ONDA 7 (7 skills — fecha o caminho de criação de componentes; dependências do gm-workflow-builder) =================
+
+  - id: gm-registry-render
+    kind: skill
+    description: >-
+      Gera as views do ARCHITECTURE.md (diagramas Mermaid, tabelas de
+      agentes/skills/domínios) e as tabelas de subagents dos primary
+      agents a partir do manifesto canônico registry.yaml (T5). Lê o YAML,
+      monta os grafos de delegação e substitui os blocos delimitados por
+      BEGIN_REGISTRY/END_REGISTRY. Idempotente. Fonte de verdade T5.
+    domain: meta
+    invokes: []
+    requires: [file, edit, glob, grep, ask]
+    degrades: [webfetch]
+    body: sources/gm-registry-render.md
+
+  - id: gm-skill-creator
+    kind: skill
+    description: >-
+      Cria uma nova skill do workflow no diretório de config do engine
+      (skills/<nome>/SKILL.md). Coleta propósito e domínio, gera o SKILL.md
+      completo no padrão do workflow (front matter, Lê/Gera/Nunca edita,
+      Tools, Modo de erro, Algoritmo, Template, Formato de commit, Casos de
+      borda) e valida contra a schema. Fecha o ciclo com o orchestrator do
+      domínio e o gate de checklist.
+    domain: meta
+    invokes: []
+    requires: [file, write, glob, grep, ask, skill]
+    degrades: [webfetch]
+    body: sources/gm-skill-creator.md
+
+  - id: gm-subagent-creator
+    kind: skill
+    description: >-
+      Cria um novo subagent do workflow (agents/<nome>.md, mode: subagent).
+      Coleta o propósito, define o escopo de permissão pelo menor privilégio
+      (4 perfis), gera o prompt completo e valida o front matter contra a
+      schema. Skills invocadas verificadas com glob — faltantes viram
+      "skill a criar" para o builder encadear.
+    domain: meta
+    invokes: []
+    requires: [file, write, glob, grep, ask, skill]
+    degrades: [webfetch]
+    body: sources/gm-subagent-creator.md
+
+  - id: gm-primary-agent-creator
+    kind: skill
+    description: >-
+      Cria um novo primary agent do workflow (agents/<nome>.md, mode:
+      primary) no padrão do Quadri. Coleta o domínio de atuação, define
+      permissão ampla documentada, gera o prompt completo com identidade,
+      subagents que invoca e comportamento, e valida o front matter.
+      Bottom-up: subagent novo é criado antes do primary.
+    domain: meta
+    invokes: []
+    requires: [file, write, glob, grep, ask, skill]
+    degrades: [webfetch]
+    body: sources/gm-primary-agent-creator.md
+
+  - id: gm-domain-research
+    kind: skill
+    description: >-
+      Pesquisa e registra a base de conhecimento de um domínio ANTES da
+      criação da camada que o consome (knowledge-first, fonte T1). Gera
+      knowledge/<dominio>/KNOWLEDGE.md a partir de fontes primárias atuais
+      (sempre com URL e data de acesso) e atualiza knowledge/INDEX.md
+      (merge incremental). Gatilho obrigatório do gm-workflow-builder para
+      domínio novo ou base stale.
+    domain: meta
+    invokes: []
+    requires: [file, write, glob, grep, shell, ask, websearch]
+    degrades: [edit]
+    body: sources/gm-domain-research.md
+
+  - id: gm-skill-evolution
+    kind: skill
+    description: >-
+      Evolui skills do workflow baseado em aprendizados acumulados de
+      múltiplos projetos: analisa retrospectivas, identifica padrões
+      recorrentes (3+ ocorrências), propõe mudanças, valida com eval de
+      regressão (kit golmet skill-eval) antes de aplicar e registra IMPs.
+      Inclui revisão periódica de calibração Jev.
+    domain: meta
+    invokes: [gm-project-retrospective, gm-metrics-collector]
+    requires: [file, edit, glob, grep, ask, skill]
+    degrades: [webfetch]
+    body: sources/gm-skill-evolution.md
+
+  - id: gm-traceability
+    kind: skill
+    description: >-
+      Gera quality/TRACEABILITY.md — matriz de rastreabilidade entre RNs e
+      documentos downstream (DATA_MODEL, API_CONTRACTS, UI_SPEC). Atualizado
+      após cada skill de tradução técnica rodar. Consome pré-scan
+      determinístico do kit golmet validate quando disponível; modo de erro
+      skip (não bloqueia o fluxo).
+    domain: qualidade
+    invokes: []
+    requires: [file, grep, write, glob]
+    degrades: [edit, webfetch]
+    body: sources/gm-traceability.md
+
+  # ================= ONDA 8 (5 stack playbooks + 3 qualidade — os mais densos restantes) =================
+
+  - id: gm-stack-dotnet-csharp
+    kind: skill
+    description: >-
+      Playbook de stack .NET C# para os executors de dev (gm-dev-backend).
+      Comandos de build/test (dotnet CLI), Clean Architecture
+      (Api/Application/Domain/Infrastructure), padrões dominantes (MediatR
+      CQRS, FluentValidation, EF Core, Result pattern), convenções de teste
+      (xUnit, Moq, FluentAssertions) e pitfalls (DI lifecycle, async/await,
+      nullable refs, EF tracking). Stack *.csproj/*.sln.
+    domain: stack
+    invokes: [gm-stack-boilerplate]
+    requires: [file, glob, grep, shell]
+    degrades: [edit, write, webfetch]
+    body: sources/gm-stack-dotnet-csharp.md
+
+  - id: gm-stack-angular
+    kind: skill
+    description: >-
+      Playbook de stack Angular para os executors de dev (gm-dev-frontend).
+      Comandos de build/verify (ng test builder-aware, ng lint), estrutura
+      de MFE com Webpack Module Federation, padrões (módulos federados,
+      componentes compartilhados, services HTTP, guards), validações
+      reativas e convenções de spec Karma/Jasmine. Stack angular.json.
+    domain: stack
+    invokes: []
+    requires: [file, glob, grep, shell]
+    degrades: [edit, write, webfetch]
+    body: sources/gm-stack-angular.md
+
+  - id: gm-stack-rust
+    kind: skill
+    description: >-
+      Playbook de stack Rust para os executors de dev (gm-dev-backend em
+      repos CORE). Comandos de build/verify (cargo build/test/clippy/fmt),
+      estrutura de projeto, padrões dominantes (actix-web, tokio, serde,
+      sqlx, clap), convenções de teste (unit, integration, bench, doc-tests)
+      e pitfalls (borrow checker, async, lifetimes, FFI). Stack Cargo.toml.
+    domain: stack
+    invokes: []
+    requires: [file, glob, grep, shell]
+    degrades: [edit, write, webfetch]
+    body: sources/gm-stack-rust.md
+
+  - id: gm-stack-java-quarkus
+    kind: skill
+    description: >-
+      Playbook de stack Java/Quarkus para os executors de dev
+      (gm-dev-backend). Comandos de build/verify (mvn), estrutura de
+      projeto, padrões dominantes (REST Client, Panache/Hibernate, OpenAPI,
+      Flyway), convenções de teste JUnit (@QuarkusTest, @InjectMock) e
+      pitfalls (JDK vs pom.xml, form-urlencoded, config por profile).
+      Validação condicional de schema Oracle antes de mapear @JoinColumn.
+      Stack pom.xml/build.gradle.
+    domain: stack
+    invokes: []
+    requires: [file, glob, grep, shell]
+    degrades: [edit, write, webfetch]
+    body: sources/gm-stack-java-quarkus.md
+
+  - id: gm-stack-boilerplate
+    kind: skill
+    description: >-
+      Template engine para bootstrapping de projetos a partir de
+      boilerplates curados por stack: lê o registry T3
+      (rules/stack-templates.yaml), clona, executa o setup pós-clone
+      (rename, env, restore) e prepara o repo vazio para implementação.
+      Evita scaffold genérico — usa o repo curado do perfil do cliente.
+    domain: stack
+    invokes: []
+    requires: [file, glob, shell, ask]
+    degrades: [edit, write, webfetch]
+    body: sources/gm-stack-boilerplate.md
+
+  - id: gm-quality-gates
+    kind: skill
+    description: >-
+      Quality gates universal para qualquer stack backend e frontend
+      Angular — verifica KISS, YAGNI, DRY, SOLID, Clean Code, padrões de
+      teste, segurança (OWASP Top 10:2025 rasa) e performance. Comandos de
+      automação vêm do playbook da stack (fonte única). Métricas:
+      complexidade, cobertura, duplicação, smell-count. Triagem de
+      severidade ambígua com Jev (opcional, não bloqueante).
+    domain: qualidade
+    invokes: []
+    requires: [file, glob, grep, shell]
+    degrades: [edit, write, webfetch]
+    body: sources/gm-quality-gates.md
+
+  - id: gm-security-audit
+    kind: skill
+    description: >-
+      Camada dedicada de security review — revisão agêntica guiada pela
+      base T1 knowledge/security-review (OWASP ASVS 5.0.0, Top 10:2025).
+      Modo dif: tria o diff contra P-01..P-10 com findings classificados
+      (Crítico/Alto bloqueiam) como insumo do gm-dev-reviewer. Modo
+      baseline: varredura do repo inteiro gravando
+      quality/SECURITY_AUDIT_<timestamp>.md. Não é scanner; não emite
+      veredito; strict na fundação.
+    domain: qualidade
+    invokes: [gm-domain-research]
+    requires: [file, glob, grep, shell, write, ask]
+    degrades: [edit, webfetch]
+    body: sources/gm-security-audit.md
+
+  - id: gm-agents-md-sync
+    kind: skill
+    description: >-
+      Audita e sincroniza AGENTS.md entre os repositórios de um mesmo
+      produto, separando regras comuns (PRODUCT_COMMON) de específicas
+      (REPO_SPECIFIC). Auditoria read-only primeiro, diff por repo, edita
+      só após confirmação explícita. Governança multi-repo roteada pelo
+      gm-doc.
+    domain: qualidade
+    invokes: []
+    requires: [file, edit, glob, grep, ask, write]
+    degrades: [webfetch]
+    body: sources/gm-agents-md-sync.md
+
+  # ================= ONDA 9 (12 itens — tracker + figma/reverse + docs/requisitos) =================
+
+  - id: gm-gh-issue-creator
+    kind: skill
+    description: >-
+      Cria issues no GitHub a partir do arquivo de feature (IMP-092/093):
+      ESTRUTURA do Feature.md (issue principal, tasks RN-NNN-M, labels por
+      prefixo, milestone), CORPO do Analise-Funcional.md (linguagem de
+      negócio). Fallbacks legados preservados. gh CLI em lote com dry-run.
+      Capacidade tracker FULL-only.
+    domain: azure
+    invokes: []
+    requires: [file, write, glob, shell, ask, tracker]
+    degrades: [edit]
+    tracker: true
+    body: sources/gm-gh-issue-creator.md
+
+  - id: gm-gh-pr-creator
+    kind: skill
+    description: >-
+      Cria Pull Requests no GitHub a partir de branch feature, vinculando a
+      issue, com template padronizado (RNs cobertas, checklist de testes,
+      review). Gate: task SEM aprovação do gm-dev-reviewer NÃO abre PR.
+      branch-base do Gate de branch (IMP-088) é a fonte da base. Capacidade
+      tracker FULL-only.
+    domain: azure
+    invokes: []
+    requires: [file, shell, ask, tracker]
+    degrades: [edit, write]
+    tracker: true
+    body: sources/gm-gh-pr-creator.md
+
+  - id: gm-azure-workitem-creator
+    kind: skill
+    description: >-
+      Cria work items no Azure Boards a partir das tasks do delivery
+      (IMP-092/093): ESTRUTURA do Feature.md (principal + tasks filhas com
+      parent link, Activity), CORPO do Analise-Funcional.md. Hierarquia
+      Feature/User Story → Tasks (pergunta ao operador). MCP Azure DevOps
+      strict (sem fallback CLI); PAT nunca logado. Capacidade tracker
+      FULL-only.
+    domain: azure
+    invokes: []
+    requires: [file, write, glob, ask, tracker]
+    degrades: [edit, shell]
+    tracker: true
+    body: sources/gm-azure-workitem-creator.md
+
+  - id: gm-figma-prompt
+    kind: skill
+    description: >-
+      Gera prompt para protótipo visual no Figma Make a partir de
+      REQUIREMENTS.md, UI_SPEC.md, DATA_MODEL.md e API_CONTRACTS.md.
+      Mapeamento RN→tela, árvore de componentes, delta incremental via git
+      diff e persistência append-only em FIGMA_PROMPTS.md. Modo continue.
+    domain: figma
+    invokes: []
+    requires: [file, glob, shell, ask]
+    degrades: [edit, write]
+    body: sources/gm-figma-prompt.md
+
+  - id: gm-figma-tasks
+    kind: skill
+    description: >-
+      Extrai o design real de um frame Figma via MCP (figma-developer-mcp),
+      cruza com os docs do módulo e gera o delta de specs/UI_SPEC.md +
+      propostas de RNs/CRs de UI + handoff de features candidatas
+      (RN-âncora + RNs do escopo) para o gm-task-spec. Direção Figma →
+      módulo — inversa da gm-figma-prompt. Fallback: notas do operador.
+    domain: figma
+    invokes: [gm-task-spec]
+    requires: [file, edit, write, glob, grep, ask]
+    degrades: [shell, webfetch]
+    body: sources/gm-figma-tasks.md
+
+  - id: gm-ui-capture
+    kind: skill
+    description: >-
+      Captura evidência visual em runtime do sistema legado para migração
+      (golden master de UI) via MCP Playwright — screenshots por rota/estado
+      + ária snapshots (paridade dual P-17), requisições observadas e erros
+      de console, gravados em reverse/ui/ com manifesto reverse/UI_CAPTURE.md
+      e candidatas na fila reverse/CANDIDATES.md. NUNCA produção — linha
+      dura. Complemento runtime do gm-reverse-orchestrator.
+    domain: figma
+    invokes: []
+    requires: [file, write, glob, grep]
+    degrades: [edit, shell, webfetch]
+    body: sources/gm-ui-capture.md
+
+  - id: gm-design-brief
+    kind: skill
+    description: >-
+      Gera specs/DESIGN_BRIEF.md — contexto de produto para a IA do Figma
+      Make: identidade e posicionamento, estilo visual, estado atual da UI e
+      constraints. Fonte única do estilo do produto; lê apenas
+      PROJECT_CHARTER.md, REQUIREMENTS.md e UI_SPEC.md (docs-only — nunca
+      código). Merge incremental never-delete.
+    domain: figma
+    invokes: [gm-figma-prompt]
+    requires: [file, edit, write, glob, grep, ask]
+    degrades: [shell, webfetch]
+    body: sources/gm-design-brief.md
+
+  - id: gm-init
+    kind: skill
+    description: >-
+      Executado automaticamente após o charter. Verifica/cria CONSTITUTION.md
+      na raiz do repo (com §9 de Organização de Delivery e Análise — IMP-092,
+      defaults delivery_style: monthly e tracker: github) e INDEX.md
+      (invariants-only), registrando o projeto em ambos. Sugerir §9 ausente
+      só com confirmação do operador.
+    domain: intake
+    invokes: [gm-restructure]
+    requires: [file, write, edit, glob]
+    degrades: [shell, webfetch]
+    body: sources/gm-init.md
+
+  - id: gm-change-request
+    kind: skill
+    description: >-
+      Registra mudança solicitada em requisito já confirmado —
+      CHANGE_REQUESTS.md com status pending/approved/rejected/implemented.
+      Gate de score (IMP-094 R3): >= 70 nasce CR direto; < 70 nasce PEND.
+      Bloco 0 de validação de abordagem obrigatório; campo Origem (IMP-099);
+      loop design-first para CR com impacto visual (IMP-128).
+    domain: requisitos
+    invokes: [gm-figma-prompt, gm-figma-tasks, gm-data-model, gm-api-contracts, gm-ui-spec]
+    requires: [file, write, ask]
+    degrades: [edit, shell, webfetch]
+    body: sources/gm-change-request.md
+
+  - id: gm-client-report
+    kind: skill
+    description: >-
+      Gera delivery/CLIENT_REPORT_<periodo>.md — relatório periódico para o
+      cliente em linguagem de negócio: entregas do período, andamentos,
+      pendências de decisão do cliente e mudanças de escopo (por Origem do
+      CR — IMP-099). Read-only nos insumos; IDs técnicos só no apêndice.
+      Modo continue (dado ausente = N/A declarado).
+    domain: requisitos
+    invokes: []
+    requires: [file, write, glob, grep, ask]
+    degrades: [edit, shell, webfetch]
+    body: sources/gm-client-report.md
+
+  - id: gm-detect-onboarding
+    kind: skill
+    description: >-
+      Skill read-only de diagnóstico de onboarding: verifica 5 critérios
+      (flag de supressão, AGENTS.md legível, bloco projeto-padrao com valor,
+      projetos existentes, contagem de charters) e retorna
+      SUPRIMIDO/MÁQUINA NOVA/SEM PROJETOS/OPERANDO. Invocada automaticamente
+      pelos primaries no 1º turno da sessão.
+    domain: meta
+    invokes: []
+    requires: [file, glob]
+    degrades: [shell]
+    body: sources/gm-detect-onboarding.md
+
+  - id: gm-restructure
+    kind: skill
+    description: >-
+      Reestrutura projetos em 5 modos: (1) legado docs/projects/ → módulo;
+      (2) IMP-011 flat → subpastas; (3) merge de pastas por camada em
+      produto único; (4) split-delivery IMP-040 → duas camadas IMP-092
+      (análise + Feature.md); (5) reverse-layer → produto/reverse/ (IMP-142).
+      Move arquivos, atualiza referências cruzadas, lote multi-módulo,
+      MIGRATION_REPORT. Âncora PEND legada mantida — nunca promovida sozinha
+      (IMP-094).
+    domain: meta
+    invokes: [gm-task-spec]
+    requires: [file, write, edit, glob, grep, ask]
+    degrades: [shell, webfetch]
+    body: sources/gm-restructure.md
+
+  # ================= ONDA 10 (9 itens meta/workflow — FECHA O LOTE; skill de sync com GSD EXCLUÍDA por decisão do primary — runtime-layer, DR de integrações externas) =================
+
+  - id: gm-prompt-gate
+    kind: skill
+    description: >-
+      Qualifica o prompt do operador ANTES de entrar no fluxo: clareza,
+      completude, ambiguidade e intenção via Jev (gm_jev_classify do kit
+      golmet mcp — DR-015; fallback), veredito por faixa
+      (>=70 passa · 50-69 sugere · <50 reescreve) com prompt otimizado e
+      roteamento sugerido. Read-only — output no chat; qualificador, nunca
+      bloqueador.
+    domain: meta
+    invokes: []
+    requires: [file, ask]
+    degrades: [edit, write, shell, webfetch]
+    body: sources/gm-prompt-gate.md
+
+  - id: gm-knowledge-auditor
+    kind: skill
+    description: >-
+      Auditoria do PAR de métricas de conhecimento (P-09) — hit rate +
+      tokens de conhecimento por tarefa — em MODO DEGRADADO: denominadores
+      são PROXY (heurística de globs), declaração obrigatória em todo
+      relatório. Métricas global, por store (T1/T2/T3) e por modelo (P-11);
+      merge incremental no METRICS.md do pack (T2). Capacidade
+      db-introspect FULL-only (fallback N/A declarado). Fundação T1:
+      knowledge-management v1.5.0.
+    domain: meta
+    invokes: [gm-perf-auditor]
+    requires: [file, glob, shell, ask, skill]
+    degrades: [edit, write, webfetch]
+    body: sources/gm-knowledge-auditor.md
+
+  - id: gm-knowledge-graph
+    kind: skill
+    description: >-
+      Gera visualização em grafo navegável da base de conhecimento (stores
+      T1-T5 do knowledge-routing) — HTML self-contained interativo
+      (force-directed, filtros, file:// offline) + fallback Mermaid +
+      graph.json. Arestas REAIS derivadas dos metadados: registry.yaml (T5),
+      knowledge/INDEX.md (T1 staleness), patterns INDEX (T2), índice lazy +
+      rules/ (T3) e módulos T4. Modo global e delta (--scope). Read-only nas
+      fontes; idempotente na saída; strict só no registry.
+    domain: meta
+    invokes: [gm-domain-research, gm-workflow-improver]
+    requires: [file, glob, shell, ask]
+    degrades: [edit, write, webfetch]
+    body: sources/gm-knowledge-graph.md
+
+  - id: gm-pattern-extractor
+    kind: skill
+    description: >-
+      Extrai padrões reutilizáveis de retrospectivas e os documenta no
+      accumulation/patterns/ do pack ativo (T2 — genérico por organização).
+      Acumula referências de múltiplos projetos; INDEX.md automático;
+      staleness por item (data_ultima_revisao — MP-03) e invalidação por
+      contradição (status: ativo | superado + superado_por — P-05/MP-13).
+      Fronteira com stack playbooks documentada.
+    domain: meta
+    invokes: []
+    requires: [file, write, glob, grep, ask]
+    degrades: [edit, shell, webfetch]
+    body: sources/gm-pattern-extractor.md
+
+  - id: gm-project-retrospective
+    kind: skill
+    description: >-
+      Retrospectiva pós-projeto — captura aprendizados, padrões e métricas
+      de cada projeto concluído (RETROSPECTIVE.md), com Scorecard do
+      Workflow (IMP-048 — 14 segmentos, evidência obrigatória). Invoca
+      gm-pattern-extractor (padrões → T2) e gm-metrics-collector (métricas →
+      T2). Acúmulo no pack ativo (IMP-061/112).
+    domain: meta
+    invokes: [gm-pattern-extractor, gm-metrics-collector]
+    requires: [file, write, glob, grep, ask, skill]
+    degrades: [edit, shell, webfetch]
+    body: sources/gm-project-retrospective.md
+
+  - id: gm-metrics-collector
+    kind: skill
+    description: >-
+      Coleta métricas de projetos e acumula no accumulation/metrics/
+      METRICS.md do pack ativo (T2 — genérico por organização): skills
+      usadas, issues de qualidade, cobertura, duplicação, quality gate,
+      Outcome Metrics (IMP-099 — fonte/período declarados, N/A nunca zero
+      fingido). Hand-off do gm-perf-auditor (append é do coletor). Append
+      incremental — nunca reescreve histórico.
+    domain: meta
+    invokes: []
+    requires: [file, write, glob, grep, ask]
+    degrades: [edit, shell, webfetch]
+    body: sources/gm-metrics-collector.md
+
+  - id: gm-perf-auditor
+    kind: skill
+    description: >-
+      Auditoria de performance (read-only, pós-hoc) do runtime do engine —
+      latência por turno, user→resposta, context bloat e p50/p95/max por
+      dia/agente/modelo a partir do SQLite local (v2 via node:sqlite, Node
+      >= 22.5; fallback v1 via CLI). Thresholds warning/crítico; roll-up
+      heurístico por feature (IMP-099 — aproximado, não mapeadas nunca
+      atribuídas). Capacidade db-introspect FULL-only (fallback N/A
+      declarado). Gera quality/PERF_REPORT e hand-off ao gm-metrics-collector.
+    domain: meta
+    invokes: [gm-metrics-collector]
+    requires: [file, write, shell, ask, skill]
+    degrades: [edit, glob, webfetch]
+    body: sources/gm-perf-auditor.md
+
+  - id: gm-typesafe-ai
+    kind: skill
+    description: >-
+      Build AI-powered software with TypeSafe: units of AI intelligence
+      (System One models — Choice, Noul, Score) como primitivas de
+      programação. Transporte Jev no workflow É o kit (gm_jev_classify via
+      golmet mcp — DR-015; plugin legado jev-tool.js substituído). Skill
+      advisory/read-only — docs vivas typesafe.ai são a fonte de verdade.
+    domain: meta
+    invokes: []
+    requires: [file]
+    degrades: [edit, write, shell, webfetch]
+    body: sources/gm-typesafe-ai.md
+
+  - id: gm-split-commits-by-diff
+    kind: skill
+    description: >-
+      Transforma working tree misto em commits limpos e escopados: plano de
+      agrupamento por intenção antes de tocar no index, staging por paths
+      explícitos (nunca git add -A), mensagens Conventional Commits no
+      padrão do repo. Safety rules: nunca histórico reescrito, nunca
+      segredos, nunca commit vazio.
+    domain: meta
+    invokes: []
+    requires: [file, shell]
+    degrades: [edit, write, webfetch]
+    body: sources/gm-split-commits-by-diff.md
+  - id: gm-legacy-guide
+      kind: skill
+      replaces: null
+      twin: null
+      description: >-
+        Gera docs/legacy/ - a camada humana do legado para migracoes e
+        evolutivas: visao geral por dominios derivados do codigo, mapa de
+        impacto (armadilhas + regras confirmadas com dente), guias por
+        dominio como superficie de confirmacao das CANDs (detalhe regra a
+        regra com ciclo de vida) e formulario para o cliente responder as
+        regras de negocio (Confirma/Correcao/Nao e regra/Nao sei com
+        write-back para RN/CR/PEND). Le reverse + LEGACY_CONTEXT + DECISIONS
+        + codigo legado (read-only). Anti-alucinacao: todo fato tecnico
+        rastreia para reverse, DECISIONS ou codigo com path.
+      requires: [file, shell]
+      degrades: []
+      body: sources/gm-legacy-guide.md
+  - id: gm-dba
+      kind: skill
+      replaces: null        # kit-nativa nova (como gm-adopt/gm-legacy-guide)
+      twin: null
+      description: >-
+        Database Administrator do workflow - a camada principal de banco de
+        dados. 5 servicos chamaveis pelas outras camadas: modelar (revisao do
+        DATA_MODEL), migrar (revisao de mapeamento/scripts), performance
+        (queries, indices, N+1), drift (DATA_MODEL vs migrations vs schema
+        vivo) e operar (seguranca, tenant isolation, backup). Read-only por
+        default; DDL/DML exige gate explicito. Migration segue o playbook da
+        stack (nunca contradiz). As 10 regras de seguranca sao linha vermelha.
+      requires: [file, shell, mcp]
+      degrades:
+        mcp: shell
+      body: sources/gm-dba.md
+
+  # ================= ONDA 11 (4 componentes pack — camada de autoria L2 embarcada: fecha o lote em 93 itens = 68 skills + 4 primary + 21 subagents) =================
+
+  - id: gm-pack-scaffold
+    kind: skill
+    replaces: null          # kit-nativa nova (sem predecessor no namespace legado)
+    description: >-
+      Onboarding de uma NOVA organização no ecossistema de packs (L2) — cria
+      o esqueleto completo do pack a partir APENAS do contrato FORMATO §3.1
+      (pack.yaml, README, componentes de exemplo, accumulation vazio), faz o
+      primeiro commit, cria o repo remoto (`gh repo create <org>/<nome>
+      --private`), aplica o topic `golmet-pack` em packs públicos (descoberta
+      da comunidade), registra em `golmet.yaml` e instala com `golmet pack
+      add --engine <id>`. Passos de efeito externo só com confirmação
+      explícita do operador.
+    domain: meta
+    invokes: [gm-pack-update]
+    requires: [file, write, glob, grep, shell, ask]
+    degrades: [edit, webfetch]
+    evals: [fixture-001]
+    body: sources/gm-pack-scaffold.md
+
+  - id: gm-pack-publish
+    kind: skill
+    replaces: null          # kit-nativa nova (sem predecessor no namespace legado)
+    description: >-
+      Publica o pack da organização no repo remoto — valida o working tree do
+      clone, roda os evals do pack, commita por path explícito, faz push
+      origin main (nunca força), reaplica o overlay no engine (`golmet pack
+      update <repo> --engine <id>` ou MCP `gm_pack_update` com confirm),
+      move o pin do `golmet.yaml` para o SHA novo e reporta o delta. Par de
+      publicação do `gm-pack-update` (que consome).
+    domain: meta
+    invokes: [gm-pack-update]
+    requires: [file, glob, grep, shell, ask]
+    degrades: [edit, write, webfetch]
+    evals: [fixture-001]
+    body: sources/gm-pack-publish.md
+
+  - id: gm-pack-update
+    kind: skill
+    replaces: null          # kit-nativa nova (sem predecessor no namespace legado)
+    description: >-
+      Atualiza packs instalados no engine — `golmet pack update <repo>
+      --engine <id>` ressincroniza o cache `~/.golmet/packs/` e reaplica o
+      overlay validando `requires-core` (BREAKING-CHANGES.md) e no-override;
+      o pin do `golmet.yaml` manda e só se move sob pedido explícito do
+      operador. `golmet pack list`/MCP `gm_pack_list` para inventário.
+    domain: meta
+    invokes: []
+    requires: [file, glob, grep, shell, ask]
+    degrades: [edit, write, webfetch]
+    evals: [fixture-001]
+    body: sources/gm-pack-update.md
+
+  - id: gm-pack-orchestrator
+    kind: subagent
+    replaces: null          # kit-nativa novo (orquestrador do ciclo de packs)
+    description: >-
+      Orquestrador do domínio Pack: centraliza o ciclo completo de packs L2 —
+      criar (scaffold + `gh repo create` + primeiro publish), publicar
+      (versões), consumir (`golmet pack add|update|list` + MCP
+      `gm_pack_update`/`gm_pack_list`) e descobrir (topic `golmet-pack` para
+      packs públicos). Roteia, não executa; o pin manda.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-pack-scaffold, gm-pack-publish, gm-pack-update]
+    requires: [file, glob, grep, shell, ask, skill]
+    degrades: [edit, write]
+    body: sources/gm-pack-orchestrator.md

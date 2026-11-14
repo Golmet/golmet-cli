@@ -1,0 +1,75 @@
+---
+name: "Relatório periódico do cliente — 2026-11 em linguagem de negócio"
+description: >
+  delivery/ com feature entregue (done + entregue_em no período), feature
+  em andamento, CRs por Origem (evolucao e requisito-mal-capturado) e PEND
+  que aguarda o cliente. Verifica o delivery/CLIENT_REPORT_2026-11.md:
+  seções em linguagem de negócio sem IDs técnicos no corpo executivo,
+  pedido de ação do cliente no topo, mudanças de escopo por origem e
+  apêndice técnico com a tabela de rastreabilidade.
+inputs_required: [REQUIREMENTS.md, support/CHANGE_REQUESTS.md]
+
+checks:
+  - type: file_exists
+    path: "delivery/CLIENT_REPORT_2026-11.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "delivery/CLIENT_REPORT_2026-11.md"
+    severity: error
+
+  - type: contains
+    path: "delivery/CLIENT_REPORT_2026-11.md"
+    pattern: "period: 2026-11"
+    severity: error
+
+  - type: section_exists
+    path: "delivery/CLIENT_REPORT_2026-11.md"
+    section: "## ⚡ Precisamos de você"
+    severity: error
+
+  - type: section_order
+    path: "delivery/CLIENT_REPORT_2026-11.md"
+    sections:
+      - "## ⚡ Precisamos de você"
+      - "## Em linguagem do cliente"
+      - "## Panorama geral"
+      - "## Apêndice técnico (rastreabilidade)"
+    severity: error
+
+  - type: contains
+    path: "delivery/CLIENT_REPORT_2026-11.md"
+    pattern: "ajuste de entendimento do requisito"
+    severity: error
+
+  - type: contains
+    path: "delivery/CLIENT_REPORT_2026-11.md"
+    pattern: "RN-010-M1"
+    severity: error
+
+  - type: contains
+    path: "delivery/CLIENT_REPORT_2026-11.md"
+    pattern: "05/11/2026"
+    severity: error
+
+  - type: cross_ref
+    path: "delivery/CLIENT_REPORT_2026-11.md"
+    pattern: "RN-(\\d+)"
+    sources: ["REQUIREMENTS.md"]
+    severity: error
+
+  - type: no_todos
+    path: "delivery/CLIENT_REPORT_2026-11.md"
+    patterns: ["TODO", "FIXME"]
+    severity: warning
+
+  - type: line_count_range
+    path: "delivery/CLIENT_REPORT_2026-11.md"
+    min: 40
+    max: 200
+    severity: warning
+
+  - type: reference_match
+    path: "delivery/CLIENT_REPORT_2026-11.md"
+    expected: "output-expected/delivery/CLIENT_REPORT_2026-11.md"
+    severity: error

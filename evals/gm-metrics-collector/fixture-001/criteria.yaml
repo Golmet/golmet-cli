@@ -1,0 +1,70 @@
+---
+name: "gm-metrics-collector — append incremental + Outcome Metrics (IMP-099)"
+description: >
+  Sandbox de eval (paths relativos: docs/metrics/) do projeto MeuApp
+  concluído: RETROSPECTIVE.md com métricas (10 skills, 2 issues, cobertura
+  84%, dup 1.9%, gate PASS, 2 IMPs, 1 ADR), quality/QUALITY_GATE.md,
+  quality/VALIDATION_REPORT.md, REQUIREMENTS.md §11 com 4 PENDs (1
+  resolved → resolução 25%) e support/CHANGE_REQUESTS.md com campo Origem
+  (1 rmc, 1 evo → retrabalho 50%). O METRICS.md pré-existente já tem a
+  linha do AppLegado (2026-08): a skill APENAS anexa a linha do MeuApp —
+  histórico nunca reescrito — e cria a seção Outcome Metrics (IMP-099)
+  com fonte/período declarados. Métricas sem fonte no sandbox (tempo/
+  tokens por feature sem PERF_REPORT; drift-check sem entregue_em) entram
+  como N/A (sem dados) — nunca zero fingido.
+inputs_required: [RETROSPECTIVE.md, quality/QUALITY_GATE.md, quality/VALIDATION_REPORT.md, support/CHANGE_REQUESTS.md, docs/metrics/METRICS.md]
+
+checks:
+  - type: file_exists
+    path: "docs/metrics/METRICS.md"
+    severity: error
+
+  # --- histórico preservado: linha anterior INTACTA (append-only) ---
+  - type: contains
+    path: "docs/metrics/METRICS.md"
+    pattern: "| AppLegado | 2026-08 | 9 | 4 | 82% | 2.4% | WARN | 1 |"
+    severity: error
+
+  # --- linha nova do projeto, derivada da retrospectiva + quality gate ---
+  - type: contains
+    path: "docs/metrics/METRICS.md"
+    pattern: "| MeuApp | 2026-09 | 10 | 2 | 84% | 1.9% | PASS | 2 |"
+    severity: error
+
+  # --- seção Outcome Metrics (IMP-099) com fonte/período declarados ---
+  - type: section_exists
+    path: "docs/metrics/METRICS.md"
+    section: "## Outcome Metrics"
+    severity: error
+
+  - type: table_has_columns
+    path: "docs/metrics/METRICS.md"
+    columns: ["Data", "Resolução PENDs", "Retrabalho req.", "Fonte/Período"]
+    severity: error
+
+  - type: contains
+    path: "docs/metrics/METRICS.md"
+    pattern: "| 25% | 1/1/0/0 | 50% |"
+    severity: error
+
+  - type: contains
+    path: "docs/metrics/METRICS.md"
+    pattern: "progress + support/CHANGE_REQUESTS.md"
+    severity: error
+
+  # --- IMP-080/099: sem PERF_REPORT no sandbox = N/A, nunca zero fingido ---
+  - type: contains
+    path: "docs/metrics/METRICS.md"
+    pattern: "N/A (sem dados)"
+    severity: error
+
+  # --- entrada de qualidade da coleta: sem marcadores pendentes ---
+  - type: no_todos
+    path: "docs/metrics/METRICS.md"
+    patterns: ["TODO", "FIXME"]
+    severity: warning
+
+  - type: reference_match
+    path: "docs/metrics/METRICS.md"
+    expected: "output-expected/METRICS.md"
+    severity: error

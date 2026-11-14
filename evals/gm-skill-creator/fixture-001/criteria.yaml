@@ -1,0 +1,73 @@
+---
+name: "Criação de skill — gm-foo completa"
+description: >
+  PEDIDO.md com os requisitos já coletados (nome gm-foo, propósito de
+  auditoria de cobertura por RN, domínio Qualidade). Verifica que a skill
+  gerada em skills/gm-foo/SKILL.md segue o padrão do kit: front matter com
+  name/description/requires/degrades e seções do template (Lê/Gera/Nunca
+  edita/Algoritmo), sem `prompt:` no front matter.
+inputs_required: [PEDIDO.md]
+
+checks:
+  - type: file_exists
+    path: "skills/gm-foo/SKILL.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "skills/gm-foo/SKILL.md"
+    severity: error
+
+  - type: contains
+    path: "skills/gm-foo/SKILL.md"
+    pattern: "name: gm-foo"
+    severity: error
+
+  - type: contains
+    path: "skills/gm-foo/SKILL.md"
+    pattern: "requires:"
+    severity: error
+
+  - type: contains
+    path: "skills/gm-foo/SKILL.md"
+    pattern: "degrades:"
+    severity: error
+
+  - type: section_exists
+    path: "skills/gm-foo/SKILL.md"
+    section: "## Lê (upstream)"
+    severity: error
+
+  - type: section_exists
+    path: "skills/gm-foo/SKILL.md"
+    section: "## Gera (downstream)"
+    severity: error
+
+  - type: section_exists
+    path: "skills/gm-foo/SKILL.md"
+    section: "## Nunca edita"
+    severity: error
+
+  - type: section_order
+    path: "skills/gm-foo/SKILL.md"
+    sections:
+      - "## Lê (upstream)"
+      - "## Gera (downstream)"
+      - "## Nunca edita"
+      - "## Algoritmo"
+    severity: error
+
+  # front matter proibido: o corpo é o conteúdo da skill (nunca `prompt:`)
+  - type: not_contains
+    path: "skills/gm-foo/SKILL.md"
+    pattern: "prompt:"
+    severity: error
+
+  - type: no_todos
+    path: "skills/gm-foo/SKILL.md"
+    patterns: ["TODO", "FIXME", "PEND-"]
+    severity: warning
+
+  - type: reference_match
+    path: "skills/gm-foo/SKILL.md"
+    expected: "output-expected/skills/gm-foo/SKILL.md"
+    severity: error

@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "generated_at": "2026-11-08T00:00:00Z",
+  "workspace": "H8",
+  "entities": {
+    "adr": {
+      "ADR-001": { "estado": "accepted", "secao_hash": "nomatch" }
+    }
+  },
+  "counts": {}
+}

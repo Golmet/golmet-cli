@@ -1,0 +1,7 @@
+format: 1
+container: true
+products: [MeuApp]
+packs:
+  - id: meuapp
+    repo: minha-org/pack-meuapp
+    pin: 3fca9d1e2b3c4d5e6f7081a2b3c4d5e6f708192a

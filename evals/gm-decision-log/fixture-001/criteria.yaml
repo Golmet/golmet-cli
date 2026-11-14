@@ -1,0 +1,74 @@
+---
+name: "Decisão — ADR-001 após DEC-001 legado (merge incremental)"
+description: >
+  REQUIREMENTS.md com RN-003 + reunião em meetings/2026-11-10-01.md
+  (decisão sobre o executor do agendamento) + DECISIONS.md com apenas a
+  entrada legada DEC-001. Como não há nenhum ADR, a sequência própria
+  começa em ADR-001: nova entrada MADR no formato do template, com
+  Decisor, contexto citando RN-003 e a reunião, e a DEC-001 legada
+  preservada sem renumeração.
+inputs_required: [REQUIREMENTS.md, meetings/2026-11-10-01.md, DECISIONS.md]
+
+checks:
+  - type: file_exists
+    path: "DECISIONS.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "DECISIONS.md"
+    severity: error
+
+  - type: section_exists
+    path: "DECISIONS.md"
+    section: "# Architecture Decision Records — MeuApp"
+    severity: error
+
+  # --- sequência ADR própria começa em 001 (DEC legado não entra) ---
+  - type: contains
+    path: "DECISIONS.md"
+    pattern: "## ADR-001:"
+    severity: error
+
+  - type: id_sequence
+    path: "DECISIONS.md"
+    pattern: "ADR-(\\d+)"
+    severity: error
+
+  # --- entrada legada preservada, sequência legada não prolongada ---
+  - type: contains
+    path: "DECISIONS.md"
+    pattern: "## DEC-001:"
+    severity: error
+
+  - type: not_contains
+    path: "DECISIONS.md"
+    pattern: "DEC-002"
+    severity: error
+
+  # --- formato MADR do template ---
+  - type: contains
+    path: "DECISIONS.md"
+    pattern: "**Status:** Aceito"
+    severity: error
+
+  - type: contains
+    path: "DECISIONS.md"
+    pattern: "**Decisor:** Bruno (líder técnico)"
+    severity: error
+
+  - type: contains
+    path: "DECISIONS.md"
+    pattern: "**Consequências:**"
+    severity: error
+
+  # --- rastreabilidade para a RN de origem ---
+  - type: contains
+    path: "DECISIONS.md"
+    pattern: "RN-003"
+    severity: error
+
+  - type: cross_ref
+    path: "DECISIONS.md"
+    pattern: "RN-(\\d+)"
+    sources: ["REQUIREMENTS.md"]
+    severity: error

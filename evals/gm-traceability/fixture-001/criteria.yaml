@@ -1,0 +1,73 @@
+---
+name: "Rastreabilidade — 3 RNs com gap em RN-003 e CR-001 refletido"
+description: >
+  REQUIREMENTS.md com RN-001..RN-003 + 4 downstreams em specs/ (DATA_MODEL
+  cobre RN-001/RN-002; API_CONTRACTS cobre as 3; ERROR_CATALOG e UI_SPEC
+  não cobrem RN-003) e CR-001 implementado em support/CHANGE_REQUESTS.md.
+  Verifica a matriz completa do gm-traceability em quality/TRACEABILITY.md:
+  status por artefato, seção de gaps para RN-003 e reflexo do CR-001.
+inputs_required: [REQUIREMENTS.md, specs/DATA_MODEL.md, specs/API_CONTRACTS.md, specs/UI_SPEC.md]
+
+checks:
+  - type: file_exists
+    path: "quality/TRACEABILITY.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "quality/TRACEABILITY.md"
+    severity: error
+
+  - type: section_exists
+    path: "quality/TRACEABILITY.md"
+    section: "## 1. Matriz RN vs Downstreams"
+    severity: error
+
+  - type: section_exists
+    path: "quality/TRACEABILITY.md"
+    section: "## 2. Gaps Detectados"
+    severity: error
+
+  - type: section_exists
+    path: "quality/TRACEABILITY.md"
+    section: "## 3. CRs Aprovados vs Implementados"
+    severity: error
+
+  - type: section_order
+    path: "quality/TRACEABILITY.md"
+    sections:
+      - "## 1. Matriz RN vs Downstreams"
+      - "## 2. Gaps Detectados"
+      - "## 3. CRs Aprovados vs Implementados"
+    severity: error
+
+  - type: table_has_columns
+    path: "quality/TRACEABILITY.md"
+    columns: ["RN", "Descrição", "DATA_MODEL", "API_CONTRACTS", "ERROR_CATALOG", "UI_SPEC", "Status"]
+    severity: error
+
+  - type: contains
+    path: "quality/TRACEABILITY.md"
+    pattern: "| gap |"
+    severity: error
+
+  - type: contains
+    path: "quality/TRACEABILITY.md"
+    pattern: "CR-001"
+    severity: error
+
+  - type: cross_ref
+    path: "quality/TRACEABILITY.md"
+    pattern: "RN-(\\d+)"
+    sources: ["REQUIREMENTS.md"]
+    severity: error
+
+  - type: id_sequence
+    path: "quality/TRACEABILITY.md"
+    pattern: "RN-(\\d+)"
+    allow_gaps: true
+    severity: error
+
+  - type: reference_match
+    path: "quality/TRACEABILITY.md"
+    expected: "output-expected/TRACEABILITY.md"
+    severity: error

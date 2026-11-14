@@ -1,0 +1,88 @@
+---
+name: "gm-knowledge-auditor — par P-09 com fallback honesto (sem banco no sandbox)"
+description: >
+  Sandbox de eval com stores T1-T3 mínimos (knowledge/api-design T1,
+  accumulation/patterns T2, rules/stack-playbook T3) e SEM banco do
+  runtime — fixtures não carregam opencode.db. Contrato do modo de erro
+  da skill (IMP-080): banco ausente não bloqueia; o relatório
+  docs/KNOWLEDGE_AUDIT.md (nome fixo no sandbox de eval) declara o erro
+  DB_MISSING, zera contadores explicitamente e reporta hit rate e tokens
+  como N/A (sem dados) — nunca zero fingido, nenhum percentual em
+  relatório sem dados. Relatório sem dados NUNCA faz merge no
+  METRICS.md — a declaração PROXY (heurística de globs) é obrigatória.
+inputs_required: [knowledge/INDEX.md, accumulation/patterns/INDEX.md, rules/stack-playbook.md, PROJECT_CHARTER.md]
+
+checks:
+  - type: file_exists
+    path: "docs/KNOWLEDGE_AUDIT.md"
+    severity: error
+
+  # --- modo degradado e declaração PROXY obrigatória ---
+  - type: contains
+    path: "docs/KNOWLEDGE_AUDIT.md"
+    pattern: "MODO DEGRADADO"
+    severity: error
+
+  - type: section_exists
+    path: "docs/KNOWLEDGE_AUDIT.md"
+    section: "## Declaração PROXY (obrigatória)"
+    severity: error
+
+  - type: contains
+    path: "docs/KNOWLEDGE_AUDIT.md"
+    pattern: "heurística de globs"
+    severity: error
+
+  # --- erro declarado, não silenciado (modo de erro da skill) ---
+  - type: contains
+    path: "docs/KNOWLEDGE_AUDIT.md"
+    pattern: "DB_MISSING"
+    severity: error
+
+  # --- fallback IMP-080: N/A nunca zero fingido ---
+  - type: contains
+    path: "docs/KNOWLEDGE_AUDIT.md"
+    pattern: "N/A (sem dados)"
+    severity: error
+
+  # --- estrutura do par P-09: hit rate + tokens ---
+  - type: section_exists
+    path: "docs/KNOWLEDGE_AUDIT.md"
+    section: "## Hit Rate Global"
+    severity: error
+
+  - type: section_exists
+    path: "docs/KNOWLEDGE_AUDIT.md"
+    section: "## Hit Rate por Store"
+    severity: error
+
+  - type: section_exists
+    path: "docs/KNOWLEDGE_AUDIT.md"
+    section: "## Metodologia e Limitações"
+    severity: error
+
+  - type: contains
+    path: "docs/KNOWLEDGE_AUDIT.md"
+    pattern: "T3"
+    severity: error
+
+  # --- invariante: nenhum percentual em relatório sem dados ---
+  - type: not_contains
+    path: "docs/KNOWLEDGE_AUDIT.md"
+    pattern: "%"
+    severity: warning
+
+  # --- sem dados = nenhum merge no METRICS.md ---
+  - type: not_file_exists
+    path: "docs/metrics/METRICS.md"
+    severity: error
+
+  - type: no_todos
+    path: "docs/KNOWLEDGE_AUDIT.md"
+    patterns: ["TODO", "FIXME"]
+    severity: warning
+
+  - type: reference_match
+    path: "docs/KNOWLEDGE_AUDIT.md"
+    expected: "output-expected/KNOWLEDGE_AUDIT.md"
+    severity: error

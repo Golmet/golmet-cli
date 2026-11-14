@@ -1,0 +1,82 @@
+---
+name: "gm-dba performance — N+1, índice faltante e SELECT * no MeuApp"
+description: >
+  Serviço PERFORMANCE do gm-dba (baseline AUTORADA — sem CLI: o kit só tem
+  comando determinístico para o serviço drift; performance é análise AI do
+  gm-dba). Workspace MeuApp self-contained com código quente em
+  `repo/MeuApp.Api` e três problemas claros: query em loop (N+1 em
+  `RelatorioService`), filtro sem índice em coluna de alta cardinalidade
+  (`Clientes.CpfCnpj` — RN-001) e SELECT * em SQL literal
+  (`PedidoRepository`). O relatório `specs/DB_PERFORMANCE.md` segue o
+  contrato do corpo da skill (`coredata/sources/gm-dba.md`, serviço 3):
+  achados com severidade, análise N+1, índices sugeridos com CREATE INDEX
+  pronto (nunca aplicado — DDL é gate) e declaração de honestidade
+  "não verificado contra schema vivo".
+inputs_required: [specs/DATA_MODEL.md, specs/REQUIREMENTS.md, repo/MeuApp.Api/Services/RelatorioService.cs]
+
+checks:
+  - type: file_exists
+    path: "specs/DB_PERFORMANCE.md"
+    severity: error
+
+  - type: contains
+    path: "specs/DB_PERFORMANCE.md"
+    pattern: "PRF-001"
+    severity: error
+
+  - type: contains
+    path: "specs/DB_PERFORMANCE.md"
+    pattern: "PRF-002"
+    severity: error
+
+  - type: contains
+    path: "specs/DB_PERFORMANCE.md"
+    pattern: "PRF-003"
+    severity: error
+
+  - type: contains
+    path: "specs/DB_PERFORMANCE.md"
+    pattern: "N+1"
+    severity: error
+
+  - type: contains
+    path: "specs/DB_PERFORMANCE.md"
+    pattern: "SELECT *"
+    severity: error
+
+  - type: contains
+    path: "specs/DB_PERFORMANCE.md"
+    pattern: "CREATE INDEX IX_Clientes_CpfCnpj"
+    severity: error
+
+  - type: contains
+    path: "specs/DB_PERFORMANCE.md"
+    pattern: "CREATE INDEX IX_Pedidos_ClienteId_CriadoEm"
+    severity: error
+
+  - type: contains
+    path: "specs/DB_PERFORMANCE.md"
+    pattern: "crítica: 1 · alta: 1 · média: 1 · n+1: 1 · índices sugeridos: 2"
+    severity: error
+
+  - type: section_order
+    path: "specs/DB_PERFORMANCE.md"
+    sections:
+      - "# DB PERFORMANCE — Queries, Índices e N+1"
+      - "## 1. Resumo de achados (3)"
+      - "## 2. N+1 — PRF-001 (Crítica)"
+      - "## 3. Filtro sem índice em coluna de alta cardinalidade — PRF-002 (Alta)"
+      - "## 4. SELECT * — PRF-003 (Média)"
+      - "## 5. Índices sugeridos (2)"
+      - "## Resumo"
+    severity: error
+
+  - type: no_todos
+    path: "specs/DB_PERFORMANCE.md"
+    patterns: ["TODO", "FIXME"]
+    severity: warning
+
+  - type: reference_match
+    path: "specs/DB_PERFORMANCE.md"
+    expected: "output-expected/specs/DB_PERFORMANCE.md"
+    severity: error

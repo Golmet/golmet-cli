@@ -1,0 +1,86 @@
+---
+name: "gm-restructure — modo IMP-011 flat → subpastas com relatório"
+description: >
+  Módulo MeuApp em layout flat pré-IMP-011 (DATA_MODEL, UI_SPEC,
+  TRACEABILITY, TASKS, LEGACY_CONTEXT e DEV_GLOSSARY na raiz; charter,
+  REQUIREMENTS e DECISIONS ficam na raiz). A skill move os artefatos para
+  as subpastas canônicas (specs/ · quality/ · delivery/ · support/ ·
+  glossaries/), atualiza os links relativos do REQUIREMENTS.md sem tocar
+  na prosa semântica e gera docs/MIGRATION_REPORT.md com a tabela de
+  arquivos movidos. Decisões (DEC-001) permanecem intactas — conteúdo
+  semântico nunca é editado.
+inputs_required: [PROJECT_CHARTER.md, REQUIREMENTS.md, DATA_MODEL.md, TRACEABILITY.md, TASKS.md]
+
+checks:
+  # --- artefatos nos destinos canônicos do mapeamento IMP-011 ---
+  - type: file_exists
+    path: "specs/DATA_MODEL.md"
+    severity: error
+
+  - type: file_exists
+    path: "quality/TRACEABILITY.md"
+    severity: error
+
+  - type: file_exists
+    path: "delivery/TASKS.md"
+    severity: error
+
+  - type: file_exists
+    path: "support/LEGACY_CONTEXT.md"
+    severity: error
+
+  - type: file_exists
+    path: "glossaries/DEV_GLOSSARY.md"
+    severity: error
+
+  # --- relatório de migração ---
+  - type: file_exists
+    path: "docs/MIGRATION_REPORT.md"
+    severity: error
+
+  - type: section_exists
+    path: "docs/MIGRATION_REPORT.md"
+    section: "## Arquivos movidos"
+    severity: error
+
+  - type: contains
+    path: "docs/MIGRATION_REPORT.md"
+    pattern: "**Modo:** IMP-011 (flat → estruturado)"
+    severity: error
+
+  - type: table_has_columns
+    path: "docs/MIGRATION_REPORT.md"
+    columns: ["Arquivo", "Origem", "Destino"]
+    severity: error
+
+  # --- referências cruzadas atualizadas (links relativos, não prosa) ---
+  - type: contains
+    path: "REQUIREMENTS.md"
+    pattern: "](specs/DATA_MODEL.md"
+    severity: error
+
+  - type: not_contains
+    path: "REQUIREMENTS.md"
+    pattern: "](DATA_MODEL.md)"
+    severity: error
+
+  - type: contains
+    path: "REQUIREMENTS.md"
+    pattern: "](delivery/TASKS.md"
+    severity: error
+
+  # --- prosa semântica intacta (decisões preservadas) ---
+  - type: contains
+    path: "DECISIONS.md"
+    pattern: "DEC-001 — E-mail como identificador único de cliente"
+    severity: error
+
+  - type: no_todos
+    path: "docs/MIGRATION_REPORT.md"
+    patterns: ["TODO", "FIXME"]
+    severity: warning
+
+  - type: reference_match
+    path: "docs/MIGRATION_REPORT.md"
+    expected: "output-expected/MIGRATION_REPORT.md"
+    severity: error

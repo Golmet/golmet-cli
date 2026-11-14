@@ -1,0 +1,67 @@
+---
+name: "Pattern library — extração de padrões da retrospectiva com merge"
+description: >
+  Retrospectiva do MeuApp com dois padrões novos (envelope-erro-api em
+  codigo, checklist-deploy-vps em processo) e INDEX existente com o padrão
+  paginacao-offset. Verifica os PATTERN.md criados seguindo o template
+  (metadados de maturidade, data_ultima_revisao, status ativo), a
+  preservação do padrão pré-existente (merge incremental, nunca delete) e
+  o INDEX.md atualizado com a coluna de staleness.
+inputs_required: [docs/RETROSPECTIVE.md, patterns/INDEX.md]
+
+checks:
+  - type: file_exists
+    path: "patterns/INDEX.md"
+    severity: error
+
+  - type: file_exists
+    path: "patterns/codigo/envelope-erro-api/PATTERN.md"
+    severity: error
+
+  - type: file_exists
+    path: "patterns/processo/checklist-deploy-vps/PATTERN.md"
+    severity: error
+
+  - type: file_exists
+    path: "patterns/codigo/paginacao-offset/PATTERN.md"
+    severity: error
+
+  - type: contains
+    path: "patterns/INDEX.md"
+    pattern: "data_ultima_revisao"
+    severity: error
+
+  - type: contains
+    path: "patterns/INDEX.md"
+    pattern: "paginacao-offset"
+    severity: error
+
+  - type: contains
+    path: "patterns/INDEX.md"
+    pattern: "envelope-erro-api"
+    severity: error
+
+  - type: contains
+    path: "patterns/INDEX.md"
+    pattern: "checklist-deploy-vps"
+    severity: error
+
+  - type: contains
+    path: "patterns/codigo/envelope-erro-api/PATTERN.md"
+    pattern: "**Maturidade:** validado"
+    severity: error
+
+  - type: contains
+    path: "patterns/codigo/envelope-erro-api/PATTERN.md"
+    pattern: "**Status:** ativo"
+    severity: error
+
+  - type: contains
+    path: "patterns/processo/checklist-deploy-vps/PATTERN.md"
+    pattern: "**Status:** ativo"
+    severity: error
+
+  - type: reference_match
+    path: "patterns/INDEX.md"
+    expected: "output-expected/patterns/INDEX.md"
+    severity: error

@@ -1,0 +1,54 @@
+mode: manual
+---
+name: "Adopt L2 — workspace sem charter (só delivery/ solto) ABORTA antes do apply"
+description: >
+  NEGATIVO: workspace legado SEM PROJECT_CHARTER.md — apenas um arquivo
+  RN-*.md solto na raiz do delivery/ (variante legada sem grupo, sem front
+  matter). Pré-condição do handshake assistido: o gate do passo 3
+  ("charter pode nascer confirmed?") exige o charter com §1.1 (repos +
+  HEAD congelado); sem charter não há julgamento possível e o modo de
+  erro strict NUNCA roda --apply com gates sem resposta — registra a
+  pendência e interrompe o passo (retomada recomeça do dry-run). Esperado:
+  ABORTAR sem escrever NADA — golmet.yaml, golmet.index.json,
+  .golmet/manifest.json e o scaffold §2 (PROJECT_CHARTER.md,
+  reverse/CANDIDATES.md, REQUIREMENTS.md) não podem existir, e a prosa
+  legada segue intata (nenhuma diretiva de estado adicionada).
+inputs_required: [delivery/RN-001 - Reservas.md]
+
+checks:
+  # --- abort: nenhum artefato do kit surgiu ---
+  - type: not_file_exists
+    path: "golmet.yaml"
+    severity: error
+
+  - type: not_file_exists
+    path: "golmet.index.json"
+    severity: error
+
+  - type: not_file_exists
+    path: ".golmet/manifest.json"
+    severity: error
+
+  - type: not_file_exists
+    path: "PROJECT_CHARTER.md"
+    severity: error
+
+  - type: not_file_exists
+    path: "reverse/CANDIDATES.md"
+    severity: error
+
+  - type: not_file_exists
+    path: "REQUIREMENTS.md"
+    severity: error
+
+  # --- o input de fato é um workspace legado sem charter ---
+  - type: contains
+    path: "delivery/RN-001 - Reservas.md"
+    pattern: "arquivo solto na raiz do delivery"
+    severity: error
+
+  # --- a prosa nunca foi adotada (nenhuma diretiva de estado) ---
+  - type: not_contains
+    path: "delivery"
+    pattern: "> estado:"
+    severity: error

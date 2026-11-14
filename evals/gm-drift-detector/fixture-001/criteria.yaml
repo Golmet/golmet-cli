@@ -1,0 +1,73 @@
+---
+name: "Drift detector — módulo com baseline de 3 medições"
+description: >
+  Módulo MeuApp com specs e DRIFT_BASELINE.md contendo 3 medições
+  (out/nov de 2025). Verifica o relatório de drift do gm-drift-detector:
+  score 0-100 por artefato, tendência contra o Baseline #3 e
+  recomendações com skill corretiva.
+inputs_required: [REQUIREMENTS.md, DECISIONS.md, specs/DATA_MODEL.md, specs/API_CONTRACTS.md, quality/DRIFT_BASELINE.md]
+
+checks:
+  - type: file_exists
+    path: "quality/DRIFT_REPORT_2026-01-01-0900.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "quality/DRIFT_REPORT_2026-01-01-0900.md"
+    severity: error
+
+  - type: section_exists
+    path: "quality/DRIFT_REPORT_2026-01-01-0900.md"
+    section: "## Resumo Executivo"
+    severity: error
+
+  - type: section_exists
+    path: "quality/DRIFT_REPORT_2026-01-01-0900.md"
+    section: "## Drift Score por Artefato"
+    severity: error
+
+  - type: contains
+    path: "quality/DRIFT_REPORT_2026-01-01-0900.md"
+    pattern: "Drift Score Global"
+    severity: error
+
+  - type: table_has_columns
+    path: "quality/DRIFT_REPORT_2026-01-01-0900.md"
+    columns: ["Artefato", "Score"]
+    severity: error
+
+  - type: section_order
+    path: "quality/DRIFT_REPORT_2026-01-01-0900.md"
+    sections:
+      - "## Resumo Executivo"
+      - "## Drift Score por Artefato"
+      - "## Detalhamento por Artefato"
+      - "## Recomendações"
+    severity: error
+
+  - type: cross_ref
+    path: "quality/DRIFT_REPORT_2026-01-01-0900.md"
+    pattern: "RN-(\\d+)"
+    sources: ["REQUIREMENTS.md"]
+    severity: error
+
+  - type: not_contains
+    path: "quality/DRIFT_REPORT_2026-01-01-0900.md"
+    pattern: "ORGEX"
+    severity: warning
+
+  - type: no_todos
+    path: "quality/DRIFT_REPORT_2026-01-01-0900.md"
+    patterns: ["TODO", "FIXME", "PEND-"]
+    severity: warning
+
+  - type: line_count_range
+    path: "quality/DRIFT_REPORT_2026-01-01-0900.md"
+    min: 60
+    max: 200
+    severity: warning
+
+  - type: reference_match
+    path: "quality/DRIFT_REPORT_2026-01-01-0900.md"
+    expected: "output-expected/quality/DRIFT_REPORT_2026-01-01-0900.md"
+    severity: error

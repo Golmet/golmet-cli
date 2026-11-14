@@ -1,0 +1,71 @@
+---
+name: "Criação de primary agent — gm-bar com delegação"
+description: >
+  PEDIDO.md com os requisitos já coletados (nome gm-bar, domínio de
+  auditoria de qualidade, invoca @gm-foosub existente). Verifica
+  agents/gm-bar.md com mode: primary, permissão ampla, tabela de
+  Subagents citando o subagent e SEM `name:` no front matter (o nome vem
+  do arquivo).
+inputs_required: [PEDIDO.md, agents/gm-foosub.md]
+
+checks:
+  - type: file_exists
+    path: "agents/gm-bar.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "agents/gm-bar.md"
+    severity: error
+
+  - type: contains
+    path: "agents/gm-bar.md"
+    pattern: "mode: primary"
+    severity: error
+
+  - type: contains
+    path: "agents/gm-bar.md"
+    pattern: "temperature: 0.3"
+    severity: error
+
+  # permissão ampla (padrão do Quadri)
+  - type: contains
+    path: "agents/gm-bar.md"
+    pattern: "task: allow"
+    severity: error
+
+  # delegação ao subagent existente
+  - type: contains
+    path: "agents/gm-bar.md"
+    pattern: "@gm-foosub"
+    severity: error
+
+  # primary não usa `name:` no front matter — o nome vem do arquivo
+  - type: not_contains
+    path: "agents/gm-bar.md"
+    pattern: "name:"
+    severity: error
+
+  - type: section_exists
+    path: "agents/gm-bar.md"
+    section: "## Regras de precedência"
+    severity: error
+
+  - type: section_order
+    path: "agents/gm-bar.md"
+    sections:
+      - "## Identidade e propósito"
+      - "## Regras de precedência"
+      - "## Início de sessão"
+      - "### Subagents"
+      - "## Comportamento"
+    severity: error
+
+  - type: no_todos
+    path: "agents/gm-bar.md"
+    patterns: ["TODO", "FIXME", "PEND-"]
+    severity: warning
+
+  - type: reference_match
+    path: "agents/gm-bar.md"
+    expected: "output-expected/agents/gm-bar.md"
+    severity: error

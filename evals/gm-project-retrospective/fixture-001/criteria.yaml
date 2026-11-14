@@ -1,0 +1,88 @@
+---
+name: "gm-project-retrospective — Scorecard 14 segmentos com evidência"
+description: >
+  Projeto MeuApp concluído: delivery/2026-09 com 2 features em [done]
+  (RN-001 com RN-001-1/2, RN-002 com RN-002-2), WORKFLOW_IMPROVEMENTS.md
+  com IMP-001/IMP-002, DECISIONS.md com ADR-001 e quality/QUALITY_GATE.md
+  com gate PASS e cobertura 84%. A skill gera RETROSPECTIVE.md com o
+  Scorecard do Workflow (IMP-048): os 14 segmentos da taxonomia fixa
+  (7 fases + 7 transversais), nota 0-10 SOMENTE com evidência do período
+  (sem uso = N/A — nunca chute) e nota geral = média das fases com
+  evidência. IMPs/ADRs citados devem existir nas fontes (anti-invenção).
+inputs_required: [PROJECT_CHARTER.md, REQUIREMENTS.md, WORKFLOW_IMPROVEMENTS.md, DECISIONS.md, quality/QUALITY_GATE.md]
+
+checks:
+  - type: file_exists
+    path: "RETROSPECTIVE.md"
+    severity: error
+
+  # --- seção do scorecard com a taxonomia fixa (7 fases + 7 transversais) ---
+  - type: section_exists
+    path: "RETROSPECTIVE.md"
+    section: "## Scorecard do Workflow (IMP-048)"
+    severity: error
+
+  - type: contains
+    path: "RETROSPECTIVE.md"
+    pattern: "Intake"
+    severity: error
+
+  - type: contains
+    path: "RETROSPECTIVE.md"
+    pattern: "Portabilidade & onboarding"
+    severity: error
+
+  - type: table_has_columns
+    path: "RETROSPECTIVE.md"
+    columns: ["Segmento", "Nota", "Evidência"]
+    severity: error
+
+  # --- sem uso = N/A declarado (nunca chute) ---
+  - type: contains
+    path: "RETROSPECTIVE.md"
+    pattern: "N/A"
+    severity: error
+
+  # --- métricas do projeto extraídas dos artefatos ---
+  - type: section_exists
+    path: "RETROSPECTIVE.md"
+    section: "## Métricas do projeto"
+    severity: error
+
+  - type: contains
+    path: "RETROSPECTIVE.md"
+    pattern: "Cobertura de testes"
+    severity: error
+
+  # --- evidência rastreia para as fontes do período ---
+  - type: contains
+    path: "RETROSPECTIVE.md"
+    pattern: "IMP-001"
+    severity: error
+
+  - type: contains
+    path: "RETROSPECTIVE.md"
+    pattern: "ADR-001"
+    severity: error
+
+  - type: cross_ref
+    path: "RETROSPECTIVE.md"
+    pattern: "IMP-(\\d+)"
+    sources: ["WORKFLOW_IMPROVEMENTS.md"]
+    severity: error
+
+  - type: cross_ref
+    path: "RETROSPECTIVE.md"
+    pattern: "ADR-(\\d+)"
+    sources: ["DECISIONS.md"]
+    severity: error
+
+  - type: no_todos
+    path: "RETROSPECTIVE.md"
+    patterns: ["TODO", "FIXME"]
+    severity: warning
+
+  - type: reference_match
+    path: "RETROSPECTIVE.md"
+    expected: "output-expected/RETROSPECTIVE.md"
+    severity: error

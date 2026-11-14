@@ -1,0 +1,65 @@
+---
+name: "Update do pack meuapp — o pin manda, accumulation nunca instala"
+description: >
+  gm-pack-update sobre o workspace neutro do MeuApp: o cache
+  (`cache/meuapp/`, papel de `~/.golmet/packs/`) contém o estado do pin
+  (v0.1.0) e o remote já tem v0.2.0 — a skill REINSTALA a partir do pin
+  (overlay `skills/gm-resumo/SKILL.md` no engine) e MANTÉM o pin do
+  `golmet.yaml` (mover só sob pedido explícito). Nunca instala
+  `accumulation/`. Artefatos congelados da baseline autorada: provide
+  instalado (conteúdo do pin, sem 0.2.0) e golmet.yaml inalterado.
+inputs_required: [golmet.yaml, cache/meuapp/pack.yaml]
+
+checks:
+  - type: file_exists
+    path: "skills/gm-resumo/SKILL.md"
+    severity: error
+
+  - type: contains
+    path: "skills/gm-resumo/SKILL.md"
+    pattern: "gm-resumo"
+    severity: error
+
+  - type: not_contains
+    path: "skills/gm-resumo/SKILL.md"
+    pattern: "0.2.0"
+    severity: error
+
+  - type: file_exists
+    path: "golmet.yaml"
+    severity: error
+
+  - type: contains
+    path: "golmet.yaml"
+    pattern: "pin: 9e8b7c1d2a3f4e5b6a7c8d9e0f1a2b3c4d5e6f70"
+    severity: error
+
+  - type: contains
+    path: "golmet.yaml"
+    pattern: "repo: minha-org/pack-meuapp"
+    severity: error
+
+  - type: not_file_exists
+    path: "accumulation/patterns/README.md"
+    severity: error
+
+  - type: no_todos
+    path: "skills/gm-resumo/SKILL.md"
+    patterns: ["TODO", "FIXME"]
+    severity: warning
+
+  - type: line_count_range
+    path: "skills/gm-resumo/SKILL.md"
+    min: 5
+    max: 60
+    severity: warning
+
+  - type: contains
+    path: "cache/meuapp/pack.yaml"
+    pattern: "version: 0.1.0"
+    severity: error
+
+  - type: reference_match
+    path: "golmet.yaml"
+    expected: "output-expected/golmet.yaml"
+    severity: error

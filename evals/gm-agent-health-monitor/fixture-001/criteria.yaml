@@ -1,0 +1,65 @@
+---
+name: "Health monitor — registry mínimo com skill quebrada"
+description: >
+  Módulo MeuApp com config mínima (registry.yaml com 2 skills e 1
+  subagent) e a skill calc-frete com erro proposital (seções
+  obrigatórias ausentes e placeholder no corpo). Verifica o relatório
+  de módulo do gm-agent-health-monitor em quality/.
+inputs_required: [PROJECT_CHARTER.md, config/registry.yaml, config/skills/calc-frete/SKILL.md, config/skills/calc-imposto/SKILL.md, quality/PROPAGATION_STATUS.md]
+
+checks:
+  - type: file_exists
+    path: "quality/AGENT_HEALTH_REPORT_2026-01-01-0800.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "quality/AGENT_HEALTH_REPORT_2026-01-01-0800.md"
+    severity: error
+
+  - type: section_exists
+    path: "quality/AGENT_HEALTH_REPORT_2026-01-01-0800.md"
+    section: "## Resumo"
+    severity: error
+
+  - type: section_exists
+    path: "quality/AGENT_HEALTH_REPORT_2026-01-01-0800.md"
+    section: "## B. Skills"
+    severity: error
+
+  - type: contains
+    path: "quality/AGENT_HEALTH_REPORT_2026-01-01-0800.md"
+    pattern: "calc-frete"
+    severity: error
+
+  - type: contains
+    path: "quality/AGENT_HEALTH_REPORT_2026-01-01-0800.md"
+    pattern: "calc-imposto"
+    severity: error
+
+  - type: contains
+    path: "quality/AGENT_HEALTH_REPORT_2026-01-01-0800.md"
+    pattern: "config/registry.yaml"
+    severity: error
+
+  - type: table_has_columns
+    path: "quality/AGENT_HEALTH_REPORT_2026-01-01-0800.md"
+    columns: ["Skill", "Status"]
+    severity: error
+
+  - type: section_order
+    path: "quality/AGENT_HEALTH_REPORT_2026-01-01-0800.md"
+    sections:
+      - "## Resumo"
+      - "## B. Skills"
+      - "## Recomendações"
+    severity: error
+
+  - type: no_todos
+    path: "quality/AGENT_HEALTH_REPORT_2026-01-01-0800.md"
+    patterns: ["TODO", "FIXME", "PEND-"]
+    severity: warning
+
+  - type: reference_match
+    path: "quality/AGENT_HEALTH_REPORT_2026-01-01-0800.md"
+    expected: "output-expected/quality/AGENT_HEALTH_REPORT_2026-01-01-0800.md"
+    severity: error

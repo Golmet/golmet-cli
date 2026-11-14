@@ -1,0 +1,62 @@
+---
+name: "Scaffold do pack meuapp — contrato FORMATO §3.1, repo privado e topic golmet-pack"
+description: >
+  gm-pack-scaffold sobre o brief neutro do MeuApp: cria o esqueleto
+  `packs/meuapp/` (pack.yaml v0.1.0 conforme FORMATO §3.1, README com
+  instrução de instalação e convenção do topic `golmet-pack`, skill de
+  exemplo em `skills/`, accumulation com README). O pack.yaml é o artefato
+  congelado da baseline autorada.
+inputs_required: [golmet.yaml, brief/pack-brief.md]
+
+checks:
+  - type: file_exists
+    path: "packs/meuapp/pack.yaml"
+    severity: error
+
+  - type: contains
+    path: "packs/meuapp/pack.yaml"
+    pattern: "id: meuapp"
+    severity: error
+
+  - type: contains
+    path: "packs/meuapp/pack.yaml"
+    pattern: "version: 0.1.0"
+    severity: error
+
+  - type: contains
+    path: "packs/meuapp/pack.yaml"
+    pattern: "requires-core"
+    severity: error
+
+  - type: contains
+    path: "packs/meuapp/pack.yaml"
+    pattern: "no-override: true"
+    severity: error
+
+  - type: contains
+    path: "packs/meuapp/pack.yaml"
+    pattern: "skills/"
+    severity: error
+
+  - type: file_exists
+    path: "packs/meuapp/README.md"
+    severity: error
+
+  - type: contains
+    path: "packs/meuapp/README.md"
+    pattern: "golmet-pack"
+    severity: error
+
+  - type: contains
+    path: "packs/meuapp/README.md"
+    pattern: "golmet pack add"
+    severity: error
+
+  - type: file_exists
+    path: "packs/meuapp/skills/gm-resumo/SKILL.md"
+    severity: error
+
+  - type: reference_match
+    path: "packs/meuapp/pack.yaml"
+    expected: "output-expected/packs/meuapp/pack.yaml"
+    severity: error

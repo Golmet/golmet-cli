@@ -1,0 +1,98 @@
+mode: manual
+---
+name: "Validate L1 — workspace com 4 violações H gera VALIDATION_REPORT FAIL"
+description: >
+  POSITIVA: workspace FORMATO com 4 violações hard reais (H3 Feature ready
+  com anchor draft, H2 Task duplicada, H1 Feature ancorada em PEND, H5
+  Feature sem front matter). A gm-validate roda o pré-scan determinístico
+  do kit ('golmet validate <ws> --json' → 4 erro(s), 0 aviso(s)), NÃO
+  corrige a prosa (leitura pura) e congela quality/VALIDATION_REPORT.md
+  com ok=false por violação, contagens coerentes e status FAIL. Coerência:
+  as violações seguem presentes no workspace pós-skill (checks de
+  intactidão) e o relatório lista as 4 regras nos locais exatos do
+  pré-scan.
+inputs_required: [REQUIREMENTS.md, golmet.yaml]
+
+checks:
+  # --- o relatório existe e tem estrutura da skill ---
+  - type: file_exists
+    path: "quality/VALIDATION_REPORT.md"
+    severity: error
+
+  - type: section_exists
+    path: "quality/VALIDATION_REPORT.md"
+    section: "## 1. Resumo"
+    severity: error
+
+  - type: section_exists
+    path: "quality/VALIDATION_REPORT.md"
+    section: "## 2. Violações"
+    severity: error
+
+  # --- as 4 violações do pré-scan aparecem no relatório ---
+  - type: contains
+    path: "quality/VALIDATION_REPORT.md"
+    pattern: "Feature ready exige anchor RN active — RN-001 está draft"
+    severity: error
+
+  - type: contains
+    path: "quality/VALIDATION_REPORT.md"
+    pattern: "Task duplicada na Feature"
+    severity: error
+
+  - type: contains
+    path: "quality/VALIDATION_REPORT.md"
+    pattern: "Feature ancorada em PEND — PEND nunca ancora Feature"
+    severity: error
+
+  - type: contains
+    path: "quality/VALIDATION_REPORT.md"
+    pattern: "front matter ausente (status e anchor são obrigatórios)"
+    severity: error
+
+  # --- status FAIL com contagens coerentes com o pré-scan ---
+  - type: contains
+    path: "quality/VALIDATION_REPORT.md"
+    pattern: "| Status | FAIL |"
+    severity: error
+
+  - type: contains
+    path: "quality/VALIDATION_REPORT.md"
+    pattern: "| Erros (H) | 4 |"
+    severity: error
+
+  - type: contains
+    path: "quality/VALIDATION_REPORT.md"
+    pattern: "| Avisos (S) | 0 |"
+    severity: error
+
+  - type: line_count_range
+    path: "quality/VALIDATION_REPORT.md"
+    min: 25
+    max: 150
+    severity: warning
+
+  # --- coerência com o status FAIL: as violações seguem no workspace ---
+  #     (a skill reporta, nunca corrige — H5 segue quebrado)
+  - type: frontmatter_valid
+    path: "delivery/2026-11/RN-003 — Relatórios — Feature.md"
+    expect: fail
+    severity: error
+
+  # --- H1 intacto: anchor continua PEND ---
+  - type: contains
+    path: "delivery/2026-11/RN-002 — Cancelamento — Feature.md"
+    pattern: "anchor: PEND-001"
+    severity: error
+
+  # --- H3 intacto: RN-001 continua draft ---
+  - type: contains
+    path: "REQUIREMENTS.md"
+    pattern: "> estado: draft"
+    severity: error
+
+  # --- H2 intacto: a Task duplicada segue no arquivo ---
+  - type: contains
+    path: "delivery/2026-11/RN-001 — Agendamento — Feature.md"
+    pattern: "### RN-001-1. Endpoint duplicado (cenário de teste)"
+    severity: error

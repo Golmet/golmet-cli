@@ -1,0 +1,101 @@
+---
+name: "gm-legacy-guide — camada humana com rastreabilidade e formulário"
+description: >
+  Workspace MeuApp com substrato de reverse pronto: ledger
+  reverse/CANDIDATES.md (CAND-001 approved→RN-001, CAND-002/CAND-003
+  pending, CAND-004 rejected), support/LEGACY_CONTEXT.md (armadilhas),
+  DECISIONS.md (DEC-001 UTC) e código legado fictício em legado/src/
+  (domínios Pedidos e Estoque derivados do código). A skill gera a camada
+  humana em reverse/guide/ (nomes de arquivo em inglês, conteúdo PT-BR):
+  visão por domínios, mapa de impacto com regras confirmadas com dente,
+  guias por domínio (✅ graduada / ⏳ pendente / ❌ rejeitada) e formulário
+  com resposta livre. Regra anti-alucinação: todo fato técnico rastreia
+  para ledger, DECISIONS ou código com path; regra extraída nasce CAND —
+  nunca RN direta.
+inputs_required: [reverse/CANDIDATES.md, support/LEGACY_CONTEXT.md, DECISIONS.md, REQUIREMENTS.md]
+
+checks:
+  # --- os 4 artefatos da camada humana ---
+  - type: file_exists
+    path: "reverse/guide/OVERVIEW.md"
+    severity: error
+
+  - type: file_exists
+    path: "reverse/guide/IMPACT_MAP.md"
+    severity: error
+
+  - type: file_exists
+    path: "reverse/guide/GUIDES/Pedidos.md"
+    severity: error
+
+  - type: file_exists
+    path: "reverse/guide/FORMS/Pedidos.md"
+    severity: error
+
+  # --- domínios derivados do código (nunca inventados) ---
+  - type: contains
+    path: "reverse/guide/OVERVIEW.md"
+    pattern: "Estoque"
+    severity: error
+
+  # --- anti-alucinação: evidência de código com path ---
+  - type: contains
+    path: "reverse/guide/"
+    pattern: "legado/src/PedidoService.cs"
+    severity: error
+
+  # --- mapa de impacto: regra confirmada com dente + armadilha rastreando DECISIONS ---
+  - type: contains
+    path: "reverse/guide/IMPACT_MAP.md"
+    pattern: "RN-001"
+    severity: error
+
+  - type: contains
+    path: "reverse/guide/IMPACT_MAP.md"
+    pattern: "DEC-001"
+    severity: error
+
+  # --- guia: ciclo de vida separa graduada de pendente ---
+  - type: contains
+    path: "reverse/guide/GUIDES/Pedidos.md"
+    pattern: "CAND-003"
+    severity: error
+
+  - type: contains
+    path: "reverse/guide/GUIDES/Pedidos.md"
+    pattern: "CAND-004"
+    severity: error
+
+  # --- formulário: pergunta pendente + vocabulário de write-back parseável ---
+  - type: contains
+    path: "reverse/guide/FORMS/Pedidos.md"
+    pattern: "CAND-003"
+    severity: error
+
+  - type: contains
+    path: "reverse/guide/FORMS/Pedidos.md"
+    pattern: "Não sei"
+    severity: error
+
+  # --- regra extraída nasce CAND: nenhum RN alucinado nos guias ---
+  - type: cross_ref
+    path: "reverse/guide/"
+    pattern: "RN-(\\d+)"
+    sources: ["REQUIREMENTS.md"]
+    severity: error
+
+  # --- ledger nunca editado pela skill (fonte do ESTADO) ---
+  - type: contains
+    path: "reverse/CANDIDATES.md"
+    pattern: "### CAND-002 — Reserva de estoque por 30 minutos"
+    severity: error
+
+  - type: no_todos
+    path: "reverse/guide/"
+    patterns: ["TODO", "FIXME"]
+    severity: warning
+
+  - type: reference_match
+    path: "reverse/guide/OVERVIEW.md"
+    expected: "output-expected/OVERVIEW.md"
+    severity: error

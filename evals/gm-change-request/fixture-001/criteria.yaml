@@ -1,0 +1,72 @@
+---
+name: "Mudança — CR-002 pending com Origem e Bloco 0 registrado"
+description: >
+  REQUIREMENTS.md com RN-001..RN-003 e support/CHANGE_REQUESTS.md parcial
+  (CR-001 implemented). Solicitação nova sobre a RN-002 com score >= 70
+  (CR direto) vira CR-002 pending via merge incremental: entrada CR-001
+  intacta, campo Origem (IMP-REF) preenchido, validação de abordagem
+  (Bloco 0) registrada na Descrição e REQUIREMENTS.md intocado.
+inputs_required: [REQUIREMENTS.md, support/CHANGE_REQUESTS.md]
+
+checks:
+  - type: file_exists
+    path: "support/CHANGE_REQUESTS.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "support/CHANGE_REQUESTS.md"
+    severity: error
+
+  # --- CR novo registrado ---
+  - type: contains
+    path: "support/CHANGE_REQUESTS.md"
+    pattern: "## CR-002:"
+    severity: error
+
+  - type: contains
+    path: "support/CHANGE_REQUESTS.md"
+    pattern: "**Status:** pending"
+    severity: error
+
+  - type: contains
+    path: "support/CHANGE_REQUESTS.md"
+    pattern: "**RN afetada:** RN-002"
+    severity: error
+
+  - type: contains
+    path: "support/CHANGE_REQUESTS.md"
+    pattern: "**Origem:** evolucao"
+    severity: error
+
+  - type: contains
+    path: "support/CHANGE_REQUESTS.md"
+    pattern: "**Impacto visual:** não"
+    severity: error
+
+  # --- merge incremental: CR anterior preservado ---
+  - type: contains
+    path: "support/CHANGE_REQUESTS.md"
+    pattern: "## CR-001:"
+    severity: error
+
+  - type: contains
+    path: "support/CHANGE_REQUESTS.md"
+    pattern: "**Status:** implemented"
+    severity: error
+
+  # --- nunca edita REQUIREMENTS.md (a mudança não vira RN sem aprovação) ---
+  - type: not_contains
+    path: "REQUIREMENTS.md"
+    pattern: "CR-002"
+    severity: error
+
+  - type: cross_ref
+    path: "support/CHANGE_REQUESTS.md"
+    pattern: "RN-(\\d+)"
+    sources: ["REQUIREMENTS.md"]
+    severity: error
+
+  - type: reference_match
+    path: "support/CHANGE_REQUESTS.md"
+    expected: "output-expected/CHANGE_REQUESTS.md"
+    severity: error

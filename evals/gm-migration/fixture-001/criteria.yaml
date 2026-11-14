@@ -1,0 +1,75 @@
+---
+name: "Migration — mapeamento campo a campo com UP/DOWN"
+description: >
+  MeuApp com tabelas legadas (TB_CLIENTE_LEGADO, TB_PEDIDO_LEGADO),
+  REQUIREMENTS com RNs de migração e DATA_MODEL de destino. Verifica o
+  MIGRATION.md do gm-migration: escopo, mapeamento campo a campo,
+  scripts UP/DOWN, cronograma, validação e riscos.
+inputs_required: [REQUIREMENTS.md, support/LEGACY_CONTEXT.md, specs/DATA_MODEL.md]
+
+checks:
+  - type: file_exists
+    path: "support/MIGRATION.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "support/MIGRATION.md"
+    severity: error
+
+  - type: section_exists
+    path: "support/MIGRATION.md"
+    section: "## 2. Mapeamento de Dados"
+    severity: error
+
+  - type: section_order
+    path: "support/MIGRATION.md"
+    sections:
+      - "## 1. Escopo da Migração"
+      - "## 2. Mapeamento de Dados"
+      - "## 3. Scripts"
+      - "## 4. Cronograma"
+      - "## 5. Validação Pós-Migração"
+      - "## 6. Riscos"
+    severity: error
+
+  - type: table_has_columns
+    path: "support/MIGRATION.md"
+    columns: ["Campo legado", "Campo novo", "Transformação"]
+    severity: error
+
+  - type: contains
+    path: "support/MIGRATION.md"
+    pattern: "TB_CLIENTE_LEGADO"
+    severity: error
+
+  - type: contains
+    path: "support/MIGRATION.md"
+    pattern: "### 3.2 Rollback (DOWN)"
+    severity: error
+
+  - type: contains
+    path: "support/MIGRATION.md"
+    pattern: "```sql"
+    severity: error
+
+  - type: cross_ref
+    path: "support/MIGRATION.md"
+    pattern: "RN-(\\d+)"
+    sources: ["REQUIREMENTS.md"]
+    severity: error
+
+  - type: no_todos
+    path: "support/MIGRATION.md"
+    patterns: ["TODO", "FIXME", "PEND-"]
+    severity: warning
+
+  - type: line_count_range
+    path: "support/MIGRATION.md"
+    min: 50
+    max: 220
+    severity: warning
+
+  - type: reference_match
+    path: "support/MIGRATION.md"
+    expected: "output-expected/support/MIGRATION.md"
+    severity: error

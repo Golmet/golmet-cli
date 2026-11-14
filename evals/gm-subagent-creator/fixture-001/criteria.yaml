@@ -1,0 +1,70 @@
+---
+name: "Criação de subagent — gm-foosub read-only"
+description: >
+  PEDIDO.md com os requisitos já coletados (nome gm-foosub, perfil
+  read-only, sem skills invocadas). Verifica agents/gm-foosub.md com front
+  matter mode: subagent, menor privilégio (edit/write/bash deny), sem o
+  campo proibido `tools:` e com as seções do template.
+inputs_required: [PEDIDO.md]
+
+checks:
+  - type: file_exists
+    path: "agents/gm-foosub.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "agents/gm-foosub.md"
+    severity: error
+
+  - type: contains
+    path: "agents/gm-foosub.md"
+    pattern: "name: gm-foosub"
+    severity: error
+
+  - type: contains
+    path: "agents/gm-foosub.md"
+    pattern: "mode: subagent"
+    severity: error
+
+  - type: contains
+    path: "agents/gm-foosub.md"
+    pattern: "temperature: 0.1"
+    severity: error
+
+  # perfil read-only — menor privilégio
+  - type: contains
+    path: "agents/gm-foosub.md"
+    pattern: "edit: deny"
+    severity: error
+
+  - type: contains
+    path: "agents/gm-foosub.md"
+    pattern: "write: deny"
+    severity: error
+
+  - type: contains
+    path: "agents/gm-foosub.md"
+    pattern: "bash: deny"
+    severity: error
+
+  # campo proibido na schema do engine (o correto é permission:)
+  - type: not_contains
+    path: "agents/gm-foosub.md"
+    pattern: "tools:"
+    severity: error
+
+  - type: section_order
+    path: "agents/gm-foosub.md"
+    sections:
+      - "## Princípios"
+      - "## Lê (upstream)"
+      - "## Gera (downstream)"
+      - "## Nunca edita"
+      - "## Tools disponíveis"
+      - "## Algoritmo"
+    severity: error
+
+  - type: reference_match
+    path: "agents/gm-foosub.md"
+    expected: "output-expected/agents/gm-foosub.md"
+    severity: error

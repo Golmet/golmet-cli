@@ -1,0 +1,80 @@
+---
+name: "Adopt - workspace legado vira FORMATO sem tocar na prosa"
+description: >
+  Handshake da gm-adopt em forma de fixture: o engine semeia o workspace
+  com o input (charter sem front matter, RN duplicada H2, evidência sem
+  hash S4), roda 'golmet adopt --dry-run' (deve escrever NADA — leitura
+  pura), confirma os gates e roda 'golmet adopt --apply --charter-status
+  draft --keep-legacy-layouts'. O kit pontua o ESTADO FINAL do workspace:
+  golmet.yaml + golmet.index.json criados, charter com front matter
+  prefixado, prosa original intacta (o kit NUNCA edita prosa nem inventa
+  hash — re-pin é do agente), zona .golmet criada.
+inputs_required: [PROJECT_CHARTER.md, REQUIREMENTS.md]
+
+checks:
+  # --- transform determinístico executado ---
+  - type: file_exists
+    path: "golmet.yaml"
+    severity: error
+
+  - type: file_exists
+    path: "golmet.index.json"
+    severity: error
+
+  - type: contains
+    path: "golmet.index.json"
+    pattern: "\"format\": 1"
+    severity: error
+
+  - type: file_exists
+    path: ".golmet/manifest.json"
+    severity: error
+
+  # --- charter: front matter prefixado pelo kit (transform mecânico) ---
+  - type: frontmatter_valid
+    path: "PROJECT_CHARTER.md"
+    severity: error
+
+  - type: contains
+    path: "PROJECT_CHARTER.md"
+    pattern: "status: draft"
+    severity: error
+
+  # --- prosa original INTACTA (heading original preservado) ---
+  - type: contains
+    path: "PROJECT_CHARTER.md"
+    pattern: "# Charter — Legado"
+    severity: error
+
+  - type: contains
+    path: "PROJECT_CHARTER.md"
+    pattern: "| ../Legado-API | main | a1b2c3d |"
+    severity: error
+
+  - type: contains
+    path: "REQUIREMENTS.md"
+    pattern: "## RN-001 — Pedidos"
+    severity: error
+
+  # --- evidência legada intacta: o kit NUNCA escolhe hash sozinho ---
+  - type: contains
+    path: "REQUIREMENTS.md"
+    pattern: "[src/Agenda.cs:42]"
+    severity: error
+
+  - type: not_contains
+    path: "REQUIREMENTS.md"
+    pattern: "[src/Agenda.cs:42 @"
+    severity: error
+
+  # --- RN duplicada segue na prosa (desambiguação é gate humano, H2) ---
+  - type: contains
+    path: "REQUIREMENTS.md"
+    pattern: "Segunda seção com a mesma ID"
+    severity: error
+
+  # --- estado final do workspace: índice enxergou as entidades ---
+  - type: contains
+    path: "golmet.index.json"
+    pattern: "\"rn\":"
+    severity: error

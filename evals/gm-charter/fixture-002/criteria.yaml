@@ -1,0 +1,41 @@
+mode: manual
+---
+name: "Charter L2 — intake sem stakeholders e sem repos ABORTA sem gerar charter"
+description: >
+  NEGATIVO: transcrição de intake incompleta e inconsistente — o cliente
+  NÃO definiu os stakeholders (§6) E NÃO definiu os repositórios do
+  produto (§1), com declarações contraditórias (app único vs MeuApp-Web +
+  MeuApp-API, nada decidido). Regra da skill: não invente dados não
+  fornecidos; sem ask nativo, pergunte no chat e PARE (ask → chat-stop);
+  modo de erro strict — se o charter não for gerado, o projeto não pode
+  começar. Esperado: ABORTAR antes de escrever — NENHUM artefato de saída
+  (nem PROJECT_CHARTER.md, nem o checkpoint meetings/2026-10-05-01.md do
+  passo 6), e o input permanece intocado.
+inputs_required: [meetings/2026-10-05-intake.md]
+
+checks:
+  # --- abort: nenhum artefato de saída ---
+  - type: not_file_exists
+    path: "PROJECT_CHARTER.md"
+    severity: error
+
+  - type: not_file_exists
+    path: "meetings/2026-10-05-01.md"
+    severity: error
+
+  # --- o input de fato carrega os dois defeitos (estado semeado) ---
+  - type: contains
+    path: "meetings/2026-10-05-intake.md"
+    pattern: "Ainda não definimos os stakeholders"
+    severity: error
+
+  - type: contains
+    path: "meetings/2026-10-05-intake.md"
+    pattern: "Não temos repositório definido"
+    severity: error
+
+  # --- a skill não pode ter "resolvido" o abort escrevendo template no input ---
+  - type: not_contains
+    path: "meetings"
+    pattern: "## 6. Stakeholders"
+    severity: error

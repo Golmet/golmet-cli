@@ -1,0 +1,7 @@
+id: meuapp
+version: 0.1.0
+name: Pack MeuApp
+requires-core: ">=0.3"
+no-override: true
+provides:
+  - skills/gm-resumo/SKILL.md

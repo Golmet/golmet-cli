@@ -1,0 +1,77 @@
+---
+name: "Render de registry — blocos BEGIN/END substituídos"
+description: >
+  registry.yaml mínimo autoconsistente (gm-req delega gm-next e
+  gm-intake-orchestrator; skill gm-charter) + ARCHITECTURE.md e
+  agents/gm-req.md com blocos stale. Verifica que os blocos foram
+  substituídos pelas views (mermaid BT/LR, tabelas §3-§6, numeração 5.1,
+  tabela de subagents no primary), o conteúdo stale removido e as seções
+  narrativas fora dos marcadores preservadas.
+inputs_required: [registry.yaml, ARCHITECTURE.md, agents/gm-req.md]
+
+checks:
+  - type: file_exists
+    path: "ARCHITECTURE.md"
+    severity: error
+
+  - type: mermaid_valid
+    path: "ARCHITECTURE.md"
+    severity: error
+
+  - type: contains
+    path: "ARCHITECTURE.md"
+    pattern: "@gm-intake-orchestrator"
+    severity: error
+
+  - type: table_has_columns
+    path: "ARCHITECTURE.md"
+    columns: ["Primary", "Descrição", "Delega para", "Invoca diretamente"]
+    severity: error
+
+  - type: table_has_columns
+    path: "ARCHITECTURE.md"
+    columns: ["Subagent", "Descrição", "Invoca skills", "Owner", "Disponível para"]
+    severity: error
+
+  # numeração sequencial da §5 conforme ordem de exibição
+  - type: contains
+    path: "ARCHITECTURE.md"
+    pattern: "### 5.1"
+    severity: error
+
+  - type: section_order
+    path: "ARCHITECTURE.md"
+    sections:
+      - "## 1. Diagrama de camadas"
+      - "## 2. Diagrama de interações"
+      - "## 3. Primary Agents"
+      - "## 4. Subagents"
+      - "## 5. Skills por domínio"
+      - "## 6. Taxonomia de domínios"
+    severity: error
+
+  # bloco substituído — conteúdo stale não sobrevive
+  - type: not_contains
+    path: "ARCHITECTURE.md"
+    pattern: "@gm-antigo"
+    severity: error
+
+  - type: table_has_columns
+    path: "agents/gm-req.md"
+    columns: ["Subagent", "Quando invocar"]
+    severity: error
+
+  - type: not_contains
+    path: "agents/gm-req.md"
+    pattern: "@gm-antigo"
+    severity: error
+
+  - type: reference_match
+    path: "ARCHITECTURE.md"
+    expected: "output-expected/ARCHITECTURE.md"
+    severity: error
+
+  - type: reference_match
+    path: "agents/gm-req.md"
+    expected: "output-expected/agents/gm-req.md"
+    severity: error

@@ -1,0 +1,12 @@
+node_modules/
+*.tgz
+npm-debug.log*
+.DS_Store
+PUBLISH.md
+
+# Go
+/dist/
+*.exe
+
+# config local de editor
+.vscode/
