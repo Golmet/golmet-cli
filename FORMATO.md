@@ -40,6 +40,21 @@ O FORMATO governa apenas o **estado normativo** do produto: o que foi decidido e
                                     #   por micro-contexto (specs/data_model/ + INDEX.md — §7.7.1)
 ```
 
+**O `golmet init` sem flags e sem `--yes` é SEMPRE interativo** (M22) —
+pergunta o que inicializar (**Organização** — termo do usuário; "container"
+permanece o termo interno do `golmet.yaml`/FORMATO — / workspace-produto em
+Organização existente / workspace-produto raiz livre) e **confirma antes de
+criar** (nome/destino exibidos); nunca cria no cwd silenciosamente. Scripts
+e CI exigem flags explícitos (`--org` ou `--into <container>`) com `--yes`;
+sem TTY e sem flags → fail-closed com o comando a rodar (exit 2, nada
+escrito). Detecção de Organização existente: o dir PAI do cwd quando ele é
+container (golmet.yaml com `container: true`) vira a sugestão do wizard —
+o disco NÃO é globado (o operador aponta caminhos explícitos). Caso real
+que motivou: init bare no HOME criou um workspace misturado com a
+instalação global do kit (`~/.golmet/tools/` — o codegraph do kit, 333 MB,
+quase apagado junto); o `~/.golmet/` é do kit GLOBAL — **o init nunca cria
+na raiz do home** (guarda no scaffold; subpastas do home são legítimas).
+
 ### 2.1 Camadas de conteúdo do GOLMET (DR-021)
 
 O conteúdo instalado pelo kit segue quatro camadas, da mais fraca para a mais

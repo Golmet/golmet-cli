@@ -7,18 +7,52 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// newInitCmd — golmet init [produto] [--org] [--into <container>]
+// newInitCmd — golmet init [produto] [--org] [--into <container>] [--yes]
+// [--plain]. SEM flags e SEM arg (init bare): wizard interativo em TTY —
+// pergunta o que inicializar (Organização / workspace em Organização /
+// raiz livre) e confirma antes de criar (M22 — FORMATO §2); nunca mais
+// cria no cwd silenciosamente. Sem TTY e sem --plain: fail-closed com o
+// comando a rodar (scripts/CI exigem --org ou --into + --yes).
 func newInitCmd() *cobra.Command {
 	var org bool
 	var into string
+	var yes, plain bool
 	cmd := &cobra.Command{
 		Use:   "init [produto]",
-		Short: "Inicializa um workspace (golmet.yaml, charter, zonas)",
+		Short: "Inicializa um workspace (golmet.yaml, charter, zonas) — sem flags = wizard interativo",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			out := cmd.OutOrStdout()
 			name := ""
 			if len(args) == 1 {
 				name = args[0]
+			}
+			explicit := org || into != "" || name != ""
+			// init bare (sem flags e sem arg): o destino não é conhecido —
+			// o wizard pergunta; script/CI fail-closed com a remediação.
+			if !explicit {
+				if !isTTY() && !plain {
+					fmt.Fprintln(cmd.ErrOrStderr(), "golmet: 'golmet init' sem flags não cria nada em script/CI — nada foi escrito")
+					fmt.Fprintln(cmd.ErrOrStderr(), "     fix: rode com --org ou --into <container> e --yes; ou em terminal interativo (o wizard pergunta antes de criar); --plain ativa o wizard numerado em stdin")
+					return exitError(2)
+				}
+				base, berr := absCwd()
+				if berr != nil {
+					fmt.Fprintln(cmd.ErrOrStderr(), "golmet: "+berr.Error())
+					return exitError(2)
+				}
+				w := &initWizard{out: out, in: stdinReader(), cwd: base}
+				opt, baseDir, wname, werr := runInitWizard(w, yes)
+				if werr != nil {
+					fmt.Fprintln(cmd.ErrOrStderr(), "golmet: "+werr.Error())
+					return exitError(2)
+				}
+				if opt == nil {
+					fmt.Fprintln(out, "init cancelado — nada foi criado")
+					return nil
+				}
+				rep, err := scaffold.Run(baseDir, wname, *opt)
+				return printInitResult(cmd, rep, err)
 			}
 			base, err := absCwd()
 			if err != nil {
@@ -26,22 +60,17 @@ func newInitCmd() *cobra.Command {
 				return exitError(2)
 			}
 			rep, err := scaffold.Run(base, name, scaffold.Options{Org: org, Into: into})
-			if err != nil {
-				if rep != nil {
-					printScaffold(cmd, rep)
-				}
-				fmt.Fprintln(cmd.ErrOrStderr(), "golmet: "+err.Error())
-				return exitError(2)
-			}
-			printScaffold(cmd, rep)
-			return nil
+			return printInitResult(cmd, rep, err)
 		},
 	}
 	cmd.Flags().BoolVar(&org, "org", false, "cria um container de organização (container: true — §2)")
 	cmd.Flags().StringVar(&into, "into", "", "cria o produto dentro de um container existente")
+	cmd.Flags().BoolVar(&yes, "yes", false, "pula a confirmação do wizard (script/CI — requer --org ou --into)")
+	cmd.Flags().BoolVar(&plain, "plain", false, "wizard em modo numerado lendo stdin (sem TTY)")
 	return cmd
 }
 
+// printScaffold exibe o relatório do scaffold (arquivos criados/pulados).
 func printScaffold(cmd *cobra.Command, rep *scaffold.Report) {
 	out := cmd.OutOrStdout()
 	for _, f := range rep.Files {
@@ -63,4 +92,19 @@ func printScaffold(cmd *cobra.Command, rep *scaffold.Report) {
 	if rep.ContainerUpdated {
 		fmt.Fprintf(out, "container atualizado: products: [%s]\n", rep.ContainerProducts)
 	}
+}
+
+// printInitResult centraliza a saída do init (wizard e flags usam o mesmo
+// printScaffold e o mesmo tratamento de erro — exit 2 com o relatório
+// parcial quando houver).
+func printInitResult(cmd *cobra.Command, rep *scaffold.Report, err error) error {
+	if err != nil {
+		if rep != nil {
+			printScaffold(cmd, rep)
+		}
+		fmt.Fprintln(cmd.ErrOrStderr(), "golmet: "+err.Error())
+		return exitError(2)
+	}
+	printScaffold(cmd, rep)
+	return nil
 }

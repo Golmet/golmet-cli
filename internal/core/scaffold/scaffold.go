@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/Golmet/golmet-cli/internal/core/frontmatter"
@@ -25,6 +26,10 @@ type Options struct {
 	Into          string // cria o produto dentro de um container existente
 	CharterStatus string // draft (default) | confirmed (§7.1)
 }
+
+// userHomeDir injetável (testes) — a guarda do home não pode exigir o
+// home real da máquina de teste.
+var userHomeDir = os.UserHomeDir
 
 // FileResult registra o destino de um arquivo do scaffold.
 type FileResult struct {
@@ -75,6 +80,13 @@ func Run(baseDir, name string, opt Options) (*Report, error) {
 	}
 	if st, serr := os.Stat(root); serr == nil && !st.IsDir() {
 		return nil, fmt.Errorf("%s existe e não é uma pasta", root)
+	}
+	// M22 — guarda do caso real: o init NUNCA cria na RAIZ do HOME do
+	// operador (o ~/.golmet/ é a instalação global do kit — tools, packs;
+	// um workspace na raiz do home mistura estado do kit com o workspace e
+	// quase apagou o codegraph). Subpastas do home são legítimas.
+	if home, herr := userHomeDir(); herr == nil && sameDirPath(root, home) {
+		return nil, fmt.Errorf("raiz %s é o HOME do operador — o init nunca cria no home (a instalação global do kit vive em ~/.golmet/); rode o init dentro de uma subpasta", root)
 	}
 	wsName := filepath.Base(root)
 
@@ -193,6 +205,17 @@ func requireContainer(dir string) error {
 		return fmt.Errorf("%s não é um container (container: true ausente no golmet.yaml)", dir)
 	}
 	return nil
+}
+
+// sameDirPath compara dois caminhos com tolerância do SO (Windows é case-
+// insensitive; o root resolvido e o home do operador podem diferir em
+// case/barras).
+func sameDirPath(a, b string) bool {
+	a, b = filepath.Clean(a), filepath.Clean(b)
+	if runtime.GOOS == "windows" {
+		return strings.EqualFold(a, b)
+	}
+	return a == b
 }
 
 // addToContainer acrescenta o produto à lista products: do container com
