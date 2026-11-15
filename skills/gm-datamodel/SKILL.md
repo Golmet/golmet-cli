@@ -7,16 +7,23 @@ degrades:
 kit:
   checkpoints: post-write validate
 ---
-# gm-datamodel — Modelo de Dados (Tabelas e Relacionamentos)
+# gm-datamodel - Modelo de Dados (Tabelas e Relacionamentos)
 
 Gera `<Produto>/specs/DATA_MODEL.md` com o modelo de dados focado em
 **tabelas do banco** (não entidades ORM ou DTOs). Colunas, tipos de banco,
 PKs, FKs, check constraints, índices e decisão de armazenamento.
+Quando o agregado unitário cresce além do limiar de quebra, a skill também
+executa o **Split por micro-contexto** — transforma `specs/DATA_MODEL.md`
+em `specs/data_model/` (INDEX.md + escopos auto-contidos; ver seção própria).
 
 ## Resolução de caminhos
 
-Os artefatos do workspace seguem o layout do FORMATO §2 — a saída fica em
-`specs/DATA_MODEL.md`; o contexto de legado fica em `reverse/LEGACY_CONTEXT.md`.
+Os artefatos do workspace seguem o layout do FORMATO §2 (§7.7.1 para os
+agregados de `specs/`) — a saída fica em `specs/DATA_MODEL.md` (formato
+**unitário**) ou em `specs/data_model/` (formato **quebrado**:
+`INDEX.md` obrigatório + `<escopo>.md` auto-contidos); o contexto de legado
+fica em `reverse/LEGACY_CONTEXT.md`. As duas formas são canônicas
+simultaneamente — nenhum workspace é obrigado a quebrar.
 
 **Regra de fallback (transição):** ao **LER** um artefato, verifique primeiro
 o caminho novo (ex: `specs/DATA_MODEL.md`); se não existir, use o caminho
@@ -33,7 +40,12 @@ durante a transição.
 
 ## Gera (downstream)
 
-- `<Produto>/specs/DATA_MODEL.md`
+- `<Produto>/specs/DATA_MODEL.md` — formato **unitário** (agregado único)
+- `<Produto>/specs/data_model/` — formato **quebrado**: `INDEX.md` (mestre:
+  visão geral, ER global, índice dos escopos) + `<escopo>.md`
+  micro-contextos auto-contidos — gerado pelo Split por micro-contexto
+  (seção abaixo); o padrão é genérico (`specs/api_contracts/`,
+  `specs/ui_spec/`), a implantação começa no DATA_MODEL
 
 ## Nunca edita
 
@@ -80,9 +92,57 @@ docs: add data model for <produto>
 8. Criar tabela de **"Uso no escopo atual — colunas preenchidas"** mapeando campo do request → coluna da tabela
 9. Se houver ADR conflitante (reuso vs tabela nova), resolver com `ask` ou documentar a decisão final na seção "Decisão de armazenamento"
 10. Escreva `specs/DATA_MODEL.md`
-11. Rode `golmet validate` (checkpoint post-write) — ou anote a pendência se o kit não estiver disponível
+11. **Limiar de quebra (warning L7):** se o agregado unitário passar de
+    **800 linhas** (constante `DataModelSplitLines` declarada no lint —
+    FORMATO §7.7.1), proponha o **Split por micro-contexto** ao responsável
+    (seção abaixo). Em workspace **já quebrado**, escreva direto no formato
+    quebrado seguindo o merge incremental (seção abaixo)
+12. Rode `golmet validate` (checkpoint post-write) — ou anote a pendência se o kit não estiver disponível
 
 > **Regra de idioma:** Documentos no idioma do cliente (padrão PT-BR). Títulos, descrições de colunas, comentários no idioma combinado. Tipos de banco (`NUMBER`, `VARCHAR2`, `DATE`) e identificadores de coluna (`NRO_ID_REGISTRO`) mantêm o nome real do banco. **Nomes de colunas sempre em MAIÚSCULAS** (ex.: `CTR_DTH_INC`, `TXT_STATUS`).
+
+## Split por micro-contexto (unitário → quebrado)
+
+Artefatos agregados crescem indefinidamente e quem implementa uma RN carrega
+o arquivo inteiro quando precisa de um escopo — contexto desnecessário derruba
+qualidade. O FORMATO §7.7.1 define o formato **quebrado**: `specs/data_model/`
+com `INDEX.md` OBRIGATÓRIO + `<escopo>.md` auto-contidos. Gatilhos: o unitário
+passou do limiar de **800 linhas** (warning do lint — constante
+`DataModelSplitLines`) **ou** o responsável pede o split.
+
+**Procedimento:**
+
+1. **Proponha os escopos** — agregados/domínios identificados no conteúdo do
+   unitário (ex.: agendamento, financeiro, cadastros) — **com confirmação do
+   responsável** antes de quebrar (corte de escopo é decisão de conteúdo,
+   nunca mecânica)
+2. **Gere `specs/data_model/INDEX.md`** — o mestre: visão geral do modelo,
+   ER global agregado (mermaid com as tabelas de todos os escopos) e índice
+   dos escopos com links — é por ele que todo leitor começa
+3. **Distribua o conteúdo** nos `<escopo>.md` **auto-contidos** — entidades
+   (tabelas, colunas, PKs/FKs, constraints, índices), relacionamentos do
+   escopo e as RNs daquele escopo; cada arquivo se lê SOZINHO — nenhuma
+   leitura cruzada obrigatória (repita a tabela compartilhada ou resuma-a
+   com referência explícita "detalhe em `<outro-escopo>.md`")
+4. **Remova o `specs/DATA_MODEL.md` original** — o mestre passa a ser o
+   INDEX (decisão do responsável); deixe os dois = split incompleto
+
+**Merge incremental NO quebrado** (o fluxo normal passa a manter a estrutura
+quebrada):
+
+- **Entidade/tabela nova** → entra no escopo certo (agregado/domínio do
+  conteúdo); se couber em mais de um, pergunte via `ask`
+- **Escopo novo** (domínio sem arquivo) → arquivo `<escopo>.md` novo +
+  entrada correspondente no INDEX.md
+- **Nada é deletado sem substituição explícita** — conteúdo movido de escopo
+  sai do arquivo antigo apenas quando entra no novo (mesma disciplina de
+  merge incremental do unitário)
+- O lint valida a forma: quebrado sem `INDEX.md` = **error L7** com
+  remediação apontando este Split
+
+**Traceability:** com o agregado quebrado, a matriz de rastreabilidade mapeia
+RN → caminho de escopo específico (ex.: `RN-012 → data_model/agendamento.md`)
+— finura maior que o agregado inteiro (ver gm-traceability).
 
 ## Template — DATA_MODEL.md
 
@@ -202,7 +262,10 @@ tabela com entidade ORM (campos da linguagem) nem com DTO (campos de request):
 - **Tabela reaproveitada do LEGACY_CONTEXT.md**: documente TODAS as colunas legadas (marcando "(não usado)" as não usadas) e mantenha os tipos originais do banco — não aplique as convenções de tabela nova.
 - **Tipo de coluna ambíguo** (ex.: texto que pode ser VARCHAR2 ou NUMBER): pergunte via `ask` antes de escrever; nunca derive tipo da linguagem de aplicação — só tipos de banco.
 - **ADR conflitante (reuso vs tabela nova)**: registre as duas opções na seção de decisão de armazenamento e resolva com `ask` ou documente a decisão final com referência ao ADR.
-- **LEGACY_CONTEXT.md ausente em workspace `legado: true`**: aborte (modo `strict`) — não é possível documentar tabelas legado sem o contexto.
+- **LEGACY_CONTEXT.md ausente em workspace `legado: true`**: aborte (modo `strict`) - não é possível documentar tabelas legado sem o contexto.
+- **Split solicitado sem escopos claros**: se os agregados/domínios não emergem do conteúdo (tabelas todas muito entrelaçadas), pergunte via `ask` com uma proposta concreta — nunca quebre por contagem mecânica de seções; sem consenso, mantenha o unitário (as duas formas são válidas simultaneamente).
+- **Split parcial (unitário + quebrado coexistindo)**: é split incompleto — termine a distribuição e remova o `DATA_MODEL.md` original; o mestre passa a ser o `specs/data_model/INDEX.md`.
+- **Workspace já quebrado**: NÃO recrie o `DATA_MODEL.md` unitário — escreva no escopo certo (merge incremental) e atualize o INDEX quando criar escopo novo.
 
 ---
 

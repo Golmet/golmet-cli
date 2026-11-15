@@ -410,7 +410,7 @@ func TestL7SpecAggregatesUnitaryAndBroken(t *testing.T) {
 	// unitário acima do limiar → warning apontando o split
 	os.WriteFile(filepath.Join(ws, "specs", "DATA_MODEL.md"), []byte(strings.Repeat("coluna\n", DataModelSplitLines+1)), 0o644)
 	rep2 := runLint(t, ws, t.TempDir())
-	l7 := findingsOf(rep2, "L7")
+	l7 := findingsOf(rep2, "L7-size")
 	if len(l7) != 1 || l7[0].Severity != "warning" || l7[0].File != "specs/DATA_MODEL.md" {
 		t.Fatalf("unitário grande = %+v, want 1 warning em specs/DATA_MODEL.md", l7)
 	}
@@ -430,6 +430,9 @@ func TestL7SpecAggregatesUnitaryAndBroken(t *testing.T) {
 	if l7 := findingsOf(rep3, "L7"); len(l7) != 0 {
 		t.Fatalf("quebrado COM INDEX deveria ser limpo: %+v", l7)
 	}
+	if l7s := findingsOf(rep3, "L7-size"); len(l7s) != 0 {
+		t.Fatalf("quebrado COM INDEX não deveria ter aviso de tamanho: %+v", l7s)
+	}
 
 	// merge no quebrado: entidade nova no escopo certo + escopo novo com
 	// entrada no INDEX continuam limpos
@@ -438,6 +441,9 @@ func TestL7SpecAggregatesUnitaryAndBroken(t *testing.T) {
 	rep4 := runLint(t, ws, t.TempDir())
 	if l7 := findingsOf(rep4, "L7"); len(l7) != 0 {
 		t.Fatalf("escopo novo + INDEX atualizado deveria ser limpo: %+v", l7)
+	}
+	if l7s := findingsOf(rep4, "L7-size"); len(l7s) != 0 {
+		t.Fatalf("escopo novo + INDEX atualizado não deveria ter aviso de tamanho: %+v", l7s)
 	}
 
 	// quebrado SEM INDEX → error com remediação do split
@@ -449,6 +455,67 @@ func TestL7SpecAggregatesUnitaryAndBroken(t *testing.T) {
 	}
 	if !strings.Contains(l75[0].Fix, "crie o INDEX") || !strings.Contains(l75[0].Fix, "gm-datamodel Split") {
 		t.Errorf("remediação deveria citar o INDEX e o Split: %+v", l75[0])
+	}
+}
+
+// ---- L7-size — aviso precoce dos 4 candidatos sem gramática declarada ----
+
+func TestL7SizeWarningsEarlyCandidates(t *testing.T) {
+	// limiares PINADOS (mudança de número quebra aqui de propósito)
+	wantLines := map[string]int{
+		"DECISIONS.md":            800,
+		"specs/ERROR_CATALOG.md":  600,
+		"support/KNOWN_ERRORS.md": 400,
+		"GLOSSARY.md":             300,
+	}
+	for _, a := range aggregateSizeWarns {
+		if a.Lines != wantLines[a.Paths[0]] {
+			t.Errorf("limiar de %s = %d, want %d", a.Paths[0], a.Lines, wantLines[a.Paths[0]])
+		}
+	}
+
+	cases := []struct {
+		path  string
+		lines int
+	}{
+		{"DECISIONS.md", 800},
+		{"specs/ERROR_CATALOG.md", 600},
+		{"support/KNOWN_ERRORS.md", 400},
+		{"GLOSSARY.md", 300},
+	}
+	for _, tc := range cases {
+		ws := t.TempDir()
+		os.MkdirAll(filepath.Dir(filepath.Join(ws, tc.path)), 0o755)
+		// abaixo do limiar → silêncio
+		os.WriteFile(filepath.Join(ws, filepath.FromSlash(tc.path)), []byte(strings.Repeat("linha\n", tc.lines)), 0o644)
+		rep := runLint(t, ws, t.TempDir())
+		if n := len(findingsOf(rep, "L7-size")) + len(findingsOf(rep, "L7")); n != 0 {
+			t.Fatalf("%s com %d linhas (no limiar) deveria silenciar: %+v", tc.path, tc.lines, rep.Findings)
+		}
+		// acima do limiar → warning L7-size com remediação de PLANEJAMENTO
+		os.WriteFile(filepath.Join(ws, filepath.FromSlash(tc.path)), []byte(strings.Repeat("linha\n", tc.lines+1)), 0o644)
+		rep2 := runLint(t, ws, t.TempDir())
+		l7s := findingsOf(rep2, "L7-size")
+		if len(l7s) != 1 {
+			t.Fatalf("%s com %d linhas = %d avisos, want 1: %+v", tc.path, tc.lines+1, len(l7s), rep2.Findings)
+		}
+		f := l7s[0]
+		if f.Severity != "warning" || f.File != tc.path {
+			t.Errorf("aviso %s = %+v, want warning em %s", tc.path, f, tc.path)
+		}
+		if !strings.Contains(f.Fix, "gm-doc") || !strings.Contains(f.Fix, "ainda não está declarada no FORMATO") {
+			t.Errorf("remediação deveria apontar planejamento com gm-doc (sem gramática declarada): %+v", f)
+		}
+	}
+
+	// fallback de path: root legado do ERROR_CATALOG também dispara (1º
+	// existente vale, sem duplicar findings)
+	ws := t.TempDir()
+	os.WriteFile(filepath.Join(ws, "ERROR_CATALOG.md"), []byte(strings.Repeat("linha\n", 601)), 0o644)
+	rep := runLint(t, ws, t.TempDir())
+	l7s := findingsOf(rep, "L7-size")
+	if len(l7s) != 1 || l7s[0].File != "ERROR_CATALOG.md" {
+		t.Fatalf("ERROR_CATALOG legado na raiz = %+v, want 1 aviso apontando a raiz", l7s)
 	}
 }
 

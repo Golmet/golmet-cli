@@ -28,7 +28,7 @@ import (
 // Finding é um apontamento do lint: severidade, arquivo (+linha quando
 // aplicável), descrição e remediação sugerida (PT-BR).
 type Finding struct {
-	Check       string `json:"check"`          // L1 | L3 | L4 | L5 | L6 | L7 | L8 | L9
+	Check       string `json:"check"`          // L1 | L3 | L4 | L5 | L6 | L7 | L7-size | L8 | L9
 	Severity    string `json:"severity"`       // error | warning
 	File        string `json:"file,omitempty"` // rel ao alvo do check (slash)
 	Line        int    `json:"line,omitempty"` // 0 = arquivo inteiro
@@ -76,11 +76,30 @@ var specAggregates = []struct {
 }
 
 // DataModelSplitLines — limiar (em linhas) do aviso de quebra do agregado
-// unitário specs/DATA_MODEL.md: acima disso o L7 emite warning recomendando
-// o split por micro-contexto. Constante COMPARTILHADA com o gm-datamodel (a
-// skill cita o mesmo número no procedimento de Split) e declarada no
-// FORMATO §7.7.1 — mudar aqui = mudar lá.
+// unitário specs/DATA_MODEL.md: acima disso o lint emite warning
+// (categoria L7-size) recomendando o split por micro-contexto. Constante
+// COMPARTILHADA com o gm-datamodel (a skill cita o mesmo número no
+// procedimento de Split) e declarada no FORMATO §7.7.1 — mudar aqui =
+// mudar lá.
 const DataModelSplitLines = 800
+
+// aggregateSizeWarns — avisos PRECOCES de tamanho (warning L7-size) para os
+// próximos candidatos a quebra por micro-contexto: agregados que crescem
+// mas AINDA NÃO TÊM gramática quebrada declarada no FORMATO (só o
+// data_model tem — §7.7.1). Acima do limiar de aviso, o warning recomenda
+// PLANEJAR a quebra com o gm-doc — a gramática de cada artefato será
+// declarada quando o volume justificar (decisão do operador). Limiar
+// próprio por natureza do conteúdo. Paths em ordem de precedência (1º
+// existente vale: caminho canônico primeiro, raiz legado como fallback).
+var aggregateSizeWarns = []struct {
+	Paths []string // onde o agregado vive no workspace
+	Lines int      // limiar de aviso
+}{
+	{[]string{"DECISIONS.md"}, 800},                               // ADRs auto-contidos; quebrado decisions/ será planejado quando disparar
+	{[]string{"specs/ERROR_CATALOG.md", "ERROR_CATALOG.md"}, 600}, // specs/ canônico, raiz legado
+	{[]string{"support/KNOWN_ERRORS.md", "KNOWN_ERRORS.md"}, 400}, // support/ canônico, raiz legado
+	{[]string{"GLOSSARY.md"}, 300},                                // glossários por público (DEV/BUSINESS/USER) ficam fora — o agregado é o GLOSSARY.md
+}
 
 // configRootDirs — dirs canônicos de 1º nível do config do engine.
 // knowledge/ é legado reconhecido. Unknown dir → warning.
@@ -909,9 +928,11 @@ func lintL7(rep *Report, ws string, kitMode bool, configRoot string) {
 // lintL7SpecAggregates — L7 sobre os agregados técnicos do WORKSPACE de
 // produto (specs/, FORMATO §7.7.1): reconhece AS DUAS formas canônicas —
 // unitário (`specs/DATA_MODEL.md`) e quebrado (`specs/data_model/` com
-// INDEX.md OBRIGATÓRIO, o mestre: visão global + índice dos escopos) — e
-// avisa quando o unitário passa do limiar de quebra (DataModelSplitLines).
-// Roda em qualquer workspace (kit e produto); sem specs/ é silencioso.
+// INDEX.md OBRIGATÓRIO, o mestre: visão global + índice dos escopos) —,
+// avisa quando o unitário passa do limiar de quebra (DataModelSplitLines)
+// e emite o aviso PRECOCE (L7-size) para os agregados candidatos sem
+// gramática quebrada declarada (aggregateSizeWarns). Roda em qualquer
+// workspace (kit e produto); sem specs/ é silencioso.
 func lintL7SpecAggregates(rep *Report, ws string) {
 	for _, agg := range specAggregates {
 		dir := filepath.Join(ws, "specs", filepath.FromSlash(agg.Dir))
@@ -923,12 +944,33 @@ func lintL7SpecAggregates(rep *Report, ws string) {
 			})
 		}
 	}
+	// DATA_MODEL — gramática quebrada JÁ declarada (FORMATO §7.7.1): o
+	// aviso aponta o Split do gm-datamodel
 	if n, ok := lineCount(filepath.Join(ws, "specs", "DATA_MODEL.md")); ok && n > DataModelSplitLines {
 		rep.Findings = append(rep.Findings, Finding{
-			Check: "L7", Severity: "warning", File: "specs/DATA_MODEL.md",
+			Check: "L7-size", Severity: "warning", File: "specs/DATA_MODEL.md",
 			Description: fmt.Sprintf("agregado unitário com %d linhas (limiar de quebra: %d) — contexto inteiro carregado a cada RN deixa de pagar o preço", n, DataModelSplitLines),
 			Fix:         "considere quebrar por micro-contexto (specs/data_model/ com INDEX.md + escopos auto-contidos) — veja gm-datamodel Split",
 		})
+	}
+	// Candidatos PRECOCES — sem gramática quebrada declarada ainda: o aviso
+	// só recomenda PLANEJAR a quebra (gramática será definida no FORMATO
+	// quando o volume justificar). 1º path existente do agregado vale.
+	for _, a := range aggregateSizeWarns {
+		for _, p := range a.Paths {
+			n, ok := lineCount(filepath.Join(ws, filepath.FromSlash(p)))
+			if !ok {
+				continue
+			}
+			if n > a.Lines {
+				rep.Findings = append(rep.Findings, Finding{
+					Check: "L7-size", Severity: "warning", File: p,
+					Description: fmt.Sprintf("agregado candidato à quebra com %d linhas (limiar de aviso: %d) — crescendo sem gramática quebrada declarada", n, a.Lines),
+					Fix:         "considere planejar a quebra por micro-contexto deste agregado com o gm-doc — a gramática quebrada deste artefato ainda não está declarada no FORMATO (será definida quando o volume justificar)",
+				})
+			}
+			break
+		}
 	}
 }
 

@@ -324,7 +324,7 @@ Agregados downstream (`DATA_MODEL`, `API_CONTRACTS`, `UI_SPEC`) aceitam **duas f
 - **Genérico:** o padrão vale para qualquer agregado (`specs/api_contracts/`, `specs/ui_spec/`) — a implantação começa no DATA_MODEL.
 - **Corte de escopo é decisão de conteúdo** (gm-datamodel + operador: agregados/domínios identificados no conteúdo) — nunca mecânico.
 - **Traceability mais fina:** a matriz mapeia RN → caminho de escopo específico (ex.: `RN-012 → data_model/agendamento.md`), não o agregado inteiro.
-- **Enforcement (L7):** agregado quebrado sem `INDEX.md` = **error**; agregado unitário acima do limiar de quebra (**800 linhas** — constante declarada no lint, compartilhada com o gm-datamodel) = **warning** recomendando o split.
+- **Enforcement (L7):** agregado quebrado sem `INDEX.md` = **error**; agregado unitário acima do limiar de quebra (**800 linhas** — constante declarada no lint, compartilhada com o gm-datamodel) = **warning** recomendando o split. Os próximos candidatos (`DECISIONS`, `ERROR_CATALOG`, `KNOWN_ERRORS`, `GLOSSARY`) recebem **aviso precoce de tamanho** (categoria `L7-size`) — detecção sem gramática: dispara o planejamento com o gm-doc; a gramática quebrada de cada artefato será declarada aqui quando o volume justificar (detalhe no §9.1).
 
 ### 7.8 ADR — `DECISIONS.md`, seções `## ADR-NNN — <título>`
 
@@ -407,6 +407,7 @@ Sem check de vocabulário legado (L2 fora do escopo por decisão do operador).
 | L5 | warning | Nome estrutural fora de kebab-case ASCII (dirs/temas canônicos; nomes com extensão isentos) |
 | L6 | error/warning | Componente fantasma: `gm-*` citado que não existe no registry — **error** em `coredata/sources` (contrato vivo), **warning** em docs/AGENTS.md (histórico) |
 | L7 | error | Estrutura fora do padrão canônico (declarado abaixo) |
+| L7-size | warning | Aviso de tamanho de agregado unitário do workspace: DATA_MODEL acima do limiar de quebra (gramática §7.7.1 declarada — split do gm-datamodel) e os 4 candidatos precoces (DECISIONS 800 · ERROR_CATALOG 600 · KNOWN_ERRORS 400 · GLOSSARY 300 linhas) acima do limiar de aviso — **detecção sem gramática**: o aviso só recomenda planejar a quebra com o gm-doc; a gramática quebrada de cada artefato será declarada no FORMATO quando o volume justificar |
 | L8 | warning | Conformidade estrutural definitivo ↔ template: o definitivo (AGENTS.md, perfis) perdeu o MÍNIMO estrutural declarado (blocos marcadores/seções/campos). Conteúdo extra = OK (evolução); definitivo ausente = skip; template depositado no config = L7 warning |
 | L9 | error | Schema do registry de stack-templates — o materializado do kit (`profile/stack-templates.yaml`) E os registries da org in-place nos packs (`packs/*/rules/stack-templates.yaml` — M15 pack-first, mesma regra, contrato §2.2): YAML parseável, `boilerplate_org` presente (placeholder `<...>` aceito), cada template com `detect` não-vazio, chave `boilerplate` presente (`null` aceito) e `description` presente quando `boilerplate` é não-null. Arquivo ausente = skip silencioso (o install materializa o do kit; pack sem registry é estado legítimo). Check separado do L7 de propósito: L7 é estrutura de diretórios; L9 é schema de conteúdo — o by_check diagnostica com precisão |
 
@@ -447,7 +448,15 @@ obriga); só a PERDA/ausência do mínimo declarado flaga.
   COM `INDEX.md` obrigatório — idem `api_contracts/`, `ui_spec/`);
   quebrado sem INDEX = L7 error; unitário acima do limiar de quebra
   (`DataModelSplitLines` = 800 linhas, constante declarada no lint e
-  compartilhada com o gm-datamodel) = L7 warning.
+  compartilhada com o gm-datamodel) = **L7-size** warning.
+- **Aviso precoce dos candidatos à quebra (L7-size):** `DECISIONS.md` (800
+  linhas — ADRs auto-contidos; quebrado `decisions/` será planejado),
+  `specs/ERROR_CATALOG.md` (600, fallback raiz), `support/KNOWN_ERRORS.md`
+  (400, fallback raiz) e `GLOSSARY.md` (300) disparam o aviso ANTES de
+  existir gramática quebrada para eles — o warning não aponta layout
+  nenhum: recomenda PLANEJAR a quebra com o gm-doc, e a gramática de cada
+  artefato entra no FORMATO quando o volume justificar (nenhum workspace é
+  obrigado a quebrar).
 
 **Heurísticas anti-falso-positivo (declaradas):** URLs/âncoras/`<placeholders>`/
 wildcards/braces não são candidatos; paths SEM `/` (nome solto) não são
