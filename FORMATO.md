@@ -64,6 +64,21 @@ instalação global do kit (`~/.golmet/tools/` — o codegraph do kit, 333 MB,
 quase apagado junto); o `~/.golmet/` é do kit GLOBAL — **o init nunca cria
 na raiz do home** (guarda no scaffold; subpastas do home são legítimas).
 
+**Catálogo global de organizações (M22.1).** `~/.golmet/organizations.json`
+— a zona global do kit (junto de skills/ e tools/) — lista as organizações
+que o kit criou/adotou: `{organizations: [{name, path, created}]}`. O
+invariante: **o golmet.yaml do container é a fonte da verdade da org
+(estrutura + products); o registro global é o catálogo para o wizard — o
+kit nunca cria organização sem registrar, e organizações fora do kit
+entram no catálogo ao serem adotadas** (`golmet init --org` sobre dir
+existente: idempotência do scaffold intacta, registro reporta "(adoção)").
+Unicidade: mesmo nome com o MESMO path = idempotente; mesmo nome com path
+DIFERENTE = erro claro ANTES de criar ("use outro nome ou remova a
+entrada"). O wizard da opção "Workspace-produto dentro de uma
+Organização existente" lista as organizações registradas com o path VIVO
+(path morto = pulada com aviso discreto), "Outra — caminho manual" por
+último; catálogo vazio → direto no caminho manual com o aviso de criação.
+
 ### 2.1 Camadas de conteúdo do GOLMET (DR-021)
 
 O conteúdo instalado pelo kit segue quatro camadas, da mais fraca para a mais

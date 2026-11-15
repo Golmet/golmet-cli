@@ -5,15 +5,21 @@
 // conceito do operador; "container" permanece o termo interno do
 // golmet.yaml/FORMATO.
 //
-// Escada de degradação (o padrão do install — M22 follow-up):
+// Escada de degradação (o padrão do install):
 //   - TTY + VT → wizard VISUAL com setas (raw mode — o MESMO padrão do
 //     wizard do install: header ◆, ↑/↓ move, enter confirma, esc/q/ctrl-c
-//     cancela); os campos de texto e a confirmação final são linha-a-linha
-//     (o estilo dos campos livres do install);
+//     cancela; detail curto ao lado + descrição contextual do item ativo
+//     no rodapé); os campos de texto e a confirmação final são linha-a-
+//     linha (o estilo dos campos livres do install);
 //   - sem TTY ou sem VT + --plain → wizard NUMERADO lendo stdin (EOF =
 //     erro claro);
 //   - sem TTY e sem --plain → fail-closed com o comando a rodar — nada é
 //     criado no cwd por acidente.
+//
+// A opção "Workspace-produto dentro de uma Organização existente" lista as
+// organizações do CATÁLOGO GLOBAL (~/.golmet/organizations.json — o
+// registro que o kit mantém ao criar/adotar orgs) com o mesmo picker; path
+// morto é pulado com aviso; a última opção é "Outra — caminho manual".
 //
 // Confirmação antes de criar SEMPRE (nome/destino exibidos); --yes pula a
 // confirmação dentro do wizard. Com flags explícitos (--org | --into) o
@@ -30,6 +36,8 @@ import (
 	"strings"
 
 	"github.com/Golmet/golmet-cli/internal/core/container"
+	"github.com/Golmet/golmet-cli/internal/core/install"
+	"github.com/Golmet/golmet-cli/internal/core/orgs"
 	"github.com/Golmet/golmet-cli/internal/core/scaffold"
 	"golang.org/x/term"
 )
@@ -42,16 +50,21 @@ type initWizard struct {
 	cwd string // cwd absoluto — base de todas as sugestões
 }
 
-// initChoiceOptions — as 3 opções do menu (fonte única do wizard visual e
-// do numerado): label + detail curto ao lado (o padrão do install —
-// "obrigatório", "remoto") + descrição CONTEXTUAL do item ativo (a linha
-// embaixo do frame que muda com o cursor — writeActiveFooter). SEM jargão
-// de implementação no menu/descrições — golmet.yaml, container: true,
-// CONSTITUTION.md são consequências da escolha, mostradas no resumo de
-// confirmação (initWizardCollect).
-var initChoiceOptions = []struct {
+// userHomeFn injetável (testes) — o catálogo global de organizações vive
+// no home (~/.golmet/organizations.json).
+var userHomeFn = os.UserHomeDir
+
+// pickItem — uma linha de seleção visual: label + detail curto ao lado +
+// descrição contextual do item ativo (o padrão do install).
+type pickItem struct {
 	label, detail, description string
-}{
+}
+
+// initChoiceOptions — as opções do menu do init (fonte única do visual e
+// do numerado). SEM jargão de implementação no menu/descrições —
+// golmet.yaml, container: true, CONSTITUTION.md são consequências da
+// escolha, mostradas no resumo de confirmação (initWizardCollect).
+var initChoiceOptions = []pickItem{
 	{"Organização", "a raiz que agrupa os workspaces",
 		"Organização é a raiz da empresa que agrupa os workspaces. Crie-a se você está estruturando a empresa — os produtos nascem dentro dela."},
 	{"Workspace-produto dentro de uma Organização existente", "projeto novo dentro da raiz",
@@ -143,40 +156,41 @@ func suggestedOrg(cwd string) string {
 	return ""
 }
 
-// ---- passo 1: a ESCOLHA do modo (visual TTY / numerado fallback) ----
+// ---- componente de SELEÇÃO VISUAL (o padrão do wizard do install) ----
 
-// drawInitChoice desenha o frame VISUAL da escolha — o padrão do render
-// do install (rawWriter + renderListLineColored: seta ">" fixa, nome bold
-// no ativo, detail curto ao lado) + a linha de descrição CONTEXTUAL do
-// item ATIVO embaixo do frame (o mesmo mecanismo writeActiveFooter do
-// install — muda conforme o cursor navega).
-func drawInitChoice(w *rawWriter, cursor int, c ttyColors, width int) {
-	fmt.Fprintf(w, "\n%s◆ O que inicializar?%s %s(↑/↓ move · enter confirma · esc cancela)%s\n\n",
-		c.bold, c.reset, c.gray, c.reset)
-	if cursor < 0 || cursor >= len(initChoiceOptions) {
-		cursor = 0 // defensivo — initChoiceApply já constrange
+// drawPick desenha o frame de seleção: header ◆ + hint, itens com seta
+// ">" de largura fixa / nome bold no ativo / detail curto ao lado, nota
+// discreta (quando há) e a linha de descrição CONTEXTUAL do item ativo
+// embaixo do frame (writeActiveFooter — muda com o cursor).
+func drawPick(w *rawWriter, header, hint string, items []pickItem, cursor int, c ttyColors, width int, note string) {
+	fmt.Fprintf(w, "\n%s◆ %s%s %s(%s)%s\n\n", c.bold, header, c.reset, c.gray, hint, c.reset)
+	if cursor < 0 || cursor >= len(items) {
+		cursor = 0 // defensivo — pickApply já constrange
 	}
-	for i, o := range initChoiceOptions {
+	for i, o := range items {
 		if i > 0 {
 			fmt.Fprint(w, "\n") // respiro entre as opções (padrão do install)
 		}
 		fmt.Fprint(w, renderListLineColored(i == cursor, c, "", o.label, c.gray+o.detail+c.reset, 0)+c.reset+"\n")
 	}
-	writeActiveFooter(w, c, width, initChoiceOptions[cursor].description)
+	if note != "" {
+		fmt.Fprintf(w, "\n%s%s%s\n", c.gray, install.TruncateWidth(note, width), c.reset)
+	}
+	writeActiveFooter(w, c, width, items[cursor].description)
 }
 
-// initChoiceApply — mapeamento puro tecla→transição do passo visual (o
-// padrão do applyWizardKey do install — testável sem console real).
-// selection = 1..3 quando enter confirma; 0 = continua; cancelled = esc/q/
-// ctrl-c/backspace (primeiro passo — não há trás).
-func initChoiceApply(cur int, key string) (newCur, selection int, cancelled bool) {
+// pickApply — mapeamento puro tecla→transição da seleção (o padrão do
+// applyWizardKey do install — testável sem console real). selection =
+// 1..len(items) quando enter confirma; 0 = continua; cancelled = esc/q/
+// ctrl-c/backspace.
+func pickApply(cur, n int, key string) (newCur, selection int, cancelled bool) {
 	switch key {
 	case keyUp:
 		if cur > 0 {
 			return cur - 1, 0, false
 		}
 	case keyDown:
-		if cur < len(initChoiceOptions)-1 {
+		if cur < n-1 {
 			return cur + 1, 0, false
 		}
 	case keyEnter:
@@ -187,11 +201,11 @@ func initChoiceApply(cur int, key string) (newCur, selection int, cancelled bool
 	return cur, 0, false
 }
 
-// runInitChoiceTTY roda o passo VISUAL da escolha em raw mode — o MESMO
-// padrão do runInteractiveTTY do install (entra e sai SEMPRE com o
-// terminal restaurado; codepage UTF-8 para os glifos). Retorna
-// (1..3, false) selecionado, (0, true) cancelado.
-func runInitChoiceTTY() (int, bool, error) {
+// runPickTTY roda a seleção VISUAL em raw mode — o MESMO padrão do
+// runInteractiveTTY do install (entra e sai SEMPRE com o terminal
+// restaurado; codepage UTF-8 para os glifos). Retorna (1..len(items),
+// false) selecionado, (0, true) cancelado.
+func runPickTTY(header, hint string, items []pickItem, note string) (int, bool, error) {
 	oldCP := setOutputCodepage()
 	defer restoreCodepage(oldCP)
 	state, err := term.MakeRaw(int(os.Stdin.Fd()))
@@ -202,7 +216,7 @@ func runInitChoiceTTY() (int, bool, error) {
 	w := &rawWriter{out: os.Stdout, c: newTTYColors(true)}
 
 	cur := 0
-	drawInitChoice(w, cur, w.c, terminalWidth())
+	drawPick(w, header, hint, items, cur, w.c, terminalWidth(), note)
 	single := make([]byte, 1)
 	for {
 		if _, rerr := os.Stdin.Read(single); rerr != nil {
@@ -221,7 +235,7 @@ func runInitChoiceTTY() (int, bool, error) {
 				}
 			}
 		}
-		newCur, selection, cancelled := initChoiceApply(cur, key)
+		newCur, selection, cancelled := pickApply(cur, len(items), key)
 		cur = newCur
 		if cancelled {
 			w.erase()
@@ -232,19 +246,21 @@ func runInitChoiceTTY() (int, bool, error) {
 			return selection, false, nil
 		}
 		w.erase()
-		drawInitChoice(w, cur, w.c, terminalWidth())
+		drawPick(w, header, hint, items, cur, w.c, terminalWidth(), note)
 	}
 }
 
-// printNumberedMenu — o menu NUMERADO do fallback (--plain/sem VT), os
-// mesmos itens com detail curto ao lado (a descrição contextual é do
-// render visual; o numerado é o fallback compacto).
-func (w *initWizard) printNumberedMenu() {
-	fmt.Fprintf(w.out, "\n%s◆ O que inicializar?%s %s(ENTER = opção 1)%s\n\n",
-		wizardANSI("\x1b[1m"), wizardANSI("\x1b[0m"), wizardANSI("\x1b[90m"), wizardANSI("\x1b[0m"))
-	for i, o := range initChoiceOptions {
+// pickNumbered — o fallback NUMERADO do mesmo picker (--plain/sem VT):
+// os mesmos itens, com a nota discreta quando houver.
+func (w *initWizard) pickNumbered(header string, items []pickItem, note string) (int, error) {
+	fmt.Fprintf(w.out, "\n%s◆ %s%s\n\n", wizardANSI("\x1b[1m"), header, wizardANSI("\x1b[0m"))
+	for i, o := range items {
 		fmt.Fprintf(w.out, "  %d. %s — %s\n", i+1, o.label, o.detail)
 	}
+	if note != "" {
+		fmt.Fprintf(w.out, "%s\n", note)
+	}
+	return w.askNumber(fmt.Sprintf("número [1-%d] (default: 1): ", len(items)), 1, len(items), 1)
 }
 
 // ---- fluxo comum: campos + confirmação por opção escolhida ----
@@ -255,7 +271,8 @@ func (w *initWizard) printNumberedMenu() {
 func runInitWizard(w *initWizard, yes, visualTTY bool) (*scaffold.Options, string, string, error) {
 	choice := 0
 	if visualTTY {
-		sel, cancelled, err := runInitChoiceTTY()
+		sel, cancelled, err := runPickTTY("O que inicializar?",
+			"↑/↓ move · enter confirma · esc cancela", initChoiceOptions, "")
 		if err != nil {
 			return nil, "", "", err
 		}
@@ -264,19 +281,20 @@ func runInitWizard(w *initWizard, yes, visualTTY bool) (*scaffold.Options, strin
 		}
 		choice = sel
 	} else {
-		w.printNumberedMenu()
-		n, err := w.askNumber("número [1-3] (default: 1): ", 1, 3, 1)
+		n, err := w.pickNumbered("O que inicializar? (ENTER = opção 1)", initChoiceOptions, "")
 		if err != nil {
 			return nil, "", "", err
 		}
 		choice = n
 	}
-	return initWizardCollect(w, choice, yes)
+	return initWizardCollect(w, choice, yes, visualTTY)
 }
 
 // initWizardCollect — os campos de texto e a confirmação final (linha-a-
 // linha, o estilo dos campos livres do install) para a opção escolhida.
-func initWizardCollect(w *initWizard, choice int, yes bool) (*scaffold.Options, string, string, error) {
+// A pré-checagem de nome duplicado no catálogo acontece ANTES da
+// confirmação — o kit nunca cria organização que não possa registrar.
+func initWizardCollect(w *initWizard, choice int, yes, visualTTY bool) (*scaffold.Options, string, string, error) {
 	suggestion := suggestedOrg(w.cwd)
 	switch choice {
 	case 1: // Organização
@@ -288,6 +306,9 @@ func initWizardCollect(w *initWizard, choice int, yes bool) (*scaffold.Options, 
 		if name != "" {
 			root = filepath.Join(w.cwd, name)
 		}
+		if err := checkOrgCatalogName(root); err != nil {
+			return nil, "", "", err
+		}
 		summary := fmt.Sprintf("  tipo:      Organização (container: true)\n  raiz:      %s\n  arquivos:  golmet.yaml · CONSTITUTION.md · INDEX.md", root)
 		ok, err := w.confirm(summary, yes)
 		if err != nil {
@@ -298,11 +319,13 @@ func initWizardCollect(w *initWizard, choice int, yes bool) (*scaffold.Options, 
 		}
 		return &scaffold.Options{Org: true}, w.cwd, name, nil
 	case 2: // workspace dentro de Organização existente
-		org, err := w.askWithDefault("Caminho da Organização existente", suggestion)
+		org, cancelled, err := w.pickOrg(suggestion, visualTTY)
 		if err != nil {
 			return nil, "", "", err
 		}
-		org = filepath.Clean(org)
+		if cancelled {
+			return nil, "", "", nil
+		}
 		name, err := w.askRequired("Nome do workspace-produto: ")
 		if err != nil {
 			return nil, "", "", err
@@ -335,6 +358,93 @@ func initWizardCollect(w *initWizard, choice int, yes bool) (*scaffold.Options, 
 		}
 		return &scaffold.Options{}, w.cwd, name, nil
 	}
+}
+
+// pickOrg — o passo de Organização da opção 2: seleção das organizações
+// do catálogo global (path vivo; morta = pulada com aviso discreto) +
+// "Outra — caminho manual" por último. 0 registradas → direto no caminho
+// manual (o fluxo anterior) com o aviso de catálogo vazio. Cancelado →
+// cancelled (o wizard inteiro cancela — nada criado).
+func (w *initWizard) pickOrg(suggestion string, visualTTY bool) (org string, cancelled bool, err error) {
+	var alive []orgs.Entry
+	dead := 0
+	registered := false
+	if home, herr := userHomeFn(); herr == nil {
+		if c, lerr := orgs.Load(home); lerr == nil {
+			registered = len(c.Organizations) > 0
+			for _, e := range c.Organizations {
+				if e.Alive() {
+					alive = append(alive, e)
+				} else {
+					dead++
+				}
+			}
+		}
+	}
+	deadNote := ""
+	if dead > 0 {
+		deadNote = fmt.Sprintf("%d organização(ões) do catálogo com caminho ausente — remova do catálogo (%s) ou restaure o caminho", dead, orgs.FileName)
+	}
+	if len(alive) == 0 {
+		// nenhuma org viva registrada → caminho manual direto (o fluxo
+		// anterior), com o aviso quando há catálogo vazio
+		if registered {
+			// catálogo só com paths mortos — o aviso discreto explica
+			fmt.Fprintf(w.out, "%s\n", deadNote)
+		} else {
+			fmt.Fprintf(w.out, "nenhuma Organização no catálogo — crie com 'golmet init --org'\n")
+		}
+		org, err := w.askWithDefault("Caminho da Organização existente", suggestion)
+		if err != nil {
+			return "", false, err
+		}
+		return filepath.Clean(org), false, nil
+	}
+	items := make([]pickItem, 0, len(alive)+1)
+	for _, e := range alive {
+		items = append(items, pickItem{label: e.Name, detail: e.Path, description: e.Path})
+	}
+	items = append(items, pickItem{label: "Outra — caminho manual",
+		detail:      "organização fora do catálogo",
+		description: "indique o caminho da Organização manualmente (ex.: a raiz adotada fora do kit)"})
+	var idx int
+	if visualTTY {
+		sel, canc, perr := runPickTTY("Escolha a Organização",
+			"↑/↓ move · enter confirma · esc cancela", items, deadNote)
+		if perr != nil {
+			return "", false, perr
+		}
+		if canc {
+			return "", true, nil
+		}
+		idx = sel
+	} else {
+		n, perr := w.pickNumbered("Escolha a Organização", items, deadNote)
+		if perr != nil {
+			return "", false, perr
+		}
+		idx = n
+	}
+	if idx == len(items) { // "Outra — caminho manual"
+		org, err := w.askWithDefault("Caminho da Organização existente", suggestion)
+		if err != nil {
+			return "", false, err
+		}
+		return filepath.Clean(org), false, nil
+	}
+	return alive[idx-1].Path, false, nil
+}
+
+// checkOrgCatalogName — pré-checagem do nome de organização no catálogo
+// global ANTES de criar (o kit nunca cria organização que não possa
+// registrar: mesmo nome com path diferente = erro claro). Home
+// indisponível → sem checagem (o Register na criação volta a validar).
+func checkOrgCatalogName(root string) error {
+	home, herr := userHomeFn()
+	if herr != nil {
+		return nil
+	}
+	return orgs.CheckName(home, filepath.Base(root), root)
 }
 
 // cores do wizard init — reuso leve do paletinha (os prompts linha-a-

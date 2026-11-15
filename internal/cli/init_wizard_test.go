@@ -19,7 +19,7 @@ import (
 func TestInitChoiceFrameVisual(t *testing.T) {
 	var b strings.Builder
 	w := &rawWriter{alt: &b, c: newTTYColors(false)} // sem cor — colunas visíveis
-	drawInitChoice(w, 0, w.c, 100)
+	drawPick(w, "O que inicializar?", "↑/↓ move · enter confirma · esc cancela", initChoiceOptions, 0, w.c, 100, "")
 	frame := b.String()
 	for _, want := range []string{
 		"◆ O que inicializar?",
@@ -37,14 +37,14 @@ func TestInitChoiceFrameVisual(t *testing.T) {
 	}
 	// largura generosa → descrição INTEIRA no rodapé (TruncateWidth)
 	var wide strings.Builder
-	drawInitChoice(&rawWriter{alt: &wide, c: newTTYColors(false)}, 0, newTTYColors(false), 200)
+	drawPick(&rawWriter{alt: &wide, c: newTTYColors(false)}, "O que inicializar?", "↑/↓ move · enter confirma · esc cancela", initChoiceOptions, 0, newTTYColors(false), 200, "")
 	if !strings.Contains(wide.String(), "os produtos nascem dentro dela.") {
 		t.Errorf("descrição completa esperada com largura 200:\n%s", wide.String())
 	}
 	// largura estreita → truncada com "…" (a marca conta na largura — o
 	// rodapé nunca passa de width)
 	var narrow strings.Builder
-	drawInitChoice(&rawWriter{alt: &narrow, c: newTTYColors(false)}, 0, newTTYColors(false), 40)
+	drawPick(&rawWriter{alt: &narrow, c: newTTYColors(false)}, "O que inicializar?", "↑/↓ move · enter confirma · esc cancela", initChoiceOptions, 0, newTTYColors(false), 40, "")
 	if !strings.Contains(narrow.String(), "…") {
 		t.Errorf("rodapé deveria truncar com … na largura 40:\n%s", narrow.String())
 	}
@@ -64,7 +64,7 @@ func TestInitChoiceFrameVisual(t *testing.T) {
 func TestInitChoiceFrameCursorMoves(t *testing.T) {
 	var b strings.Builder
 	w := &rawWriter{alt: &b, c: newTTYColors(false)}
-	drawInitChoice(w, 1, w.c, 200)
+	drawPick(w, "O que inicializar?", "↑/↓ move · enter confirma · esc cancela", initChoiceOptions, 1, w.c, 200, "")
 	frame := b.String()
 	if !strings.Contains(frame, ">   Workspace-produto dentro de uma Organização existente") {
 		t.Errorf("cursor não está na opção 2:\n%s", frame)
@@ -81,40 +81,40 @@ func TestInitChoiceFrameCursorMoves(t *testing.T) {
 	}
 	// opção 3 — desmancha a dúvida do cursor (o footer troca de linha)
 	b.Reset()
-	drawInitChoice(w, 2, w.c, 200)
+	drawPick(w, "O que inicializar?", "↑/↓ move · enter confirma · esc cancela", initChoiceOptions, 2, w.c, 200, "")
 	if !strings.Contains(b.String(), "para trabalho isolado ou repositório próprio.") {
 		t.Errorf("descrição contextual da opção 3 ausente:\n%s", b.String())
 	}
 }
 
-// initChoiceApply — o mapeamento puro tecla→transição (o padrão do
-// applyWizardKey do install): ↑/↓ move, enter confirma 1..3,
+// pickApply — o mapeamento puro tecla→transição (o padrão do
+// applyWizardKey do install): ↑/↓ move, enter confirma 1..n,
 // esc/q/ctrl-c/backspace cancelam; tecla desconhecida = no-op.
-func TestInitChoiceApplyKeys(t *testing.T) {
+func TestPickApplyKeys(t *testing.T) {
 	// movimento
-	if cur, sel, cnc := initChoiceApply(0, keyDown); cur != 1 || sel != 0 || cnc {
+	if cur, sel, cnc := pickApply(0, 3, keyDown); cur != 1 || sel != 0 || cnc {
 		t.Errorf("down = %d/%d/%v, want 1/0/false", cur, sel, cnc)
 	}
-	// borda inferior
-	if cur, sel, cnc := initChoiceApply(2, keyDown); cur != 2 || sel != 0 || cnc {
+	// borda inferior (n=3)
+	if cur, sel, cnc := pickApply(2, 3, keyDown); cur != 2 || sel != 0 || cnc {
 		t.Errorf("down na borda = %d/%d/%v, want 2/0/false", cur, sel, cnc)
 	}
 	// borda superior
-	if cur, _, _ := initChoiceApply(0, keyUp); cur != 0 {
+	if cur, _, _ := pickApply(0, 3, keyUp); cur != 0 {
 		t.Errorf("up na borda = %d, want 0", cur)
 	}
-	// enter confirma com a posição corrente (0-based → 1..3)
-	if cur, sel, cnc := initChoiceApply(1, keyEnter); cur != 1 || sel != 2 || cnc {
+	// enter confirma com a posição corrente (0-based → 1..n)
+	if cur, sel, cnc := pickApply(1, 3, keyEnter); cur != 1 || sel != 2 || cnc {
 		t.Errorf("enter = %d/%d/%v, want 1/2/false", cur, sel, cnc)
 	}
 	// cancelamentos (esc, q, ctrl-c, backspace)
 	for _, k := range []string{keyCancel, keyCtrlC, keyBack} {
-		if _, sel, cnc := initChoiceApply(0, k); sel != 0 || !cnc {
+		if _, sel, cnc := pickApply(0, 3, k); sel != 0 || !cnc {
 			t.Errorf("tecla %q = sel %d cancel %v, want 0/true", k, sel, cnc)
 		}
 	}
 	// desconhecida = no-op
-	if cur, sel, cnc := initChoiceApply(1, "?"); cur != 1 || sel != 0 || cnc {
+	if cur, sel, cnc := pickApply(1, 3, "?"); cur != 1 || sel != 0 || cnc {
 		t.Errorf("desconhecida = %d/%d/%v, want no-op", cur, sel, cnc)
 	}
 }
@@ -133,6 +133,7 @@ func newTestWizard(cwd, input string) (*initWizard, *strings.Builder) {
 // continua sendo o termo interno).
 func TestInitWizardOrgFlow(t *testing.T) {
 	cwd := t.TempDir()
+	isolatedHome(t)
 	w, out := newTestWizard(cwd, "1\nMinhaOrg\ns\n")
 	opt, baseDir, name, err := runInitWizard(w, false, false)
 	if err != nil {
@@ -226,6 +227,7 @@ func TestInitWizardFreeRootFlow(t *testing.T) {
 // Confirmação negativa: NADA é criado (o wizard devolve nil).
 func TestInitWizardCancelled(t *testing.T) {
 	cwd := t.TempDir()
+	isolatedHome(t)
 	w, out := newTestWizard(cwd, "1\nMinhaOrg\nn\n")
 	opt, _, _, err := runInitWizard(w, false, false)
 	if err != nil || opt != nil {
@@ -292,6 +294,7 @@ func TestInitExplicitFlagsUnchangedNoTTY(t *testing.T) {
 	isTTY = func() bool { return false }
 	t.Cleanup(func() { isTTY = oldTTY })
 	base := inTempDir(t)
+	isolatedHome(t)
 
 	if _, err := runCmd(t, "init", "MinhaOrg", "--org"); err != nil {
 		t.Fatalf("init --org: %v", err)

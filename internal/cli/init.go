@@ -2,7 +2,10 @@ package cli
 
 import (
 	"fmt"
+	"path/filepath"
 
+	"github.com/Golmet/golmet-cli/internal/core/container"
+	"github.com/Golmet/golmet-cli/internal/core/orgs"
 	"github.com/Golmet/golmet-cli/internal/core/scaffold"
 	"github.com/spf13/cobra"
 )
@@ -59,15 +62,28 @@ func newInitCmd() *cobra.Command {
 					return nil
 				}
 				rep, err := scaffold.Run(baseDir, wname, *opt)
-				return printInitResult(cmd, rep, err)
+				return finishInit(cmd, opt.Org, rep, err)
 			}
 			base, err := absCwd()
 			if err != nil {
 				fmt.Fprintln(cmd.ErrOrStderr(), "golmet: "+err.Error())
 				return exitError(2)
 			}
+			// --org: pré-checagem do nome no catálogo global — o kit nunca
+			// cria organização que não possa registrar (nome duplicado com
+			// path diferente = erro ANTES de criar qualquer coisa).
+			if org {
+				root := base
+				if name != "" {
+					root = filepath.Join(base, name)
+				}
+				if cerr := checkOrgCatalogName(root); cerr != nil {
+					fmt.Fprintln(cmd.ErrOrStderr(), "golmet: "+cerr.Error())
+					return exitError(2)
+				}
+			}
 			rep, err := scaffold.Run(base, name, scaffold.Options{Org: org, Into: into})
-			return printInitResult(cmd, rep, err)
+			return finishInit(cmd, org, rep, err)
 		},
 	}
 	cmd.Flags().BoolVar(&org, "org", false, "cria um container de organização (container: true — §2)")
@@ -75,6 +91,68 @@ func newInitCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&yes, "yes", false, "pula a confirmação do wizard (script/CI — requer --org ou --into)")
 	cmd.Flags().BoolVar(&plain, "plain", false, "wizard em modo numerado lendo stdin (sem TTY)")
 	return cmd
+}
+
+// finishInit centraliza a saída do init (wizard e flags usam o mesmo
+// printScaffold e o mesmo tratamento de erro — exit 2 com o relatório
+// parcial quando houver) e REGISTRA a organização no catálogo global
+// quando o scaffold criou/adotou um container (--org).
+func finishInit(cmd *cobra.Command, isOrg bool, rep *scaffold.Report, err error) error {
+	if err != nil {
+		if rep != nil {
+			printScaffold(cmd, rep)
+		}
+		fmt.Fprintln(cmd.ErrOrStderr(), "golmet: "+err.Error())
+		return exitError(2)
+	}
+	printScaffold(cmd, rep)
+	if isOrg && rep != nil {
+		msg, regErr := registerOrgCatalog(rep)
+		if regErr != nil {
+			fmt.Fprintln(cmd.ErrOrStderr(), "golmet: "+regErr.Error())
+			return exitError(2)
+		}
+		if msg != "" {
+			fmt.Fprintln(cmd.OutOrStdout(), msg)
+		}
+	}
+	return nil
+}
+
+// registerOrgCatalog registra a organização no catálogo global
+// (~/.golmet/organizations.json) após o scaffold --org bem-sucedido —
+// criação nova OU adoção (golmet.yaml existente íntegro; a idempotência
+// do scaffold é intacta — nada é sobrescrito). O registro exige container
+// íntegro (a fonte da verdade da org é o golmet.yaml); declaração
+// ausente/ilegível/não-container → o init segue SEM registrar com a nota
+// explicando (o catálogo não adentra estados ambíguos).
+func registerOrgCatalog(rep *scaffold.Report) (string, error) {
+	home, herr := userHomeFn()
+	if herr != nil {
+		return "", fmt.Errorf("home do operador indisponível — o catálogo global de organizações não pôde ser atualizado")
+	}
+	fields, isContainer, cerr := container.Config(rep.Root)
+	if cerr != nil || !isContainer || fields["format"].Str != "1" {
+		return fmt.Sprintf("⚠️ golmet.yaml de %s não declara Organização íntegra (container: true, format: 1) — catálogo global NÃO atualizado", rep.Root), nil
+	}
+	if err := orgs.Register(home, rep.Name, rep.Root); err != nil {
+		return "", err
+	}
+	if adoptedOrg(rep) {
+		return fmt.Sprintf("Organização %s registrada no catálogo global (adoção — nada foi sobrescrito)", rep.Name), nil
+	}
+	return fmt.Sprintf("Organização %s registrada no catálogo global (~/.golmet/organizations.json)", rep.Name), nil
+}
+
+// adoptedOrg — o golmet.yaml já existia (scaffold pulou) = adoção de
+// container nascido fora do kit.
+func adoptedOrg(rep *scaffold.Report) bool {
+	for _, f := range rep.Files {
+		if f.Path == "golmet.yaml" && f.Skipped {
+			return true
+		}
+	}
+	return false
 }
 
 // printScaffold exibe o relatório do scaffold (arquivos criados/pulados).
@@ -99,19 +177,4 @@ func printScaffold(cmd *cobra.Command, rep *scaffold.Report) {
 	if rep.ContainerUpdated {
 		fmt.Fprintf(out, "container atualizado: products: [%s]\n", rep.ContainerProducts)
 	}
-}
-
-// printInitResult centraliza a saída do init (wizard e flags usam o mesmo
-// printScaffold e o mesmo tratamento de erro — exit 2 com o relatório
-// parcial quando houver).
-func printInitResult(cmd *cobra.Command, rep *scaffold.Report, err error) error {
-	if err != nil {
-		if rep != nil {
-			printScaffold(cmd, rep)
-		}
-		fmt.Fprintln(cmd.ErrOrStderr(), "golmet: "+err.Error())
-		return exitError(2)
-	}
-	printScaffold(cmd, rep)
-	return nil
 }
