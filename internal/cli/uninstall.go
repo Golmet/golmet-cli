@@ -14,7 +14,7 @@ import (
 // newUninstallCmd — golmet uninstall: remoção completa da estrutura global
 // do Golmet na máquina com seleção por camadas. Tudo vem SELECIONADO por
 // padrão MENOS o PACK — e o pack apaga APENAS o working copy local: o
-// repositório remoto (ex.: github.com/TechMinds-Group/TM.PACK.RDD) NÃO é
+// repositório remoto (ex.: github.com/<org>/<pack-repo>) NÃO é
 // tocado — delete-o manualmente no GitHub se quiser remover de vez.
 func newUninstallCmd() *cobra.Command {
 	var only, home, workspace, engine string
@@ -165,7 +165,7 @@ func confirmUninstall(out interface{ Write([]byte) (int, error) }, plan *uninsta
 		fmt.Fprintf(out, "  • %s — %d alvo(s)\n", l.Label, l.Count)
 		if l.ID == "packs" {
 			fmt.Fprintf(out, "    ⚠️ Apaga APENAS o working copy local (packs/<id>/). O repositório remoto\n")
-			fmt.Fprintf(out, "       (ex.: github.com/TechMinds-Group/TM.PACK.RDD) NÃO é tocado — delete-o\n")
+			fmt.Fprintf(out, "       (ex.: github.com/<org>/<pack-repo>) NÃO é tocado — delete-o\n")
 			fmt.Fprintf(out, "       manualmente no GitHub se quiser remover de vez.\n")
 		}
 	}

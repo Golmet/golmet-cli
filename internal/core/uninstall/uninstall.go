@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -425,7 +426,7 @@ func (r *Report) Human() string {
 	}
 	if r.PackReminder {
 		fmt.Fprintf(&b, "\n⚠️ PACKS: apenas o working copy LOCAL foi apagado. O repositório remoto\n")
-		fmt.Fprintf(&b, "   (ex.: github.com/TechMinds-Group/TM.PACK.RDD) NÃO é tocado — delete-o\n")
+		fmt.Fprintf(&b, "   (ex.: github.com/<org>/<pack-repo>) NÃO é tocado — delete-o\n")
 		fmt.Fprintf(&b, "   manualmente no GitHub se quiser remover de vez.\n")
 	}
 	fmt.Fprintf(&b, "\n%d arquivo(s)/dir(s) removido(s).\n", r.Removed)
@@ -597,9 +598,10 @@ func uninstallEngineEntries(configRoot string) (removed, errs []string, note str
 	// objeto deixa a vírgula da key anterior pendente (JSONC tolera; o JSON
 	// resultante precisa ser válido)
 	orig = stripDanglingCommas(orig)
-	// validação: o resultado (sem comentários) precisa ser JSON válido
-	stripped := stripJSONCComments([]byte(orig))
-	if !json.Valid(stripped) {
+	// validação: o resultado (jsonc → json puro: sem comentários, sem
+	// vírgulas trailing — jsonc permite, json puro não; best-effort
+	// determinístico) precisa ser JSON válido antes de gravar
+	if !json.Valid(stripJSONCToJSON([]byte(orig))) {
 		return nil, []string{"opencode.jsonc: a remoção produziria JSON inválido — arquivo INTACTO, remova as chaves manualmente (mcp.golmet, agent.gm-dev-*)"}, ""
 	}
 	if err := os.WriteFile(path, []byte(orig), 0o644); err != nil {
@@ -824,4 +826,21 @@ func stripJSONCComments(data []byte) []byte {
 		}
 	}
 	return []byte(b.String())
+}
+
+// stripJSONCToJSON — jsonc → json puro (validação): remove comentários E
+// vírgulas trailing (jsonc permite `, }`; json puro não). Loop até ponto
+// fixo — vírgulas em cascata (`, , }`) colapsam juntas. Best-effort
+// determinístico para a VALIDAÇÃO da camada engine (falso-positivo aborta
+// sem gravar — seguro por design).
+func stripJSONCToJSON(data []byte) []byte {
+	s := stripJSONCComments(data)
+	re := regexp.MustCompile(`,(\s*[}\]])`)
+	for {
+		next := re.ReplaceAll(s, []byte("$1"))
+		if string(next) == string(s) {
+			return s
+		}
+		s = next
+	}
 }

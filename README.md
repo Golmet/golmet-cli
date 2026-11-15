@@ -53,7 +53,7 @@ registers the MCP server and runs the doctor in a single pass.
 
 ## Commands
 
-17 commands, one binary (`golmet`):
+18 commands, one binary (`golmet`):
 
 | Command    | What it does                                                                                                                                                                   |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -72,10 +72,32 @@ registers the MCP server and runs the doctor in a single pass.
 | `pack`     | Manages L2 packs (`add` / `update` / `publish` / `list`) without destroying local customizations — two archetypes: `overlay` (read-only cache) and `state` (bidirectional Git working copy)          |
 | `db`       | Database services (the `gm-dba` layer): DATA_MODEL ↔ migrations/snapshot drift                                                                                                 |
 | `template` | Emits a kit template (AGENTS.md skeleton, client/operator profile) straight from the embed — templates are construction artifacts: they live in the kit, never installed into the config |
+| `uninstall` | Removes the global Golmet structure layer by layer (ferramental, kit state, packs, personal, unmanaged, engine registry) — everything selected by default EXCEPT packs; pack removal deletes ONLY the local working copy, the remote repo is manual |
 | `upgrade`  | Self-update of the binary from the latest GitHub release (SHA-256 verified; `--check` read-only; rollback via `<bin>.old`)                                                      |
 | `lint`     | Deterministic structural sweep (dead refs, orphans, stale manifest entries, naming, ghost `gm-*` components, canonical structure, definitivo↔template conformance, stack-templates schema — kit materializado + registries de pack) — findings with severity + remediation; exit 0 clean, 2 with findings |
 
 The normative contract behind all of this is [FORMATO.md](FORMATO.md) v1.
+
+## Desinstalação
+
+`golmet uninstall` remove a estrutura global do Golmet da máquina, por camadas,
+com descoberta dinâmica do estado real (manifest + personal.json + config do
+engine). Tudo vem **selecionado por padrão, MENOS o pack**:
+
+| Camada | O que remove |
+| ------ | ------------ |
+| Ferramental | arquivos geridos layer core (agents/, skills/, profile/) |
+| Estado do kit | `<config>/.golmet/` inteiro (manifest + personal.json) |
+| Packs instalados | **DESELECIONADO por padrão** — apaga APENAS o working copy local (`packs/<id>/`); **o repositório remoto NÃO é tocado — delete-o manualmente no GitHub** |
+| Dados pessoais | paths do personal.json (AGENTS.md, profile/client-profile.md, profile/operator-profile.md, cli.json, service.json) — opencode.jsonc NÃO (é do engine) |
+| Não-geridos | arquivos sem dono no config (ex.: plugins/) |
+| Registro no engine | remove SÓ as entradas do Golmet no opencode.jsonc (MCP `golmet`, overrides gm-dev-*) — o arquivo e o resto da config permanecem |
+
+Flags: `--engine` · `--home` · `--only <csv>` (não-interativo, exige `--yes`) ·
+`--dry-run` (lista sem apagar) · `--json`. Dirs vazios criados pelo kit são
+removidos ao final; nunca toca nada fora do config root + working copies de
+pack validados. O engine (opencode) continua instalado — o Golmet apenas sai
+dele.
 
 ## Updating
 

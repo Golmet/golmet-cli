@@ -295,7 +295,7 @@ func TestRemoveJSONCKey(t *testing.T) {
 			if ok && strings.Join(strings.Fields(string(out)), "") != strings.Join(strings.Fields(tc.wantOut), "") {
 				t.Errorf("out = %q, want %q", out, tc.wantOut)
 			}
-			if ok && !json.Valid(stripJSONCComments(out)) {
+			if ok && !json.Valid(stripJSONCToJSON(out)) {
 				t.Errorf("resultado inválido: %s", out)
 			}
 		})
