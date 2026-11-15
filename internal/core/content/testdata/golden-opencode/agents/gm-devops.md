@@ -49,7 +49,7 @@ Skill. Nunca contradiga as convenções do AGENTS.md: idioma
 PT-BR, agrupamento de perguntas, encerramento anti-idle.
 
 Sintaxe corrente de GitHub Actions/Compose/cloudflared/systemd — MCP
-context7 (`rules/context7.md` do config; NUNCA confie na memória de
+context7 (`profile/context7.md` do config; NUNCA confie na memória de
 treino para sintaxe de tool de infra).
 
 ## Início de sessão

@@ -48,7 +48,7 @@ func TestL1DeadRefsAndFalsePositives(t *testing.T) {
 		"- [ok](README.md) e `FORMATO.md` — existem na raiz do kit",
 		"- `docs/guia.md` — existe em docs/",
 		"- [morto](sub/nada-disso.md) — não existe → L1",
-		"- `rules/context7.md` — resolve via coredata/rules (mapping canônico)",
+		"- `profile/context7.md` — resolve via coredata/rules (mapping canônico)",
 		"- `agents/gm-a.md` — resolve via registry (gm-a)",
 		"- <caminho-placeholder> e `pkg/*/x.go` e [url](https://x.com/a.md) — não verificáveis",
 		"- `packs/<id>/x.md` — placeholder, não verificável",
@@ -90,9 +90,9 @@ func TestL1RuntimeViewConfig(t *testing.T) {
 	ws := t.TempDir() // workspace NÃO-kit → só runtime view
 	home := t.TempDir()
 	cfg := filepath.Join(home, ".config", "opencode")
-	os.MkdirAll(filepath.Join(cfg, "rules"), 0o755)
-	os.WriteFile(filepath.Join(cfg, "AGENTS.md"), []byte("- `rules/viva.md` — existe\n- `rules/morta.md` — não existe → L1\n"), 0o644)
-	os.WriteFile(filepath.Join(cfg, "rules", "viva.md"), []byte("ok\n"), 0o644)
+	os.MkdirAll(filepath.Join(cfg, "profile"), 0o755)
+	os.WriteFile(filepath.Join(cfg, "AGENTS.md"), []byte("- `profile/viva.md` — existe\n- `profile/morta.md` — não existe → L1\n"), 0o644)
+	os.WriteFile(filepath.Join(cfg, "profile", "viva.md"), []byte("ok\n"), 0o644)
 
 	// state pack com md citando arquivo do próprio pack — L1 de pack é
 	// SKIP v0.1 (docs de negócio citam paths de produto por design)
@@ -106,7 +106,7 @@ func TestL1RuntimeViewConfig(t *testing.T) {
 	rep := runLint(t, ws, home)
 	l1 := findingsOf(rep, "L1")
 	if len(l1) != 1 || l1[0].File != "AGENTS.md" {
-		t.Fatalf("L1 = %+v, want 1 (AGENTS.md rules/morta — pack fora do scan v0.1)", l1)
+		t.Fatalf("L1 = %+v, want 1 (AGENTS.md profile/morta — pack fora do scan v0.1)", l1)
 	}
 }
 
@@ -125,8 +125,8 @@ func TestL3OrphansWithAllowlistAndCited(t *testing.T) {
 	os.WriteFile(filepath.Join(cfg, ".golmet", "manifest.json"), []byte(
 		`{"version":"1","updated_at":"2026-01-01T00:00:00Z","layers":{"core":{"source":"embedded"}},"files":[{"file":"skills/gm-a/SKILL.md","sha256":"x","layer":"core"}]}`), 0o644)
 	// pessoal-por-design
-	os.WriteFile(filepath.Join(cfg, "rules", "client-profile.md"), []byte("dado\n"), 0o644)
-	os.WriteFile(filepath.Join(cfg, ".golmet", "personal.json"), []byte(`{"version":1,"paths":["rules/client-profile.md"]}`), 0o644)
+	os.WriteFile(filepath.Join(cfg, "profile", "client-profile.md"), []byte("dado\n"), 0o644)
+	os.WriteFile(filepath.Join(cfg, ".golmet", "personal.json"), []byte(`{"version":1,"paths":["profile/client-profile.md"]}`), 0o644)
 	// allowlist
 	os.WriteFile(filepath.Join(cfg, "plugins", "ext.dll"), []byte("bin\n"), 0o644)
 	// settings raiz allowlist
@@ -310,16 +310,16 @@ func TestL8StructuralConformance(t *testing.T) {
 		"<!-- knowledge-routing -->", "T1-T5", "<!-- /knowledge-routing -->",
 		"## Seção Extra que o definitivo ganhou (evolução — nunca finding)",
 	}, "\n")
-	os.MkdirAll(filepath.Join(cfg, "rules"), 0o755)
+	os.MkdirAll(filepath.Join(cfg, "profile"), 0o755)
 	os.WriteFile(filepath.Join(cfg, "AGENTS.md"), []byte(agents), 0o644)
-	os.WriteFile(filepath.Join(cfg, "rules", "client-profile.md"), []byte(
+	os.WriteFile(filepath.Join(cfg, "profile", "client-profile.md"), []byte(
 		strings.Join([]string{
 			"## Tracker (estrutura migrada da org — não é mínimo)",
 			"## Identidade e infraestrutura (IMP-105)", "| org_github | x |", "| ghcr_registry | y |", "| dns_domain | z |",
 			"## Packs (IMP-111)", "| packs | a |",
 			"## Seção extra do cliente (evolução — ok)",
 		}, "\n")), 0o644)
-	os.WriteFile(filepath.Join(cfg, "rules", "operator-profile.md"), []byte(
+	os.WriteFile(filepath.Join(cfg, "profile", "operator-profile.md"), []byte(
 		strings.Join([]string{
 			"## Identidade", "| Nome | x |",
 			"## Identidade git e contas", "| git user.name | a |", "| git user.email | b |", "| username | c |",
@@ -336,7 +336,7 @@ func TestL8StructuralConformance(t *testing.T) {
 			"<!-- azure-devops -->", "sem fechamento",
 			"### Tools MCP do kit",
 		}, "\n")), 0o644)
-	os.WriteFile(filepath.Join(cfg, "rules", "client-profile.md"), []byte("sem estrutura\n"), 0o644)
+	os.WriteFile(filepath.Join(cfg, "profile", "client-profile.md"), []byte("sem estrutura\n"), 0o644)
 	rep2 := runLint(t, t.TempDir(), home)
 	l8 := findingsOf(rep2, "L8")
 	if len(l8) == 0 {
@@ -350,7 +350,7 @@ func TestL8StructuralConformance(t *testing.T) {
 		switch f.File {
 		case "AGENTS.md":
 			agentsFlags++
-		case "rules/client-profile.md":
+		case "profile/client-profile.md":
 			clientFlags++
 		default:
 			t.Errorf("L8 inesperado em %s", f.File)
@@ -362,7 +362,7 @@ func TestL8StructuralConformance(t *testing.T) {
 
 	// operator-profile CONFORMANTE não flaga (isolando o ruído do par acima)
 	for _, f := range findingsOf(rep2, "L8") {
-		if f.File == "rules/operator-profile.md" {
+		if f.File == "profile/operator-profile.md" {
 			t.Errorf("operator-profile conformante não deveria flagar: %+v", f)
 		}
 	}

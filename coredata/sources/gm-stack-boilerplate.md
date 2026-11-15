@@ -2,7 +2,7 @@
 
 Template engine para bootstrapping de projetos a partir de boilerplates
 pré-definidos por stack. Lê o registry T3 de templates por stack
-(`rules/stack-templates.yaml` — lazy-loaded via AGENTS.md),
+(`profile/stack-templates.yaml` — lazy-loaded via AGENTS.md),
 clona o boilerplate correspondente, executa o setup pós-clone
 (rename, env, restore) e prepara o projeto para receber implementação.
 Invocada por `gm-dev-backend` e `gm-dev-frontend` ao detectar repo vazio
@@ -20,7 +20,7 @@ cliente).
 
 ## Lê (upstream)
 
-- `rules/stack-templates.yaml` (T3) — registry de boilerplates por stack (lazy-loaded via AGENTS.md)
+- `profile/stack-templates.yaml` (T3) — registry de boilerplates por stack (lazy-loaded via AGENTS.md)
 - `AGENTS.md` do repo alvo — convenções específicas do projeto
 
 ## Gera (downstream)
@@ -30,7 +30,7 @@ cliente).
 
 ## Nunca edita
 
-- `rules/stack-templates.yaml` (adicionar stacks manualmente ou via CR)
+- `profile/stack-templates.yaml` (adicionar stacks manualmente ou via CR)
 - Boilerplate repos (são lidos como template, nunca modificados)
 - Código existente no repo alvo (só escreve em repo vazio)
 
@@ -52,7 +52,7 @@ Boilerplate não encontrado ou repo privado sem acesso → orientar fallback a s
    Se mais de uma stack combinar, pergunte (`ask`). Se nenhuma, reporte que a stack não tem
    boilerplate no registry e encerre (deixando o executor cair no scaffold genérico).
 
-2. **Carregar o registry:** leia `rules/stack-templates.yaml` e busque o template da stack detectada.
+2. **Carregar o registry:** leia `profile/stack-templates.yaml` e busque o template da stack detectada.
 
 3. **Verificar boilerplate disponível:** se `templates.<stack>.boilerplate` for `null`,
    reporte que não há boilerplate para esta stack e encerre (executor usará scaffold genérico).

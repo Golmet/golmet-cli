@@ -99,14 +99,14 @@ use o próprio `— Feature.md` como corpo com AVISO na saída (ver Modo de erro
 ## Parâmetros do Azure (pergunta agrupada — IMP-043)
 
 Pergunte em UMA única pergunta (defaults do ambiente — org/projeto/repos/usuário
-do perfil do cliente: `rules/client-profile.md` (IMP-103), espelhados no bloco
+do perfil do cliente: `profile/client-profile.md` (IMP-103), espelhados no bloco
 `azure-devops` do AGENTS.md global — pré-oferecidos, SEMPRE aceitando override;
 nunca hardcode como únicos):
 
 | Parâmetro | Default do ambiente | Observação |
 |---|---|---|
-| Org | `<org-do-perfil>` | organização Azure DevOps — consultar `rules/client-profile.md` (IMP-103) |
-| Projeto | `<projeto-do-perfil>` | projeto do produto — consultar `rules/client-profile.md` (IMP-103) |
+| Org | `<org-do-perfil>` | organização Azure DevOps — consultar `profile/client-profile.md` (IMP-103) |
+| Projeto | `<projeto-do-perfil>` | projeto do produto — consultar `profile/client-profile.md` (IMP-103) |
 | AreaPath | área default do projeto | aceitar override |
 | IterationPath | iteração corrente do projeto | aceitar override; nunca invente |
 | Tipo do principal | `Feature` ou `User Story` | pergunta obrigatória — sem default por omissão |

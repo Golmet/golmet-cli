@@ -153,7 +153,7 @@ even it never touches files managed by packs.
 
 ## Security posture
 
-- Rendered paths validated against traversal (allowlist: `agents/`, `skills/`, `rules/`).
+- Rendered paths validated against traversal (allowlist: `agents/`, `skills/`, `profile/`).
 - Symlink/junction escape rejected at both source and destination (real containment via `EvalSymlinks`).
 - A dirty Git cache fails closed before any `pull --ff-only`.
 - Credentials in URLs are redacted from manifests, payloads and errors.

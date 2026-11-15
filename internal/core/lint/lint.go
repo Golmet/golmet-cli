@@ -60,7 +60,7 @@ var patternTypes = []string{"process", "architecture", "code", "ui", "test", "da
 
 // configRootDirs — dirs canônicos de 1º nível do config do engine.
 // knowledge/ é legado reconhecido. Unknown dir → warning.
-var configRootDirs = []string{"agents", "skills", "rules", "packs", "plugins", "knowledge", ".golmet"}
+var configRootDirs = []string{"agents", "skills", "profile", "packs", "plugins", "knowledge", ".golmet"}
 
 // orphanAllowlist — prefixes de path (slash) sabidamente SEM dono no config
 // do engine (órfãos-legítimos: artefatos de runtime, plugins de terceiros,
@@ -121,8 +121,8 @@ var l8Pairs = []struct {
 	Min      []string
 }{
 	{"templates/AGENTS.template.md", "AGENTS.md", nil}, // blocos + seções (caso especial)
-	{"rules/client-profile.template.md", "rules/client-profile.md", l8ClientProfileMin},
-	{"rules/operator-profile.template.md", "rules/operator-profile.md", l8OperatorProfileMin},
+	{"rules/client-profile.template.md", "profile/client-profile.md", l8ClientProfileMin},
+	{"rules/operator-profile.template.md", "profile/operator-profile.md", l8OperatorProfileMin},
 }
 
 // moduleStoreNames — nomes de artefato de WORKSPACE DE PRODUTO citados por
@@ -246,11 +246,23 @@ func Run(opt Options) (*Report, error) {
 				roots = append(roots, configRoot)
 			}
 			checkMDRefs(rep, rel, fpath, roots, func(cand string) (bool, bool) {
-				// resolução canônica kit: rules/x → coredata/rules/x;
-				// skills/<id>/SKILL.md e agents/<id>.md → id no registry.
-				// rules/<x> NÃO canônico = runtime do config do operador
-				// (client/operator-profile, templates) — verificável só com
-				// config presente; sem ele o L1 de kit NÃO opina (skip).
+				// resolução canônica kit (M13): o destino no config é
+				// profile/ — profile/x → coredata/rules/x (a FONTE
+				// canônica: context7, stack-templates); perfil
+				// (client/operator) não tem fonte canônica → runtime do
+				// config do operador → SKIP. rules/x (prosa antiga) →
+				// coredata/rules/x (compat). skills/<id>/SKILL.md e
+				// agents/<id>.md → id no registry.
+				if strings.HasPrefix(cand, "profile/") {
+					base := strings.TrimPrefix(cand, "profile/")
+					if fileExists(filepath.Join(ws, "coredata", "rules", filepath.FromSlash(base))) {
+						return true, false
+					}
+					if containsStr([]string{"client-profile.md", "operator-profile.md"}, base) {
+						return false, true // perfil = pessoal-por-design
+					}
+					return false, true // runtime do config; sem config o kit não opina
+				}
 				if strings.HasPrefix(cand, "rules/") {
 					if fileExists(filepath.Join(ws, "coredata", filepath.FromSlash(cand))) {
 						return true, false
@@ -329,7 +341,7 @@ func lintL1Runtime(rep *Report, configRoot string) {
 	if fileExists(filepath.Join(configRoot, "AGENTS.template.md")) {
 		rels = append(rels, "AGENTS.template.md")
 	}
-	rels = append(rels, mdFilesUnder(configRoot, "rules")...)
+	rels = append(rels, mdFilesUnder(configRoot, "profile")...)
 	for _, rel := range rels {
 		fpath := filepath.Join(configRoot, filepath.FromSlash(rel))
 		checkMDRefs(rep, rel, fpath, []string{filepath.Dir(fpath), configRoot}, nil)
@@ -733,7 +745,7 @@ func lintL6(rep *Report, ws string, kitMode bool, configRoot string, kitMDs []st
 			scan(rel, filepath.Join(ws, filepath.FromSlash(rel)), sev)
 		}
 	}
-	// config: AGENTS.md + AGENTS.template.md + rules/*.md = warning (runtime do operador)
+	// config: AGENTS.md + AGENTS.template.md + profile/*.md = warning (runtime do operador)
 	if configRoot != "" {
 		if fileExists(filepath.Join(configRoot, "AGENTS.md")) {
 			scan("AGENTS.md", filepath.Join(configRoot, "AGENTS.md"), "warning")
@@ -741,7 +753,7 @@ func lintL6(rep *Report, ws string, kitMode bool, configRoot string, kitMDs []st
 		if fileExists(filepath.Join(configRoot, "AGENTS.template.md")) {
 			scan("AGENTS.template.md", filepath.Join(configRoot, "AGENTS.template.md"), "warning")
 		}
-		for _, rel := range mdFilesUnder(configRoot, "rules") {
+		for _, rel := range mdFilesUnder(configRoot, "profile") {
 			scan(rel, filepath.Join(configRoot, filepath.FromSlash(rel)), "warning")
 		}
 	}
@@ -794,9 +806,9 @@ func lintL7(rep *Report, ws string, kitMode bool, configRoot string) {
 		golden := filepath.Join(ws, "internal", "core", "content", "testdata", "golden-opencode")
 		if entries, err := os.ReadDir(golden); err == nil {
 			for _, e := range entries {
-				if e.IsDir() && !containsStr([]string{"agents", "skills", "rules"}, e.Name()) {
+				if e.IsDir() && !containsStr([]string{"agents", "skills", "profile"}, e.Name()) {
 					structErr("internal/core/content/testdata/golden-opencode/"+e.Name(),
-						"dir não canônico no golden (espelha o render: agents/, skills/, rules/)",
+						"dir não canônico no golden (espelha o render: agents/, skills/, profile/)",
 						"regenere o golden (GOLMET_UPDATE_GOLDEN=1) ou mova o dir")
 				}
 			}

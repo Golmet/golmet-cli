@@ -265,10 +265,10 @@ justificar | ❌ violação.
 ### Passo 7b — Verificação G: Índice lazy do AGENTS.md global
 
 1. Leia o AGENTS.md global e extraia as entradas do índice
-   "Índice de Referências — lazy loading" (padrão: `` `rules/<arquivo>.md` ``).
-2. Para cada entrada, verifique se o arquivo existe em `rules/` →
+   "Índice de Referências — lazy loading" (padrão: `` `profile/<arquivo>.md` ``).
+2. Para cada entrada, verifique se o arquivo existe em `profile/` →
    **referência quebrada = ❌**.
-3. Para cada arquivo em `rules/`, verifique se está referenciado no
+3. Para cada arquivo em `profile/`, verifique se está referenciado no
    índice → arquivo órfão = ⚠️ (nunca será carregado).
 4. Verifique a seção "Hierarquia de Convenções" → ausente = ❌.
 5. Tamanho do AGENTS.md global: > 60 linhas = ⚠️ (teto: 40;

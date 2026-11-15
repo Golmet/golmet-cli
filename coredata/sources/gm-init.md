@@ -52,7 +52,7 @@ status: active
 
 # Constituição do Repositório — <REPO_DOCS>
 
-> **Propósito:** Documentar decisões, requisitos e arquitetura de todos os projetos `<CLIENTE>` (do perfil — `rules/client-profile.md`).
+> **Propósito:** Documentar decisões, requisitos e arquitetura de todos os projetos `<CLIENTE>` (do perfil — `profile/client-profile.md`).
 > **Última atualização:** <DATA_ATUAL>
 
 ---

@@ -1,7 +1,7 @@
 ---
 name: gm-azure-setup
 description: >-
-   Wizard de configuração do MCP Azure DevOps para o workflow — verifica o server `azure-devops` no opencode.jsonc global, orienta o cadastro do PAT na env var de usuário ADO_PAT_B64 (nunca imprime, loga ou comita o token), habilita enabled: true, valida conexão com a org/projeto definidos no perfil do cliente (rules/client-profile.md) e confirma as tools do MCP. Idempotente e executado por demanda; delegado pelo gm-setup. Use quando o usuário pedir "configurar MCP Azure DevOps", "setup azure devops mcp", "configurar PAT do azure", "token do azure devops", "conectar azure boards ao opencode" ou "onboarding azure".
+   Wizard de configuração do MCP Azure DevOps para o workflow — verifica o server `azure-devops` no opencode.jsonc global, orienta o cadastro do PAT na env var de usuário ADO_PAT_B64 (nunca imprime, loga ou comita o token), habilita enabled: true, valida conexão com a org/projeto definidos no perfil do cliente (profile/client-profile.md) e confirma as tools do MCP. Idempotente e executado por demanda; delegado pelo gm-setup. Use quando o usuário pedir "configurar MCP Azure DevOps", "setup azure devops mcp", "configurar PAT do azure", "token do azure devops", "conectar azure boards ao opencode" ou "onboarding azure".
 requires: [file, edit, glob, grep, shell, ask]
 ---
 
@@ -26,7 +26,7 @@ Espelho do `gm-gh-setup` (que configura a gh CLI para o domínio GitHub).
 
 - `~/.config/opencode/opencode.jsonc` — bloco `mcp."azure-devops"` (server já definido, `enabled: false` por padrão)
 - Env var `ADO_PAT_B64` — apenas EXISTÊNCIA (`[Environment]::GetEnvironmentVariable('ADO_PAT_B64','User') -ne $null`); NUNCA imprimir o valor
-- `rules/client-profile.md` — perfil do cliente (IMP-103): org, projeto, usuário, repos e defaults do tracker. Fonte única de defaults — NUNCA hardcode de cliente nesta skill (AGENTS.md global mantém os blocos locais, gitignored).
+- `profile/client-profile.md` — perfil do cliente (IMP-103): org, projeto, usuário, repos e defaults do tracker. Fonte única de defaults — NUNCA hardcode de cliente nesta skill (AGENTS.md global mantém os blocos locais, gitignored).
 
 ## Gera (downstream)
 
@@ -140,7 +140,7 @@ Após **reiniciar o OpenCode** (reabrindo o terminal, para a env var valer):
 1. **Tools disponíveis** — as tools do server aparecem com prefixo
    `azure-devops` (ex.: criação/listagem de work items, queries de Boards).
 2. **Conexão real** — liste projetos ou consulte um work item existente na
-   org do perfil (rules/client-profile.md); o resultado deve mencionar o projeto do perfil.
+   org do perfil (profile/client-profile.md); o resultado deve mencionar o projeto do perfil.
 3. Se retornar dados da org → conexão OK.
 
 ### Passo 6 — Relatório final
@@ -173,7 +173,7 @@ ou continue o gm-setup (Passo 6 — validação de ambiente).
 
 - **Re-execução (idempotente):** itens já OK são pulados; nada é refeito. PAT expirado → só refazer Passos 2-3.
 - **Troca de PAT:** substituir o valor da MESMA env var `ADO_PAT_B64` (nunca criar segunda entrada MCP nem segunda env var).
-- **Outra org/projeto eventual:** A fonte de defaults é o perfil do cliente (rules/client-profile.md — IMP-103); para operação em outra org/projeto, informe explicitamente na chamada da tool — o wizard não altera o perfil.
+- **Outra org/projeto eventual:** A fonte de defaults é o perfil do cliente (profile/client-profile.md — IMP-103); para operação em outra org/projeto, informe explicitamente na chamada da tool — o wizard não altera o perfil.
 - **CI/CD ou sessão de serviço:** cadastrar `ADO_PAT_B64` como secret do ambiente do runner (nunca no repo).
 - **Proxy corporativo:** o MCP local respeita as env vars de proxy; configure se a rede exigir.
 - **Operador tenta colar o PAT no chat/arquivo:** recusar e orientar o Passo 3 (env var).

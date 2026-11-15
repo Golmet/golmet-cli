@@ -18,7 +18,7 @@ produto, propõe uma base comum e preserva instruções específicas de cada rep
 5. **Evidência de origem:** cada regra proposta como comum deve indicar em
    quais repos ela foi encontrada.
 6. **Hierarquia:** instruções específicas do repo continuam subordinadas apenas
-   ao `AGENTS.md` global (incluindo os `rules/*.md` apontados pelo seu índice
+   ao `AGENTS.md` global (incluindo os `profile/*.md` apontados pelo seu índice
    lazy) e às regras do próprio repo; a sincronização não pode
    apagar precedência local válida.
 
@@ -28,7 +28,7 @@ produto, propõe uma base comum e preserva instruções específicas de cada rep
 - `AGENTS.md` de cada repositório do produto.
 - `PROJECT_CHARTER.md`, `CONSTITUTION.md` e `INDEX.md` do produto quando
   disponíveis, para entender nome, repos e convenções documentais.
-- `AGENTS.md` global e `rules/*.md` (índice lazy) quando necessário
+- `AGENTS.md` global e `profile/*.md` (índice lazy) quando necessário
   para verificar precedência.
 
 ## Gera (downstream)

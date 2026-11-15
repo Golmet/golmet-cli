@@ -1,7 +1,7 @@
 ---
 name: gm-mcp-context7-setup
 description: >-
-   Wizard de configuração do MCP Context7 no OpenCode — server REMOTE oficial (Streamable HTTP em https://mcp.context7.com/mcp), funciona SEM credenciais (initialize + tools/list OK; rate limits baixos); API key OPCIONAL e recomendada (grátis em context7.com/dashboard, prefixo ctx7sk) via header Authorization Bearer. Duas rotas: remota (recomendada — sem Node.js) e local (npx @upstash/context7-mcp, Node 20+, key via CONTEXT7_API_KEY); rota automática oficial `npx ctx7 setup --opencode` citada como alternativa. Expõe resolve-library-id e query-docs; a regra de COMPORTAMENTO (quando consultar docs de libs) vive em rules/context7.md do operador — esta skill cuida da INFRAESTRUTURA do server. Modo de erro continue (setup de MCP não bloqueia o fluxo). Idempotente e executado por demanda; delegado pelo gm-setup. Use quando o usuário pedir "configurar MCP Context7", "setup context7", "conectar context7 ao opencode" ou "docs de libs no agente".
+   Wizard de configuração do MCP Context7 no OpenCode — server REMOTE oficial (Streamable HTTP em https://mcp.context7.com/mcp), funciona SEM credenciais (initialize + tools/list OK; rate limits baixos); API key OPCIONAL e recomendada (grátis em context7.com/dashboard, prefixo ctx7sk) via header Authorization Bearer. Duas rotas: remota (recomendada — sem Node.js) e local (npx @upstash/context7-mcp, Node 20+, key via CONTEXT7_API_KEY); rota automática oficial `npx ctx7 setup --opencode` citada como alternativa. Expõe resolve-library-id e query-docs; a regra de COMPORTAMENTO (quando consultar docs de libs) vive em profile/context7.md do operador — esta skill cuida da INFRAESTRUTURA do server. Modo de erro continue (setup de MCP não bloqueia o fluxo). Idempotente e executado por demanda; delegado pelo gm-setup. Use quando o usuário pedir "configurar MCP Context7", "setup context7", "conectar context7 ao opencode" ou "docs de libs no agente".
 requires: [file, edit, glob, grep, shell, ask]
 ---
 
@@ -17,7 +17,7 @@ expostas: `resolve-library-id` e `query-docs`.
 
 Fronteira de responsabilidade: a regra de **COMPORTAMENTO** (quando
 consultar docs de library/framework/SDK/API/CLI/cloud — ANTES de confiar
-na memória do modelo) vive em `rules/context7.md` do operador (índice
+na memória do modelo) vive em `profile/context7.md` do operador (índice
 lazy do AGENTS.md). Esta skill cuida da **INFRAESTRUTURA** do server —
 config, key opcional e smoke test. Sem key, avise o operador sobre os
 rate limits baixos (nunca é bloqueio — o server funciona sem key).
@@ -47,7 +47,7 @@ rate limits baixos (nunca é bloqueio — o server funciona sem key).
 - Saída de `opencode mcp list` — server `context7` já existe?
 - Env var `CONTEXT7_API_KEY` — apenas EXISTÊNCIA (para a rota local);
   NUNCA imprimir o valor
-- `rules/context7.md` do operador — regra de comportamento (quando
+- `profile/context7.md` do operador — regra de comportamento (quando
   consultar docs; separada desta skill por design)
 
 ## Gera (downstream)
@@ -65,7 +65,7 @@ rate limits baixos (nunca é bloqueio — o server funciona sem key).
 - Entradas `mcp` de outros servers (azure-devops, playwright, figma,
   postgres, sqlite, codebase-memory-mcp, hostinger) — adiciona/ajusta
   SOMENTE o bloco `context7`
-- `rules/context7.md` — regra de comportamento é do lazy index do
+- `profile/context7.md` — regra de comportamento é do lazy index do
   operador; esta skill não a cria nem a edita
 - **NENHUM arquivo com o valor da key** — proibido escrever
   `CONTEXT7_API_KEY` ou a key `ctx7sk...` em opencode.json(c) versionado,
@@ -219,7 +219,7 @@ Checklist de fechamento do wizard:
 
 Padrão de uso: `resolve-library-id` → `query-docs`. O comportamento de
 QUANDO usar (todo topic sobre library/framework/SDK/API/CLI/cloud,
-mesmo em libs "conhecidas") está em `rules/context7.md` do operador —
+mesmo em libs "conhecidas") está em `profile/context7.md` do operador —
 esta skill não duplica a regra.
 
 ## Troubleshooting

@@ -2,7 +2,7 @@
 
 <!-- Fonte de verdade dos defaults do cliente desta máquina. -->
 <!-- Gravado pelo `gm-setup` (Passo 2b). NUNCA versionado (gitignore). -->
-<!-- Este template é o esqueleto versionado; o preenchido vive em rules/client-profile.md (gitignored). -->
+<!-- Este template é o esqueleto versionado; o preenchido vive em profile/client-profile.md (gitignored). -->
 <!-- Consumido por: gm-azure-setup, gm-azure-workitem-creator, @gm-azure-orchestrator, -->
 <!-- gm-gh-setup, gm-cicd-workflow, gm-vps-setup, gm-observability, gm-stack-boilerplate (IMP-105). -->
 

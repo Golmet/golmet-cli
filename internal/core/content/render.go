@@ -51,12 +51,15 @@ func Render(fsys fs.FS, reg *Registry, engine string) ([]Rendered, []ErrMissingB
 	return out, missing
 }
 
-// renderRules anexa as rules canônicas (diretório rules/ da fonte — *.md e
-// *.yaml, ex.: rules/context7.md, rules/stack-templates.yaml) à saída do
-// render, byte-fiéis após a normalização de resquícios de editor (BOM/EOL →
-// canônico LF, a mesma do materialize). Diretório ausente = nada a anexar
-// (fontes externas antigas sem rules/ seguem renderizando); arquivo
-// ilegível vira item "sem corpo" (mesma reportagem dos bodies do registry).
+// renderRules anexa as rules canônicas da fonte (coredata/rules — *.md e
+// *.yaml, ex.: context7.md, stack-templates.yaml, templates de perfil) à
+// saída do render com Rel **profile/<nome>** — o destino no CONFIG é o
+// perfil de operação do agente (`profile/`); a FONTE continua coredata/rules
+// (o conteúdo é rules canônicas; só o destino muda — M13). Byte-fiéis após a
+// normalização de resquícios de editor (BOM/EOL → canônico LF, a mesma do
+// materialize). Diretório ausente = nada a anexar (fontes externas antigas
+// sem rules/ seguem renderizando); arquivo ilegível vira item "sem corpo"
+// (mesma reportagem dos bodies do registry).
 func renderRules(fsys fs.FS, out *[]Rendered, missing *[]ErrMissingBody) {
 	entries, err := fs.ReadDir(fsys, "rules")
 	if err != nil {
@@ -66,10 +69,12 @@ func renderRules(fsys fs.FS, out *[]Rendered, missing *[]ErrMissingBody) {
 		if e.IsDir() || (!strings.HasSuffix(e.Name(), ".md") && !strings.HasSuffix(e.Name(), ".yaml")) {
 			continue
 		}
-		rel := "rules/" + e.Name()
-		data, rerr := fs.ReadFile(fsys, rel)
+		// FONTE = rules/<nome> (coredata); DESTINO no config = profile/<nome>
+		src := "rules/" + e.Name()
+		rel := "profile/" + e.Name()
+		data, rerr := fs.ReadFile(fsys, src)
 		if rerr != nil {
-			*missing = append(*missing, ErrMissingBody{ID: rel, Path: rel})
+			*missing = append(*missing, ErrMissingBody{ID: rel, Path: src})
 			continue
 		}
 		doc := rightTrimWS(string(Normalize(data)))

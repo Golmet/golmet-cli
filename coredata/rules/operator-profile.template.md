@@ -2,7 +2,7 @@
 
 <!-- Fonte de verdade da identidade do operador DESTA máquina. -->
 <!-- Gravado pelo `gm-setup` (Passo 2c). NUNCA versionado (gitignore). -->
-<!-- Este template é o esqueleto versionado; o preenchido vive em rules/operator-profile.md (gitignored). -->
+<!-- Este template é o esqueleto versionado; o preenchido vive em profile/operator-profile.md (gitignored). -->
 <!-- Consumido por: gm-clarify (triagem de PENDs — campo Responsável), gm-decision-log (campo Decisor) -->
 <!-- e registro de IMPs em WORKFLOW_IMPROVEMENTS.md (campo Autor). -->
 <!-- Fallback: se o arquivo não existir, as skills pedem os dados ao operador manualmente -->

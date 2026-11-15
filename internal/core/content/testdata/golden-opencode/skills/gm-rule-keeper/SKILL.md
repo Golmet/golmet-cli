@@ -31,7 +31,7 @@ obrigatório da org, não anotação).
 ## Lê (upstream)
 
 - `packs/<pack-ativo>/rules/` — normas existentes (temas e seus gatilhos)
-- O índice lazy de `rules/` no AGENTS.md do operador — gatilhos já
+- O índice lazy do AGENTS.md do operador — gatilhos já
   referenciados (editar norma existente = gatilho existente; novo tema =
   linha nova no lazy index)
 - O conteúdo da norma ditado pelo operador + a decisão/IMP de origem

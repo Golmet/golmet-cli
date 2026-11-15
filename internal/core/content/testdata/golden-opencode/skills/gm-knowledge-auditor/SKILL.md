@@ -79,7 +79,7 @@ inventar números.
 | Conceito | Proxy (glob) | Limite declarado |
 |----------|--------------|------------------|
 | Sessão que **precisava** de conhecimento | ≥ 1 tool call de leitura (read/grep/glob, status `completed`) com path em artefato T4 de engenharia: segmento `specs/`, `analysis/`, `delivery/` ou arquivo `REQUIREMENTS.md` (qualquer módulo sob o diretório de projetos) | Necessidade real de conhecimento não é observável — é inferência de atividade |
-| **Hit** de conhecimento | tool call de leitura com path em `knowledge/**` (T1), `patterns/INDEX.md` ou `**/PATTERN.md` (T2), `rules/**.md` (T3) | Acionamento do bloco `knowledge-routing` em prosa NÃO é observável no db; `rules/*.yaml` e invocações da tool `skill` não contam |
+| **Hit** de conhecimento | tool call de leitura com path em `knowledge/**` (T1), `patterns/INDEX.md` ou `**/PATTERN.md` (T2), `profile/**` (T3 config) ou `packs/**/rules/**` (T3 pack) | Acionamento do bloco `knowledge-routing` em prosa NÃO é observável no db; `profile/*.yaml` e invocações da tool `skill` não contam |
 | **Tokens de conhecimento por tarefa** | soma aproximada (bytes/4, ASCII) dos arquivos de conhecimento LIDOS (tool `read`) por sessão ÷ sessões que precisavam | Tamanho no disco HOJE (não no momento da leitura); leitura parcial (offset/limit) conta como arquivo inteiro; 1ª leitura por sessão+arquivo |
 
 Regras de contagem:

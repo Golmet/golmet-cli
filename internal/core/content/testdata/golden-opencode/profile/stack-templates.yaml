@@ -5,7 +5,7 @@
 # Lazy-loaded via AGENTS.md — só lido quando necessário.
 #
 # IMP-105 (base neutra): o campo `boilerplate` é RELATIVO à organização —
-# o prefixo da org vem de `boilerplate_org` no `rules/client-profile.md`
+# o prefixo da org vem de `boilerplate_org` no `profile/client-profile.md`
 # (IMP-103), gravado pelo gm-setup. O gm-stack-boilerplate resolve
 # `<boilerplate_org>` antes de clonar. Sem perfil, pergunte ao operador.
 #

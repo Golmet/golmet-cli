@@ -188,9 +188,9 @@ func previousEntries(m *ContentManifest) map[string]FileEntry {
 // byte-equality); o materialize pula gravação/manifest e REMOVE proveniência
 // stale (entradas antigas do manifest saem no próximo materialize).
 var nonDepositTemplates = map[string]bool{
-	"AGENTS.template.md":                 true,
-	"rules/client-profile.template.md":   true,
-	"rules/operator-profile.template.md": true,
+	"AGENTS.template.md":                   true,
+	"profile/client-profile.template.md":   true,
+	"profile/operator-profile.template.md": true,
 }
 
 // Materialize renderiza o core FULL e grava agents/skills no config do engine.
@@ -409,10 +409,10 @@ func (s safeDirFS) Open(name string) (fs.File, error) {
 }
 
 // validateContentPath constrains renderer output to the three content roots
-// (agents/, skills/, rules/) plus the root-level template asset
-// (AGENTS.template.md). The check is deliberately independent of the host
-// path separator so a malicious registry cannot exploit a different
-// platform's syntax.
+// (agents/, skills/, profile/) plus the root-level template asset
+// (AGENTS.template.md — não-depositável, M12). The check is deliberately
+// independent of the host path separator so a malicious registry cannot
+// exploit a different platform's syntax.
 func validateContentPath(rel string) (string, error) {
 	normalized := strings.ReplaceAll(filepath.ToSlash(rel), "\\", "/")
 	if normalized == "" || strings.HasPrefix(normalized, "/") || filepath.IsAbs(rel) ||
@@ -429,7 +429,7 @@ func validateContentPath(rel string) (string, error) {
 		return normalized, nil
 	}
 	if !strings.HasPrefix(normalized, "agents/") && !strings.HasPrefix(normalized, "skills/") &&
-		!strings.HasPrefix(normalized, "rules/") {
+		!strings.HasPrefix(normalized, "profile/") {
 		return "", fmt.Errorf("caminho de conteúdo fora do escopo: %q", rel)
 	}
 	return normalized, nil

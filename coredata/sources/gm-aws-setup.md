@@ -28,7 +28,7 @@ Espelho do `gm-gh-setup` (que configura a gh CLI para o domínio GitHub).
   NUNCA o conteúdo de `~/.aws/credentials`)
 - Saída de `aws sts get-caller-identity --profile <nome>` — ARN/conta da
   identidade (validação)
-- `rules/client-profile.md` — perfil do cliente (IMP-103), opcional, para
+- `profile/client-profile.md` — perfil do cliente (IMP-103), opcional, para
   registrar o provider AWS (conta/região/profile — NUNCA segredo)
 
 ## Gera (downstream)
@@ -38,7 +38,7 @@ Espelho do `gm-gh-setup` (que configura a gh CLI para o domínio GitHub).
   --profile` executado INTERATIVAMENTE pelo operador no terminal — grava
   em `~/.aws`, fora de qualquer repo)
 - Opcional, sob confirmação: bloco `<!-- provider-aws -->` em
-  `rules/client-profile.md` (conta, região e profile — gitignored,
+  `profile/client-profile.md` (conta, região e profile — gitignored,
   IMP-103; NUNCA access key)
 
 ## Nunca edita
@@ -62,8 +62,8 @@ Espelho do `gm-gh-setup` (que configura a gh CLI para o domínio GitHub).
 - `question` (perguntas AGRUPADAS — IMP-043: instalar CLI? configurar
   perfil agora? registrar provider no client-profile?)
 - `read` (opencode.jsonc para o bloco `mcp."aws-mcp"`;
-  rules/client-profile.md quando for registrar provider)
-- `edit` (APENAS sob confirmação explícita: `rules/client-profile.md` —
+  profile/client-profile.md quando for registrar provider)
+- `edit` (APENAS sob confirmação explícita: `profile/client-profile.md` —
   bloco provider AWS sem segredo)
 
 ## Modo de erro
@@ -209,7 +209,7 @@ faltante:
 ### Passo 8 — (opcional, sob confirmação) Registrar provider AWS + relatório final
 
 **Opcional, só com confirmação explícita:** gravar em
-`rules/client-profile.md` (gitignored — IMP-103) um bloco do provider AWS:
+`profile/client-profile.md` (gitignored — IMP-103) um bloco do provider AWS:
 
 ```markdown
 <!-- provider-aws -->

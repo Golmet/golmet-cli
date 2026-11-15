@@ -354,10 +354,16 @@ obriga); só a PERDA/ausência do mínimo declarado flaga.
   `accumulation/` só {`patterns/`, `metrics/`, `nuances/`};
   `accumulation/patterns/<tipo>/<slug>/PATTERN.md` com tipo em
   {process, architecture, code, ui, test, data}.
-- **Config engine** (1º nível): dirs {agents, skills, rules, packs,
+- **Config engine** (1º nível): dirs {agents, skills, profile, packs,
   plugins, knowledge (legado), .golmet} + files {AGENTS.md, opencode.jsonc}
   — dir desconhecido = warning; template depositado no config
   (AGENTS.template.md) = L7 warning (template vive no kit — M12).
+  **Convenção T3 (M13):** o perfil de operação do agente vive em
+  `profile/` do config (recursos do kit kit-canônicos — context7,
+  stack-templates — e dados de operação pessoais-por-design — client/
+  operator; o DONO está no manifest/personal.json); as normas da ORG
+  permanecem IN-PLACE no pack (`packs/<id>/rules/`, uma por arquivo com
+  gatilho). T3 = "config: `profile/*` · pack: `packs/<id>/rules/*`".
 - **Kit repo**: `coredata/{sources/, rules/, templates/, registry.yaml}` com sources
   FLAT (`*.md` + `*.agent.md`); rules canônicas do kit = `rules/*.md` +
   `rules/*.yaml` (context7, templates de perfil client/operator — IMP-103/136,

@@ -108,7 +108,7 @@ gh api orgs/<org_github do perfil> --jq .login 2>&1
 - Se 404/403 → o usuário autenticado não tem acesso à org
   `<org_github>` do perfil; oriente solicitar acesso ao admin da org e
   registre ⚠️.
-- Fonte da org: `rules/client-profile.md` (`org_github`, IMP-103/IMP-105) —
+- Fonte da org: `profile/client-profile.md` (`org_github`, IMP-103/IMP-105) —
   a skill apenas valida, não altera config global do `gh`. Sem perfil,
   pergunte a org ao operador (question agrupada).
 

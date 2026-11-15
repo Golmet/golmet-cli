@@ -4,7 +4,7 @@
 TEMPLATE VERSIONADO E NEUTRO (IMP-105). Este arquivo NÃO roda direto: o
 `gm-setup` copia este template para `AGENTS.md` (gitignored, local) e
 preenche os placeholders `<preenchido pelo gm-setup>` a partir do
-`rules/client-profile.md` (IMP-103) e do pack da organização. Nada de
+`profile/client-profile.md` (IMP-103) e do pack da organização. Nada de
 organização/registry/DNS/canal/OS/tracker no template — a base publicada
 fica 100% neutra. O kit materializa este arquivo em <config>/AGENTS.template.md
 como GERIDO (layer core no manifest de conteúdo) — sincronizado pelo
@@ -22,9 +22,9 @@ Blocos marcadores reconhecidos pelo gm-setup (substituição idempotente):
 <!-- azure-devops -->
 <preenchido pelo gm-setup a partir do client-profile>
 Tracker do cliente: org/projeto/repos-padrão/usuário (IMP-103). Ler
-`rules/client-profile.md` ANTES de qualquer operação de tracker; nunca usar
+`profile/client-profile.md` ANTES de qualquer operação de tracker; nunca usar
 repos de outros setores/produtos como padrão. O perfil é gitignored —
-template em `rules/client-profile.template.md`.
+template em `profile/client-profile.template.md`.
 <!-- /azure-devops -->
 
 <!-- org-pack -->
@@ -114,7 +114,7 @@ Gatilho (P-01): aplicar este bloco apenas AO decidir onde gravar/consumir conhec
 
 ### ROTA, NÃO REPLIQUE (P-04/AP-01)
 
-Este bloco é roteiro curto — cada tipo tem SEU índice: `packs/<pack>/domains/INDEX.md` (T1) · `packs/<pack>/accumulation/patterns/INDEX.md` (T2) · índice lazy de rules/ (T3, abaixo) · `INDEX.md` do módulo (T4 — IMP-011) · registry.yaml (T5). NUNCA criar meta-índice central nem copiar conteúdo entre stores.
+Este bloco é roteiro curto — cada tipo tem SEU índice: `packs/<pack>/domains/INDEX.md` (T1) · `packs/<pack>/accumulation/patterns/INDEX.md` (T2) · índice lazy de profile/ (T3, abaixo) · `INDEX.md` do módulo (T4 — IMP-011) · registry.yaml (T5). NUNCA criar meta-índice central nem copiar conteúdo entre stores.
 
 <!-- /knowledge-routing -->
 
@@ -122,14 +122,14 @@ Este bloco é roteiro curto — cada tipo tem SEU índice: `packs/<pack>/domains
 
 CRITICAL: os arquivos abaixo NÃO são carregados automaticamente. Leia com o Read tool APENAS quando a tarefa atual exigir — nunca preventivamente. Quando lidos, trate como instruções obrigatórias que sobrescrevem defaults.
 
-- `rules/context7.md` — ANTES de responder sobre library/framework/SDK/CLI/cloud (MCP context7; não confie na memória). Infraestrutura do server: skill `gm-mcp-context7-setup`.
+- `profile/context7.md` — ANTES de responder sobre library/framework/SDK/CLI/cloud (MCP context7; não confie na memória). Infraestrutura do server: skill `gm-mcp-context7-setup`.
 - `packs/<pack>/rules/org.md` — norma da organização (identidade/repos/clientes — IMP-105) — AO criar repos/projetos na org ou editar o repo de docs do produto.
 - `packs/<pack>/rules/deploy.md` — pipeline de deploy validado (deploy.yml/secrets/deploy.sh) — AO criar/editar pipeline de deploy ou diagnosticar falha de deploy.
 - `packs/<pack>/rules/vps.md` — runbook de VPS (Docker/GHCR/tunnel/backup) — AO configurar/operar VPS.
 - `packs/<pack>/rules/observability.md` — observabilidade mínima (health/watchdog/alertas) — AO configurar saúde de serviços.
-- `rules/stack-templates.yaml` — Registry de boilerplates Golmet por stack (.NET, React, Angular, Rust, Java). A org vem de `boilerplate_org` no client-profile. Carregado pelo gm-stack-boilerplate antes de scaffold de novo projeto; editar para adicionar/atualizar templates e recomendar o PR no .config do workflow.
-- `rules/client-profile.md` — ANTES de qualquer operação Azure DevOps/tracker (org, projeto, repos e usuário do cliente; IMP-103). Gravado pelo gm-setup; nunca versionado — template em `rules/client-profile.template.md`.
-- `rules/operator-profile.md` — ANTES de registrar responsabilidade/autoria (triagem de PENDs no gm-clarify, campo Decisor no gm-decision-log, campo Autor de IMP — IMP-136). Gravado pelo gm-setup; nunca versionado — template em `rules/operator-profile.template.md`.
+- `profile/stack-templates.yaml` — Registry de boilerplates Golmet por stack (.NET, React, Angular, Rust, Java). A org vem de `boilerplate_org` no client-profile. Carregado pelo gm-stack-boilerplate antes de scaffold de novo projeto; editar para adicionar/atualizar templates e recomendar o PR no .config do workflow.
+- `profile/client-profile.md` — ANTES de qualquer operação Azure DevOps/tracker (org, projeto, repos e usuário do cliente; IMP-103). Gravado pelo gm-setup; nunca versionado — template em `profile/client-profile.template.md`.
+- `profile/operator-profile.md` — ANTES de registrar responsabilidade/autoria (triagem de PENDs no gm-clarify, campo Decisor no gm-decision-log, campo Autor de IMP — IMP-136). Gravado pelo gm-setup; nunca versionado — template em `profile/operator-profile.template.md`.
 - `packs/<pack>/accumulation/patterns/INDEX.md` (bloco `gm-pack-accumulation` acima) — AO levantar/desenhar/implementar feature de domínio já tratado em outro produto ou cenário recorrente (pattern library: process/architecture/code/ui/test/data).
 - bloco `<!-- knowledge-routing -->` (neste arquivo) + `packs/<pack>/domains/INDEX.md` — AO decidir onde gravar/consumir conhecimento novo ou ao fundar base de domínio (gm-domain-research).
 - skill `gm-knowledge-auditor` — AO pedir auditoria de consumo de conhecimento, hit rate ou custo de tokens de conhecimento.

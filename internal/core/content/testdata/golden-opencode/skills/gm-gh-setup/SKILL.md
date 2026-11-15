@@ -1,7 +1,7 @@
 ---
 name: gm-gh-setup
 description: >-
-   Wizard de configuração da GitHub CLI (gh) para o workflow — verifica instalação, autentica via gh auth login e valida o acesso à org GitHub do perfil (`org_github` em `rules/client-profile.md` — IMP-103/IMP-105). Idempotente e executado por demanda; delegado pelo gm-setup. Use quando o usuário pedir "configurar gh", "setup do gh", "autenticar github cli", "instalar gh" ou "onboarding github".
+   Wizard de configuração da GitHub CLI (gh) para o workflow — verifica instalação, autentica via gh auth login e valida o acesso à org GitHub do perfil (`org_github` em `profile/client-profile.md` — IMP-103/IMP-105). Idempotente e executado por demanda; delegado pelo gm-setup. Use quando o usuário pedir "configurar gh", "setup do gh", "autenticar github cli", "instalar gh" ou "onboarding github".
 requires: [file, edit, glob, grep, shell, ask]
 ---
 
@@ -115,7 +115,7 @@ gh api orgs/<org_github do perfil> --jq .login 2>&1
 - Se 404/403 → o usuário autenticado não tem acesso à org
   `<org_github>` do perfil; oriente solicitar acesso ao admin da org e
   registre ⚠️.
-- Fonte da org: `rules/client-profile.md` (`org_github`, IMP-103/IMP-105) —
+- Fonte da org: `profile/client-profile.md` (`org_github`, IMP-103/IMP-105) —
   a skill apenas valida, não altera config global do `gh`. Sem perfil,
   pergunte a org ao operador (question agrupada).
 
