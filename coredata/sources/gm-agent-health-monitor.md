@@ -152,12 +152,19 @@ Use `glob` para encontrar diretórios com `PROJECT_CHARTER.md`.
 3. Busque por padrões de erro comum (case-insensitive): `TODO`, `FIXME`, `PLACEHOLDER`,
    `<descrição>`, `[NÃO IMPLEMENTADO]` no corpo.
 
-### Passo 4 — Verificação C: Artefatos Órfãos
+### Passo 4 - Verificação C: Artefatos Órfãos
 
 1. Liste todos os artefatos no módulo (estrutura de subpastas).
 2. Para cada artefato, verifique se é referenciado em pelo menos um
    outro artefato (usando `grep`).
 3. Artefatos não referenciados por ninguém são "órfãos".
+4. **Temporários da zona `.golmet/` do container (válvula de escape —
+   FORMATO §2.3):** arquivo em `.golmet/` com sinais de função ganha
+   (conteúdo estruturado, nome estável, citado por outros artefatos) →
+   sugira ao operador a **promoção à estrutura canônica** via o escritor
+   canônico correspondente (`gm-datamodel` specs · `gm-rule-keeper`
+   rules · `gm-doc` documentação); sem sinais, permanece temporário e
+   morre ignorado pelo Git.
 
 ### Passo 5 — Verificação D: Staleness dos Artefatos
 

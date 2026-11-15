@@ -65,9 +65,11 @@ Detectou um desses gatilhos no pedido → devolva ao processo, não roteie.
 
 ## Algoritmo — perguntas de encaixe NA ORDEM
 
-A tabela knowledge-routing é o contrato; as 4 perguntas abaixo a operam.
+A tabela knowledge-routing é o contrato; as perguntas abaixo a operam.
 Passe na ordem — a PRIMEIRA que encaixa vence (a ordem é o desempate
-default):
+default). As perguntas 1-4 roteiam para as stores do contrato; a pergunta 5
+é a **válvula de escape** — o roteador nunca deixa um "salva isso aqui" sem
+rota:
 
 1. **É componente que o engine carrega (skill/agent)?** → `skills/`/
    `agents/` do pack (via `gm-skill-creator`/`gm-subagent-creator` +
@@ -85,6 +87,13 @@ default):
    `packs/<id>/accumulation/{patterns|metrics|nuances}/` — DELEGUE ao
    `gm-pattern-extractor` (padrão) ou `gm-metrics-collector` (métrica);
    nuances da org → `accumulation/nuances/<dominio>-nuances.md`.
+5. **VÁLVULA DE ESCAPE — não é nenhum destes?** (rascunho, relatório
+   ad-hoc, dump de análise, artefato sem função definida) → roteia para
+   `.golmet/` do container (zona de trabalho, temporária — FORMATO §2.3)
+   e pergunte ao operador se merece virar estrutura canônica (**promover**,
+   via o escritor canônico correspondente) ou permanecer temporário. O
+   temporário nasce NA ZONA, nunca solto na raiz — e morre ignorado pelo
+   Git (`.golmet/` é gitignored no container).
 
 ## Casos ambíguos (2-4 sobrepostos)
 
@@ -107,12 +116,12 @@ output (nunca disfarce o desempate de certeza).
 ```text
 ═══ gm-knowledge-route ═══
 conteúdo:  <resumo em 1 linha>
-destino:   <path T1-T5 resolvido (ou relativo, sem pack ativo)>
-escritor:  <skill canônica | operador (rules/componente)>
-formato:   <KNOWLEDGE.md | PATTERN.md | METRICS.md | RULES.md | skill/agent>
-porquê:    <1 linha de justificativa — auditável>
+destino:   <path T1-T5 resolvido (ou relativo, sem pack ativo) | .golmet/<nome> temporário (válvula de escape, pergunta 5)>
+escritor:  <skill canônica | operador (rules/componente) | operador (promover depois, válvula)>
+formato:   <KNOWLEDGE.md | PATTERN.md | METRICS.md | RULES.md | skill/agent | livre (temporário)>
+porquê:    <1 linha de justificativa — auditável | "sem função definida — válvula de escape">
 incerteza: <baixa | média — critério do desempate | declarada (fallback manual)>
-ação:      <delegar a <skill> | orientar edit + golmet pack publish | devolver ao processo>
+ação:      <delegar a <skill> | orientar edit + golmet pack publish | devolver ao processo | gravar em .golmet/<nome> e perguntar ao operador: promover ou permanecer temporário>
 ```
 
 ## Modo de erro

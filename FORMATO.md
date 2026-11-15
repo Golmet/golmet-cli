@@ -165,6 +165,17 @@ TRABALHO do kit, não conteúdo da organização.
   (zona de trabalho, gitignored) · estratégia → privado da org.*
   Assuntos transversais (sem workspace) gravam na zona de trabalho
   (`.golmet/meetings/`, `.golmet/migrations/`) — nunca na raiz.
+- **Válvula de escape (M19+):** *arquivo criado que não encaixa em
+  nenhuma estrutura canônica → `.golmet/` do container (zona de
+  trabalho, temporária). Ele nunca nasce solto na raiz — nasce na zona e
+  é promovido por decisão do operador, ou morre ignorado pelo Git
+  (`.golmet/` é gitignored).* **Promoção:** temporário que ganhou função
+  → promovido à estrutura canônica pelo escritor canônico correspondente
+  (`gm-datamodel` para specs, `gm-rule-keeper` para rules, `gm-doc` para
+  documentação), com decisão do operador. O roteador de conhecimento
+  (`gm-knowledge-route`, pergunta 5) é a porta de entrada da válvula; o
+  `gm-agent-health-monitor` sugere promoção quando um temporário ganha
+  sinais de função.
 - **`meetings/`/`migrations/` na raiz do container = warning** (M19 —
   saíram da raiz canônica; confundiam com a camada de migração de dados
   de produto): mova para `.golmet/meetings/` / `.golmet/migrations/`.
