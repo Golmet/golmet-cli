@@ -13,10 +13,11 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core/frontmatter"
 )
 
-// CanonicalDirs — pastas canônicas da raiz do container (docs é o hub de
-// docs da org; meetings são checkpoints transversais; migrations é a
-// camada de migração de dados da org).
-var CanonicalDirs = []string{"docs", "meetings", "migrations"}
+// CanonicalDirs — pastas canônicas da raiz do container (meetings são
+// checkpoints transversais; migrations é a camada de migração/histórico
+// da org). docs/ NÃO é canônico (M18): docs de produto vão no produto,
+// docs do kit vão no repo do kit, históricos em migrations/.
+var CanonicalDirs = []string{"meetings", "migrations"}
 
 // CanonicalFiles — arquivos canônicos da raiz (INDEX.md é a navegação do
 // container — IMP-012; CONSTITUTION.md são os princípios da org).

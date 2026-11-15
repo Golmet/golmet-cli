@@ -104,11 +104,22 @@ func (r *Report) runContainerChecks(root string, products []string) {
 	}
 
 	// dirs de produto na raiz fora do products: (workspace órfão ou pasta
-	// perdida — só o container sabe qual)
-	if len(st.UndeclaredDirs) > 0 {
+	// perdida — só o container sabe qual); docs/ ganha mensagem própria
+	// (não é estrutura canônica do container — M18)
+	var otherDirs []string
+	for _, d := range st.UndeclaredDirs {
+		if d == "docs" {
+			r.add("container-estrutura", Warn,
+				"docs/ não é estrutura canônica do container",
+				"docs de produto vão no produto; docs do kit vão no repo do kit; históricos em migrations/")
+			continue
+		}
+		otherDirs = append(otherDirs, d)
+	}
+	if len(otherDirs) > 0 {
 		r.add("container-products", Warn,
-			"dir(s) de produto na raiz fora do products: declarado — "+strings.Join(st.UndeclaredDirs, ", "),
-			"declare no golmet.yaml do container ('golmet init <produto> --into <container>') ou mova para docs/ (hub) se não for produto")
+			"dir(s) de produto na raiz fora do products: declarado — "+strings.Join(otherDirs, ", "),
+			"declare no golmet.yaml do container ('golmet init <produto> --into <container>') ou mova para migrations/ (histórico) se não for produto")
 	}
 
 	// base canônica ausente (INDEX.md é a navegação do container — IMP-012)
@@ -122,6 +133,6 @@ func (r *Report) runContainerChecks(root string, products []string) {
 	if len(st.LooseMDs) > 0 {
 		r.add("container-raiz", Warn,
 			"artefato(s) org-level na raiz do container — "+strings.Join(st.LooseMDs, ", "),
-			"mova para docs/ (hub de docs da org) ou declare allowlist")
+			"mova para migrations/ (histórico da org) ou declare allowlist")
 	}
 }

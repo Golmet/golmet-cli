@@ -15,7 +15,6 @@ func mkContainer(t *testing.T) string {
 	os.WriteFile(filepath.Join(ws, "golmet.yaml"), []byte("format: 1\ncontainer: true\nproducts: []\n"), 0o644)
 	os.WriteFile(filepath.Join(ws, "CONSTITUTION.md"), []byte("# Constituição\n"), 0o644)
 	os.WriteFile(filepath.Join(ws, "INDEX.md"), []byte("# Índice\n"), 0o644)
-	os.MkdirAll(filepath.Join(ws, "docs"), 0o755)
 	os.MkdirAll(filepath.Join(ws, "meetings"), 0o755)
 	os.MkdirAll(filepath.Join(ws, "migrations"), 0o755)
 	return ws
@@ -50,6 +49,17 @@ func TestInspectUndeclaredProductDir(t *testing.T) {
 	st := Inspect(ws, nil)
 	if len(st.UndeclaredDirs) != 1 || st.UndeclaredDirs[0] != "ProdutoSolto" {
 		t.Fatalf("UndeclaredDirs = %v, want [ProdutoSolto] (oculto isento)", st.UndeclaredDirs)
+	}
+}
+
+func TestInspectDocsIsNotCanonical(t *testing.T) {
+	// M18: docs/ deixou de ser canônico — cai em UndeclaredDirs para o
+	// doctor/lint emitirem a mensagem própria de extinção
+	ws := mkContainer(t)
+	os.MkdirAll(filepath.Join(ws, "docs"), 0o755)
+	st := Inspect(ws, nil)
+	if len(st.UndeclaredDirs) != 1 || st.UndeclaredDirs[0] != "docs" {
+		t.Fatalf("UndeclaredDirs = %v, want [docs] (não-canônico desde M18)", st.UndeclaredDirs)
 	}
 }
 

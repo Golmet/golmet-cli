@@ -17,7 +17,6 @@ func containerFixture(t *testing.T) string {
 	os.WriteFile(filepath.Join(ws, "golmet.yaml"), []byte("format: 1\ncontainer: true\nproducts: [ProdutoA]\n"), 0o644)
 	os.WriteFile(filepath.Join(ws, "CONSTITUTION.md"), []byte("# Constituição\n"), 0o644)
 	os.WriteFile(filepath.Join(ws, "INDEX.md"), []byte("# Índice\n"), 0o644)
-	os.MkdirAll(filepath.Join(ws, "docs"), 0o755)
 	os.MkdirAll(filepath.Join(ws, "meetings"), 0o755)
 	os.MkdirAll(filepath.Join(ws, "migrations"), 0o755)
 	os.MkdirAll(filepath.Join(ws, "ProdutoA"), 0o755)
@@ -60,8 +59,9 @@ func TestDoctorContainerHierarchyFindings(t *testing.T) {
 	ws := containerFixture(t)
 	// declarado ausente no disco
 	os.WriteFile(filepath.Join(ws, "golmet.yaml"), []byte("format: 1\ncontainer: true\nproducts: [ProdutoA, ProdutoFantasma]\n"), 0o644)
-	// produto não declarado + artefato org-level solto
+	// produto não declarado + artefato org-level solto + docs/ (não-canônico)
 	os.MkdirAll(filepath.Join(ws, "ProdutoSolto"), 0o755)
+	os.MkdirAll(filepath.Join(ws, "docs"), 0o755)
 	os.WriteFile(filepath.Join(ws, "AUDIT_2026-01-01.md"), []byte("relatório\n"), 0o644)
 
 	rep, err := Run(ws, Options{NoNetwork: true})
@@ -82,8 +82,18 @@ func TestDoctorContainerHierarchyFindings(t *testing.T) {
 		t.Fatalf("container-products = %+v, want fail (ProdutoFantasma) + warn (ProdutoSolto)", prod)
 	}
 	raiz := checksOf(rep, "container-raiz")
-	if len(raiz) != 1 || raiz[0].Status != Warn || !strings.Contains(raiz[0].Fix, "docs/") {
-		t.Fatalf("container-raiz = %+v, want 1 warn apontando docs/", raiz)
+	if len(raiz) != 1 || raiz[0].Status != Warn || !strings.Contains(raiz[0].Fix, "migrations/") {
+		t.Fatalf("container-raiz = %+v, want 1 warn apontando migrations/", raiz)
+	}
+	// docs/ não-canônico ganha a mensagem própria de extinção (M18)
+	var docsWarn bool
+	for _, c := range checksOf(rep, "container-estrutura") {
+		if c.Status == Warn && strings.Contains(c.Detail, "docs/ não é estrutura canônica do container") {
+			docsWarn = true
+		}
+	}
+	if !docsWarn {
+		t.Fatalf("container-estrutura deveria flagar docs/ com a mensagem própria: %+v", checksOf(rep, "container-estrutura"))
 	}
 }
 

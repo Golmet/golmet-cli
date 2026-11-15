@@ -141,10 +141,9 @@ do container). Estrutura canônica da raiz:
 <Container>/
 ├── golmet.yaml            # format: 1 · container: true · products: [<Produto>, …]
 ├── CONSTITUTION.md        # princípios da organização
-├── INDEX.md               # navegação do container (IMP-012) — índice de produtos e docs
-├── docs/                  # hub de docs da org (destino de artefatos org-level)
+├── INDEX.md               # navegação do container (IMP-012) — índice dos produtos
 ├── meetings/              # checkpoints transversais da org
-├── migrations/            # migrações de dados da org
+├── migrations/            # migrações e históricos da org
 ├── <Produto>/…            # workspaces filhos — cada um com o layout §2
 └── .git/                  # meta (ocultos/ferramentais ficam fora do contrato)
 ```
@@ -152,13 +151,18 @@ do container). Estrutura canônica da raiz:
 - **`products:`** lista os workspaces filhos declarados — declarado sem
   dir no disco = error (stale); dir de produto na raiz fora da lista =
   warning (`golmet init <produto> --into <container>` declara e scaffalda).
-- **Regra de scoping:** *o artefato grava no workspace do assunto;
-  assuntos transversais (sem workspace) gravam nas pastas canônicas do
-  container* (`docs/`, `meetings/`, `migrations/`) — nunca na raiz.
+- **Regra de scoping (M18):** *docs de produto → no produto · docs do
+  projeto kit → no repo do kit · docs históricos → `migrations/` ·
+  estratégia → privado da org.* Assuntos transversais (sem workspace)
+  gravam nas pastas canônicas do container (`meetings/`, `migrations/`)
+  — nunca na raiz.
+- **`docs/` na raiz do container = warning** (não-canônico desde M18):
+  "docs de produto vão no produto; docs do kit vão no repo do kit;
+  históricos em migrations/".
 - **Artefato org-level solto na raiz** (`*.md` fora do canônico, ex.:
-  auditorias/relatórios avulsos) = warning — mova para `docs/` (hub) ou
-  declare allowlist. `CONSTITUTION.md`/`INDEX.md` ausentes = warning (o
-  stub vem do `golmet init --org` — idempotente).
+  auditorias/relatórios avulsos) = warning — mova para `migrations/`
+  (histórico da org) ou declare allowlist. `CONSTITUTION.md`/`INDEX.md`
+  ausentes = warning (o stub vem do `golmet init --org` — idempotente).
 - **Dir desconhecido na raiz** = warning (mesma política do config §9.1).
 
 ## 3. `golmet.yaml`
@@ -481,19 +485,20 @@ obriga); só a PERDA/ausência do mínimo declarado flaga.
   (`DataModelSplitLines` = 800 linhas, constante declarada no lint e
   compartilhada com o gm-datamodel) = **L7-size** warning.
 - **Container de organização (§2.3):** o doctor roda o checklist de
-  hierarquia (products ↔ disco, base canônica, artefatos org-level soltos)
-  no lugar dos checks de workspace-produto; o lint valida a mesma estrutura
-  (L7) e varre a camada de navegação do container com o L1
-  (CONSTITUTION.md/INDEX.md/README.md da raiz + `docs/` + `meetings/` —
-  os `*.md` org-level soltos na raiz ficam fora do L1: o L7 já aponta a
-  movimentação). Refs ancoradas no container (`docs/`, `meetings/`,
-  `migrations/`, canônicos) são verificáveis; as demais stores de
-  workspace de produto permanecem isentas (mesma política do kit). O L1
-  do container resolve TAMBÉM o config root do engine quando conhecido
-  (`--engine`/`--home`): docs do container citam o runtime do agente
-  (ex.: `profile/client-profile.md` existe em `~/.config/opencode/profile/`)
-  — ref que resolve no config não é finding; sem config conhecido, a ref
-  volta a ser reportada.
+  hierarquia (products ↔ disco, base canônica, artefatos org-level soltos;
+  `docs/` não-canônico desde M18 — mensagem própria de extinção) no lugar
+  dos checks de workspace-produto; o lint valida a mesma estrutura (L7) e
+  varre a camada de navegação do container com o L1 (CONSTITUTION.md/
+  INDEX.md/README.md da raiz + `meetings/` + `docs/` legado durante a
+  transição — os `*.md` org-level soltos na raiz ficam fora do L1: o L7
+  já aponta a movimentação para `migrations/`). Refs ancoradas no
+  container (`meetings/`, `migrations/`, `docs/` legado, canônicos) são
+  verificáveis; as demais stores de workspace de produto permanecem
+  isentas (mesma política do kit). O L1 do container resolve TAMBÉM o
+  config root do engine quando conhecido (`--engine`/`--home`): docs do
+  container citam o runtime do agente (ex.: `profile/client-profile.md`
+  existe em `~/.config/opencode/profile/`) — ref que resolve no config
+  não é finding; sem config conhecido, a ref volta a ser reportada.
 - **Aviso precoce dos candidatos à quebra (L7-size):** `DECISIONS.md` (800
   linhas — ADRs auto-contidos; quebrado `decisions/` será planejado),
   `specs/ERROR_CATALOG.md` (600, fallback raiz), `support/KNOWN_ERRORS.md`

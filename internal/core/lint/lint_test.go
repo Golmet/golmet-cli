@@ -524,10 +524,9 @@ func TestL7SizeWarningsEarlyCandidates(t *testing.T) {
 func TestL7L1Container(t *testing.T) {
 	ws := t.TempDir()
 	os.WriteFile(filepath.Join(ws, "golmet.yaml"), []byte("format: 1\ncontainer: true\nproducts: [ProdutoA]\n"), 0o644)
-	os.WriteFile(filepath.Join(ws, "CONSTITUTION.md"), []byte("- `docs/guia.md` ok e `docs/morta.md` morta → L1\n"), 0o644)
-	os.MkdirAll(filepath.Join(ws, "docs"), 0o755)
+	os.WriteFile(filepath.Join(ws, "CONSTITUTION.md"), []byte("- `meetings/guia.md` ok e `meetings/morta.md` morta → L1\n"), 0o644)
 	os.MkdirAll(filepath.Join(ws, "meetings"), 0o755)
-	os.WriteFile(filepath.Join(ws, "docs", "guia.md"), []byte("guia\n"), 0o644)
+	os.WriteFile(filepath.Join(ws, "meetings", "guia.md"), []byte("guia\n"), 0o644)
 	os.MkdirAll(filepath.Join(ws, "ProdutoA"), 0o755)
 	os.WriteFile(filepath.Join(ws, "AUDIT.md"), []byte("solto\n"), 0o644)
 
@@ -544,7 +543,7 @@ func TestL7L1Container(t *testing.T) {
 			undeclared++
 		case f.Check == "L7" && f.Severity == "warning" && f.File == "AUDIT.md":
 			loose++
-		case f.Check == "L1" && strings.Contains(f.Description, "docs/morta.md"):
+		case f.Check == "L1" && strings.Contains(f.Description, "meetings/morta.md"):
 			deadRef++
 		}
 	}
@@ -552,13 +551,14 @@ func TestL7L1Container(t *testing.T) {
 		t.Fatalf("findings inesperados: missingProd=%d undeclared=%d loose=%d deadRef=%d — %+v", missingProd, undeclared, loose, deadRef, rep.Findings)
 	}
 
-	// declarado ausente + produto não declarado
+	// declarado ausente + produto não declarado + docs/ não-canônico (M18)
 	os.Remove(filepath.Join(ws, "golmet.yaml"))
 	os.WriteFile(filepath.Join(ws, "golmet.yaml"), []byte("format: 1\ncontainer: true\nproducts: [ProdutoA, ProdutoFantasma]\n"), 0o644)
 	os.MkdirAll(filepath.Join(ws, "ProdutoSolto"), 0o755)
+	os.MkdirAll(filepath.Join(ws, "docs"), 0o755)
 	rep2 := runLint(t, ws, t.TempDir())
 	l7 := findingsOf(rep2, "L7")
-	var errs, warns int
+	var errs, warns, docsWarn int
 	for _, f := range l7 {
 		if f.Severity == "error" && f.File == "ProdutoFantasma" {
 			errs++
@@ -566,9 +566,12 @@ func TestL7L1Container(t *testing.T) {
 		if f.Severity == "warning" && f.File == "ProdutoSolto" {
 			warns++
 		}
+		if f.Severity == "warning" && f.File == "docs" && strings.Contains(f.Description, "docs/ não é estrutura canônica") {
+			docsWarn++
+		}
 	}
-	if errs != 1 || warns != 1 {
-		t.Fatalf("L7 = %+v, want 1 error (ProdutoFantasma) + 1 warning (ProdutoSolto)", l7)
+	if errs != 1 || warns != 1 || docsWarn != 1 {
+		t.Fatalf("L7 = %+v, want 1 error (ProdutoFantasma) + 1 warning (ProdutoSolto) + 1 warning docs/ (M18)", l7)
 	}
 
 	// workspace-produto (golmet.yaml sem container) NÃO ganha checks de container

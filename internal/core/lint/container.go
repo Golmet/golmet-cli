@@ -30,8 +30,13 @@ func lintL7Container(rep *Report, ws string, st *container.Structure) {
 			"remova do products: do golmet.yaml (o produto não existe mais) ou restaure o diretório")
 	}
 	for _, d := range st.UndeclaredDirs {
+		if d == "docs" {
+			structWarn(d, "docs/ não é estrutura canônica do container",
+				"docs de produto vão no produto; docs do kit vão no repo do kit; históricos em migrations/")
+			continue
+		}
 		structWarn(d, "dir de produto na raiz fora do products: declarado",
-			"declare no golmet.yaml do container ('golmet init <produto> --into <container>') ou mova para docs/ (hub) se não for produto")
+			"declare no golmet.yaml do container ('golmet init <produto> --into <container>') ou mova para migrations/ (histórico) se não for produto")
 	}
 	for _, f := range st.MissingCanonical {
 		structWarn(f, "arquivo canônico do container ausente (INDEX.md é a navegação — IMP-012)",
@@ -39,7 +44,7 @@ func lintL7Container(rep *Report, ws string, st *container.Structure) {
 	}
 	for _, f := range st.LooseMDs {
 		structWarn(f, "artefato org-level na raiz do container",
-			"mova para docs/ (hub de docs da org) ou declare allowlist")
+			"mova para migrations/ (histórico da org) ou declare allowlist")
 	}
 }
 
