@@ -583,6 +583,39 @@ func TestL7L1Container(t *testing.T) {
 	}
 }
 
+// L1 do container resolve o CONFIG ROOT do engine quando conhecido:
+// refs ao runtime do agente (profile/client-profile.md) existem no config,
+// não no container — não são refs mortas.
+
+func TestL1ContainerResolvesEngineConfigRoot(t *testing.T) {
+	ws := t.TempDir()
+	os.WriteFile(filepath.Join(ws, "golmet.yaml"), []byte("format: 1\ncontainer: true\nproducts: []\n"), 0o644)
+	os.MkdirAll(filepath.Join(ws, "meetings"), 0o755)
+	os.WriteFile(filepath.Join(ws, "meetings", "2026-10-27-01.md"), []byte(
+		"- `profile/client-profile.md` — existe no config do engine\n"+
+			"- `profile/fantasma.md` — não existe nem no config nem no container → L1\n"), 0o644)
+
+	// config root COM o arquivo referido
+	home := t.TempDir()
+	cfg := filepath.Join(home, ".config", "opencode")
+	os.MkdirAll(filepath.Join(cfg, "profile"), 0o755)
+	os.WriteFile(filepath.Join(cfg, "profile", "client-profile.md"), []byte("perfil\n"), 0o644)
+
+	rep := runLint(t, ws, home)
+	l1 := findingsOf(rep, "L1")
+	if len(l1) != 1 || !strings.Contains(l1[0].Description, "profile/fantasma.md") {
+		t.Fatalf("L1 = %+v, want só profile/fantasma.md (client-profile resolve no config)", l1)
+	}
+
+	// sem config root na máquina (home vazia) → a ref de config vira finding
+	// (o contexto não pode verificar — caminho continua declarado como morto)
+	rep2 := runLint(t, ws, t.TempDir())
+	l12 := findingsOf(rep2, "L1")
+	if len(l12) != 2 {
+		t.Fatalf("sem config root conhecido as 2 refs deveriam flagar: %+v", l12)
+	}
+}
+
 // ---- L9 — schema do registry de stack-templates (M14) ----
 
 // l9Valid é um registry CONFORMANTE: boilerplate_org placeholder (aceito —

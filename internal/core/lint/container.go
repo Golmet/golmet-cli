@@ -48,12 +48,15 @@ func lintL7Container(rep *Report, ws string, st *container.Structure) {
 // docs/ + meetings/ (recursivo). Os *.md org-level SOLTOS na raiz ficam
 // FORA do L1 — são registros históricos e o L7 já aponta a movimentação
 // para docs/ (varrê-los produz ruído de refs que descrevem o passado).
-// Candidatos resolvem contra [dir do arquivo, raiz do container]; a
-// isenção de store é POR CANDIDATO: refs ancoradas no container
-// (docs/, meetings/, migrations/, canônicos) são arquivos próprios e
-// verificáveis — as demais stores de workspace de produto permanecem
-// isentas (mesma política do kit: citadas por design).
-func lintL1Container(rep *Report, ws string) {
+// Candidatos resolvem contra [dir do arquivo, raiz do container, CONFIG
+// ROOT do engine] — o config entra como raiz quando conhecido
+// (--engine/--home): docs do container citam o runtime do agente (ex.:
+// `profile/client-profile.md` existe em ~/.config/opencode/profile/) e
+// não são refs mortas. A isenção de store é POR CANDIDATO: refs
+// ancoradas no container (docs/, meetings/, migrations/, canônicos) são
+// arquivos próprios e verificáveis — as demais stores de workspace de
+// produto permanecem isentas (mesma política do kit: citadas por design).
+func lintL1Container(rep *Report, ws, configRoot string) {
 	var rels []string
 	for _, f := range []string{"CONSTITUTION.md", "INDEX.md", "README.md"} {
 		if fileExists(filepath.Join(ws, f)) {
@@ -64,7 +67,11 @@ func lintL1Container(rep *Report, ws string) {
 	rels = append(rels, mdFilesRecursive(ws, "meetings")...)
 	for _, rel := range rels {
 		fpath := filepath.Join(ws, filepath.FromSlash(rel))
-		checkMDRefs(rep, rel, fpath, []string{filepath.Dir(fpath), ws}, nil, containerAnchoredStoreExempt)
+		roots := []string{filepath.Dir(fpath), ws}
+		if configRoot != "" {
+			roots = append(roots, configRoot)
+		}
+		checkMDRefs(rep, rel, fpath, roots, nil, containerAnchoredStoreExempt)
 	}
 }
 

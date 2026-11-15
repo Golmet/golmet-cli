@@ -369,7 +369,7 @@ func Run(opt Options) (*Report, error) {
 	// ---- L7/L1 — container de organização (FORMATO §2) ----
 	if rep.Container {
 		lintL7Container(rep, ws, container.Inspect(ws, contProducts))
-		lintL1Container(rep, ws)
+		lintL1Container(rep, ws, configRoot)
 	}
 
 	// ---- L8 — conformidade estrutural definitivo ↔ template (warning) ----

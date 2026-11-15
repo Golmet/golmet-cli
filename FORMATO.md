@@ -488,7 +488,12 @@ obriga); só a PERDA/ausência do mínimo declarado flaga.
   os `*.md` org-level soltos na raiz ficam fora do L1: o L7 já aponta a
   movimentação). Refs ancoradas no container (`docs/`, `meetings/`,
   `migrations/`, canônicos) são verificáveis; as demais stores de
-  workspace de produto permanecem isentas (mesma política do kit).
+  workspace de produto permanecem isentas (mesma política do kit). O L1
+  do container resolve TAMBÉM o config root do engine quando conhecido
+  (`--engine`/`--home`): docs do container citam o runtime do agente
+  (ex.: `profile/client-profile.md` existe em `~/.config/opencode/profile/`)
+  — ref que resolve no config não é finding; sem config conhecido, a ref
+  volta a ser reportada.
 - **Aviso precoce dos candidatos à quebra (L7-size):** `DECISIONS.md` (800
   linhas — ADRs auto-contidos; quebrado `decisions/` será planejado),
   `specs/ERROR_CATALOG.md` (600, fallback raiz), `support/KNOWN_ERRORS.md`
