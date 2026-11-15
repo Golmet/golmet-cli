@@ -221,7 +221,7 @@ func TestWizardActiveDescription(t *testing.T) {
 		t.Fatalf("perfil sob o cursor sem o blurb: %q", p0)
 	}
 	m.ProfileMove(1)
-	if p1 := m.ActiveDescription(); p1 == p0 || !strings.Contains(p1, "121 componentes") {
+	if p1 := m.ActiveDescription(); p1 == p0 || !strings.Contains(p1, "125 componentes") {
 		t.Errorf("blurb do perfil deveria mudar ao navegar: %q", p1)
 	}
 	// passo engine: descrição do engine sob o cursor

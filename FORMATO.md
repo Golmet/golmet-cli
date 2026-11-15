@@ -341,6 +341,18 @@ kit:                           # mapa 1 nível — valores SEMPRE escalares
 
 **Perfis:** `BASE = file + shell (+mcp recomendado, +ask com degradação)` · `FULL = BASE + ask nativo + subagent + parallel + workspace-ops`. O `doctor` compara `requires` vs capacidades do engine detectado (S3).
 
+## 10.1 Duplo registro skill + subagent (mesmo id)
+
+Skill e subagent com o mesmo id **coexistem por necessidade, não por simetria** — a **skill é o contrato** (o procedimento: gatilho, Lê/Gera, formato, modo de erro, portátil a qualquer engine); o **subagent é o executor especializado** (sessão filha isolada, temperatura e permissões próprias, contexto do primary preservado).
+
+**Critério para criar o subagent do par** — existe quando pelo menos um vale:
+
+- **Trabalho denso** que gastaria o contexto do primary (ex.: `gm-pattern-extractor` processando retrospectiva longa);
+- **Delegação orquestrada** — um orquestrador abre o executor isolado (ex.: `gm-project-retrospective` → `@gm-pattern-extractor`);
+- **Disponibilidade cross-engine** para o mesmo id em qualquer engine (ex.: pares de navegação `gm-next`, `gm-progress`).
+
+**Skill-only** quando o trabalho é **leve, imediato e conversado** (o contexto da sessão dá o valor) — ex.: `gm-nuance-collector` (captura na hora), `gm-rule-keeper` (norma decidida com o operador, com confirmações no fluxo). O par pode ser completado depois, quando um dos critérios passar a valer.
+
 ## 11. Erros estruturados
 
 `golmet validate --json` emite array consumível pelo agente no loop:

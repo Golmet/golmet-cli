@@ -1142,6 +1142,71 @@ items:
     degrades: [edit, write, webfetch]
     body: sources/gm-knowledge-graph.md
 
+  - id: gm-knowledge-route
+    kind: skill
+    description: >-
+      Roteador de conhecimento do workflow — decide o DESTINO de um artefato
+      a salvar quando não há gatilho determinístico ("salva isso aqui",
+      "onde gravo X?", "isso é norma ou aprendizado?"). A tabela
+      knowledge-routing (T1-T5) do AGENTS.md é o contrato; 4 perguntas de
+      encaixe NA ORDEM: componente de engine (não roteia —
+      gm-skill-creator/gm-subagent-creator), norma de comportamento
+      (packs/<id>/rules/<assunto>.md — uma norma por arquivo com gatilho
+      próprio; orienta edit no working copy + golmet pack publish, nunca
+      escreve), fundamento perene de domínio (delega gm-domain-research) ou
+      aprendizado de projeto concluído (delega gm-pattern-extractor/
+      gm-metrics-collector). Desempate calibrado via gm_jev_classify; sem a
+      tool, julgamento manual pela ordem com incerteza declarada. Saída
+      auditável: destino + escritor canônico + formato + porquê (1 linha).
+      A skill NÃO grava conteúdo — roteia e delega. Modo de erro continue.
+      Fora do escopo: gatilhos determinísticos (gm-workflow-builder,
+      gm-project-retrospective) — destino resolvido pelo processo. Use
+      quando o operador ou um agent quiser salvar algo sem destino óbvio.
+    domain: meta
+    requires: [file, glob, grep, ask, skill]
+    degrades: [edit, write, webfetch]
+    body: sources/gm-knowledge-route.md
+
+  - id: gm-knowledge-router
+    kind: subagent
+    description: >-
+      Bibliotecário do pack — executor do roteamento de conhecimento:
+      recebe o artefato/estado, aplica o contrato gm-knowledge-route (T1-T5,
+      4 perguntas na ordem, desempate Jev) e DELEGA ao escritor canônico
+      (gm-domain-research | gm-pattern-extractor | gm-metrics-collector);
+      rules de pack são orientadas (edit no working copy + golmet pack
+      publish — não executa). Escopo read + ask + skill — decide e delega,
+      nunca escreve conteúdo. Fora do escopo: gatilhos determinísticos com
+      destino já resolvido pelo processo (gm-workflow-builder fundando
+      domínio; gm-project-retrospective extraindo padrão). Modo de erro
+      continue — conteúdo segue com o chamador.
+    mode: subagent
+    temperature: 0.1
+    invokes: [gm-domain-research, gm-metrics-collector, gm-pattern-extractor, gm-skill-creator]
+    requires: [file, glob, grep, ask, skill]
+    degrades: [edit, write]
+    body: sources/gm-knowledge-router.agent.md
+
+  - id: gm-rule-keeper
+    kind: skill
+    description: >-
+      Guardião de normas do pack (T3 — rules/) — cria e edita normas da
+      organização em packs/<pack-ativo>/rules/ com o FORMATO canônico e o
+      fluxo seguro: classifica o assunto (edit/append no arquivo do tema ou
+      arquivo novo), impõe header H1 + gatilho explícito ("AO fazer X, leia
+      isto") + conteúdo prescritivo + referências cruzadas, UMA norma por
+      arquivo (nunca monólito — lição da org do rule de 544 linhas), propõe
+      a linha do lazy index no AGENTS.md sob ask (pessoal-por-design — nunca
+      edita sem confirmação) e publica via golmet pack publish com
+      confirmação do operador. A skill NÃO decide a norma — conteúdo é
+      decisão do operador/org (IMP de origem); ela garante formato e fluxo.
+      Nunca sobrescreve norma existente sem confirmação; modo de erro
+      continue. Use quando o operador pedir "criar/editar norma da org",
+      "nova regra para o pack" ou "documentar como a organização faz X".
+    requires: [file, write, edit, glob, grep, shell, ask]
+    degrades: [webfetch]
+    body: sources/gm-rule-keeper.md
+
   - id: gm-pattern-extractor
     kind: skill
     description: >-
@@ -1185,6 +1250,30 @@ items:
     requires: [file, write, glob, grep, ask]
     degrades: [edit, shell, webfetch]
     body: sources/gm-metrics-collector.md
+
+  - id: gm-nuance-collector
+    kind: skill
+    description: >-
+      Coletor de nuances (T2 — acúmulo do pack) — registra descobertas e
+      observações específicas DURANTE o trabalho ("descobrimos que X falha
+      quando Y", "funcionou diferente com Z") na hora, com contexto, em
+      packs/<pack-ativo>/accumulation/nuances/<tema>-nuances.md — um arquivo
+      por TEMA; cada nuance = seção leve com contexto (projeto/o que estava
+      sendo feito), observação, aplicação/prática e data_observacao; tema
+      novo cria o arquivo. Append incremental — nunca deleta o histórico do
+      tema. Diferença de rota explicitada: PATTERN é reutilizável com
+      implementação compilável, formato pesado, nasce na retrospectiva
+      (gm-pattern-extractor); NUANCE é observação específica, formato leve,
+      imediata. Nuance que evolui para padrão → sugere promover via
+      gm-pattern-extractor. Lembre golmet pack publish (push manual por
+      design). Escrita restrita a nuances/** do pack ativo; modo de erro
+      continue. Use quando o operador quiser registrar uma descoberta ou
+      observação com contexto na hora.
+    domain: meta
+    invokes: []
+    requires: [file, write, edit, glob, grep, ask]
+    degrades: [shell, webfetch]
+    body: sources/gm-nuance-collector.md
 
   - id: gm-perf-auditor
     kind: skill
