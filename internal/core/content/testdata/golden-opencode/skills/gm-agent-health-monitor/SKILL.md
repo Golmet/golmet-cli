@@ -292,9 +292,25 @@ Saída: tabela entrada ↔ arquivo ↔ status + contagem de linhas.
 5. Correção: atualizar a matriz OU o front matter via gm-workflow-improver —
    nunca "consertar" a matriz para refletir allow amplo sem justificativa.
 
+### Passo 7d — Verificação I: Varredura estrutural (`gm_lint`)
+
+Varredura estrutural do config/pack via tool `gm_lint` (ou CLI
+`golmet lint --workspace .`): refs mortas (L1), órfãos (L3), manifest stale
+(L4), nomes fora do padrão (L5), componentes fantasma (L6), estrutura
+canônica (L7) e conformidade definitivo↔template (L8).
+
+- **Quando:** rode após mudanças estruturais (renomear/mover/apagar
+  arquivos, morte de modelo) e inclua o resultado no relatório de saúde.
+- **Gatilhos de usuário:** "verifica se tem inconsistência", "está tudo em
+  ordem estrutural?" — qualquer pedido nesse sentido roda o lint.
+- **Correção:** o lint APONTA, o monitor corrige o que for trivial
+  (paths mortos, renomeações kebab-case, entradas stale de manifest);
+  decisões (apagar órfão com dado, ampliar allowlist) → operador.
+- Findings entram na seção de saúde do relatório com severidade + remediação.
+
 ### Passo 8 — Montar e salvar relatório
 
-Combine as 8 verificações (A-H) num relatório único com resumo executivo,
+Combine as 9 verificações (A-I) num relatório único com resumo executivo,
 seções detalhadas e recomendações. Salve em
 `<modulo>/<projeto>/quality/AGENT_HEALTH_REPORT_<timestamp>.md`.
 

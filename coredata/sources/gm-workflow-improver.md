@@ -204,6 +204,15 @@ atualize `evals/<skill>/fixture-*/output-expected/`. **Nunca atualize
 baseline para fazer teste passar sem o usuário ver o diff** — isso anularia
 o golden set. Registre a atualização de baseline na entrada do IMP (Passo 6).
 
+### Passo 5.6 — Gate de verificação estrutural (`gm_lint`)
+
+Se a correção tocou estrutura do workflow (renomear/mover/apagar componentes,
+arquivos ou referências cruzadas), rode `gm_lint` (ou CLI `golmet lint --workspace .`)
+para CONFIRMAR que a correção não introduziu inconsistência estrutural —
+refs mortas (L1), fantasmas (L6), estrutura canônica (L7), definitivo↔template
+(L8). Findings novos = a correção ficou incompleta: ajuste antes de registrar
+o IMP (Passo 6). Zero findings = gate verde, anote no IMP.
+
 ### Passo 6 — Registrar em WORKFLOW_IMPROVEMENTS.md
 
 Adicione uma entrada no log com o template abaixo. Faça merge incremental

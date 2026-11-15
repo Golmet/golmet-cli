@@ -12,22 +12,25 @@ completo`) — o que varia por máquina vive em dois artefatos locais:
 
 | Artefato | O que contém | Versionado? |
 |----------|-------------|-------------|
-| `AGENTS.md` (`~/.config/opencode/`) | blocos `<!-- azure-devops -->`, `<!-- org-pack -->` (quando o cliente tiver pack — IMP-105), `<!-- projeto-padrao -->`, `<!-- gm-pack-accumulation -->` + Índice de Referências lazy (`rules/`, IMP-048) | ❌ gitignored — nasce do `AGENTS.template.md` versionado (IMP-105) |
+| `AGENTS.md` (`~/.config/opencode/`) | blocos `<!-- azure-devops -->`, `<!-- org-pack -->` (quando o cliente tiver pack — IMP-105), `<!-- projeto-padrao -->`, `<!-- gm-pack-accumulation -->`, `<!-- knowledge-routing -->` + Índice de Referências lazy (`rules/`, IMP-048) | ❌ gitignored — nasce do template do kit via `golmet template agents` (IMP-105) |
 | `opencode.jsonc` (`~/.config/opencode/`) | `permission.external_directory` + `agent.gm-dev-*.permission` (overrides de path) | ❌ gitignored |
 | `rules/client-profile.md` (`rules/`) | defaults do cliente (org Azure, projeto, repos, usuário, diretório de projetos — IMP-103) | ❌ gitignore explícito (dado de cliente nunca versionado) |
 | `rules/operator-profile.md` (`rules/`) | identidade do operador desta máquina (nome, e-mail, papel, contas git/GitHub — IMP-136) | ❌ gitignore explícito (dado pessoal nunca versionado) |
 | `.secrets/` (`~/.config/opencode/.secrets/`) | credenciais (APM Keys, PATs, tokens) referenciadas via `{file:...}` | ❌ gitignored |
 
 Este wizard preenche/repõe esses artefatos e valida o ambiente. O template
-versionado do AGENTS.md é `AGENTS.template.md` (neutro, IMP-105) — o local é
-gerado dele + client-profile; nunca invente conteúdo fora dos blocos marcadores.
+versionado do AGENTS.md obtém-se via `golmet template agents` (emit do embed
+— o kit NÃO deposita template no config: **template é etapa de construção —
+vive no kit; o config carrega só os definitivos**). O local é gerado dele +
+client-profile; nunca invente conteúdo fora dos blocos marcadores. Perfis:
+`golmet template client-profile` / `golmet template operator-profile`.
 
 ## Lê (upstream)
 
 - `~/.config/opencode/AGENTS.md` — blocos existentes (azure, projeto-padrao, repositorios) e índice lazy
 - `~/.config/opencode/rules/*.md` — arquivos de referência lazy existentes (IMP-048)
-- `rules/client-profile.md` / `rules/client-profile.template.md` — perfil do cliente (IMP-103)
-- `rules/operator-profile.md` / `rules/operator-profile.template.md` — perfil do operador (IMP-136)
+- `rules/client-profile.md` — perfil do cliente (IMP-103); esqueleto novo via `golmet template client-profile` (o kit não deposita template no config — M12)
+- `rules/operator-profile.md` — perfil do operador (IMP-136); esqueleto novo via `golmet template operator-profile`
 - `~/.config/opencode/opencode.jsonc` — permission e agent overrides existentes
 - `~/.config/opencode/skills/gm-azure-setup/SKILL.md` — prerequisites de Azure
 - `<raiz-de-projetos>/REPOSITORIES.md` (ou o path do bloco `<!-- repositorios -->`) — inventário de repos para validação de clones — OPCIONAL: só no perfil **completo**; core-only não lê nem valida
@@ -134,7 +137,7 @@ os seus projetos (ex: `<raiz-de-projetos>`)?"
 
 Coleta os defaults do cliente desta máquina e grava em
 `~/.config/opencode/rules/client-profile.md`, a partir do template
-versionado `rules/client-profile.template.md`. O perfil é a FONTE DE
+versionado: esqueleto via `golmet template client-profile`. O perfil é a FONTE DE
 VERDADE do cliente para o workflow — skills de tracker (Azure DevOps,
 GitHub) leem o perfil em vez de hardcode.
 
@@ -157,7 +160,7 @@ GitHub) leem o perfil em vez de hardcode.
 
 Coleta a identidade do operador DESTA máquina e grava em
 `~/.config/opencode/rules/operator-profile.md`, a partir do template
-versionado `rules/operator-profile.template.md`. O perfil é a FONTE DE
+versionado: esqueleto via `golmet template operator-profile`. O perfil é a FONTE DE
 VERDADE do operador: gm-clarify (triagem de PENDs — campo Responsável),
 gm-decision-log (campo Decisor) e o registro de IMPs (campo Autor) leem o
 perfil em vez de perguntar a cada sessão.
@@ -180,13 +183,13 @@ perfil em vez de perguntar a cada sessão.
 
 1. **AGENTS.md (a partir do template — IMP-105):**
    - Se `AGENTS.md` NÃO existir (máquina nova ou pós-`self-update` que
-     removeu o arquivo do versionamento): copie `AGENTS.template.md`
-     (versionado, neutro) para `AGENTS.md` e preencha os placeholders
+     removeu o arquivo do versionamento): emita o esqueleto com `golmet template agents`
+     (versionado, neutro; `--out` grava em arquivo) para `AGENTS.md` e preencha os placeholders
      `<preenchido pelo gm-setup>` com os valores do
      `rules/client-profile.md` (tracker, diretório de projetos,
-     pack do acúmulo).
+     pack do acúmulo). O kit NÃO deposita template no config — template é etapa de construção: vive no kit; o config carrega só os definitivos (M12).
    - Bloco `<!-- org-pack -->`: preencha SOMENTE se o perfil do cliente
-     tiver pack de organização (ex.: Acme → `rules/<pack-da-organizacao>.md`);
+     tiver pack de organização (ex.: Acme → `packs/<id>/rules/<assunto>.md`);
      cliente sem pack → mantenha o placeholder do template.
    - Se `AGENTS.md` já existe: apenas sincronize os blocos marcadores
      (`<!-- projeto-padrao -->`, `<!-- gm-pack-accumulation -->`, azure/org-pack)
@@ -326,6 +329,12 @@ Instala o hook de neutralidade no core (bloqueia push de dado de cliente):
 3. Instale: `git config core.hooksPath evals/neutrality/git-hooks`.
 
 ### Passo 7 — Relatório final
+
+**Validação estrutural do config (após o install FULL):** rode `golmet lint`
+(varredura determinística L1-L8 — refs mortas, órfãos, manifest stale, nomes,
+fantasmas, estrutura canônica, definitivo↔template) sobre o config recém-
+instalado; os findings entram neste relatório com severidade + remediação
+(triviais direto; decisões → operador). Via MCP: `gm_lint`.
 
 ```text
 ═══ gm-setup — <RESULTADO> ═══

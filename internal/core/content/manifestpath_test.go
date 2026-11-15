@@ -31,7 +31,7 @@ func TestMaterializeManifestPathOverride(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rep.Total != 129 || len(rep.Written) != 129 {
+	if rep.Total != 129 || len(rep.Written) != 126 {
 		t.Fatalf("materialize override: total=%d written=%d", rep.Total, len(rep.Written))
 	}
 	if _, err := os.Stat(override); err != nil {
@@ -42,7 +42,7 @@ func TestMaterializeManifestPathOverride(t *testing.T) {
 		t.Errorf("override criou o manifest default (.golmet/manifest.json): %v", err)
 	}
 
-	// re-run lê o estado prévio DO OVERRIDE (129 preservadas = prev visto)
+	// re-run lê o estado prévio DO OVERRIDE (126 preservadas = prev visto)
 	rep2, err := Materialize(core, reg, MaterializeOptions{
 		ConfigRoot: root, Engine: "opencode", KitVersion: "test",
 		ManifestPath: override,

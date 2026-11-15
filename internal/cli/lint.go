@@ -18,7 +18,7 @@ func newLintCmd() *cobra.Command {
 	var engineID, home, workspace string
 	cmd := &cobra.Command{
 		Use:   "lint",
-		Short: "Varredura estrutural determinística (refs mortas, órfãos, manifest stale, nomes, fantasmas, estrutura canônica)",
+		Short: "Varredura estrutural determinística (refs mortas, órfãos, manifest stale, nomes, fantasmas, estrutura canônica, definitivo↔template)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := cmd.OutOrStdout()
 			if _, known := install.LookupEngine(engineID); !known {

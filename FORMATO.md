@@ -321,8 +321,12 @@ Cache **commitado**, com **único escritor = kit** (padrão registry-render: can
 ### 9.1 `golmet lint` — varredura estrutural determinística (read-only)
 
 O lint carrega o estado todo e APONTA inconsistências; a correção é do
-agent/operador. Exit 0 limpo, 2 com findings. Sem check de vocabulário
-legado (L2 fora do escopo por decisão do operador).
+agent/operador. Executor: os checks L1-L8 rodam via **CLI `golmet lint`**
+(ou **MCP `gm_lint`** — read-only, sem confirm). Skills de manutenção que o
+invocam: gm-agent-health-monitor (saúde estrutural), gm-setup (validação
+pós-install), gm-workflow-improver (gate pós-correção),
+gm-pack-orchestrator (pós publish/update). Exit 0 limpo, 2 com findings.
+Sem check de vocabulário legado (L2 fora do escopo por decisão do operador).
 
 | Check | Severidade | Enunciado |
 |---|---|---|
@@ -332,6 +336,16 @@ legado (L2 fora do escopo por decisão do operador).
 | L5 | warning | Nome estrutural fora de kebab-case ASCII (dirs/temas canônicos; nomes com extensão isentos) |
 | L6 | error/warning | Componente fantasma: `gm-*` citado que não existe no registry — **error** em `coredata/sources` (contrato vivo), **warning** em docs/AGENTS.md (histórico) |
 | L7 | error | Estrutura fora do padrão canônico (declarado abaixo) |
+| L8 | warning | Conformidade estrutural definitivo ↔ template: o definitivo (AGENTS.md, perfis) perdeu o MÍNIMO estrutural declarado (blocos marcadores/seções/campos). Conteúdo extra = OK (evolução); definitivo ausente = skip; template depositado no config = L7 warning |
+
+**Template é etapa de construção — vive no kit, não se instala; o config
+carrega só os definitivos.** O render emite os templates (byte-equality do
+golden/docs), mas o materialize NÃO os deposita (`nonDepositTemplates`);
+quem precisa do esqueleto usa `golmet template <agents|client-profile|
+operator-profile>` (`--out` grava em arquivo). Política anti-ruído do L8:
+o mínimo estrutural é DECLARADO no lint (l8*) — se o template ganhar seção
+nova numa release, definitivos antigos NÃO flagam (evolução retroativa não
+obriga); só a PERDA/ausência do mínimo declarado flaga.
 
 **Estrutura canônica declarada (fonte única em código — `internal/core/lint`):**
 
@@ -341,10 +355,9 @@ legado (L2 fora do escopo por decisão do operador).
   `accumulation/patterns/<tipo>/<slug>/PATTERN.md` com tipo em
   {process, architecture, code, ui, test, data}.
 - **Config engine** (1º nível): dirs {agents, skills, rules, packs,
-  plugins, knowledge (legado), .golmet} + files {AGENTS.md,
-  AGENTS.template.md (materializado pelo install FULL como GERIDO — layer
-  core; o template versionado e neutro vive no kit em
-  `coredata/templates/`), opencode.jsonc} — dir desconhecido = warning.
+  plugins, knowledge (legado), .golmet} + files {AGENTS.md, opencode.jsonc}
+  — dir desconhecido = warning; template depositado no config
+  (AGENTS.template.md) = L7 warning (template vive no kit — M12).
 - **Kit repo**: `coredata/{sources/, rules/, templates/, registry.yaml}` com sources
   FLAT (`*.md` + `*.agent.md`); rules canônicas do kit = `rules/*.md` +
   `rules/*.yaml` (context7, templates de perfil client/operator — IMP-103/136,

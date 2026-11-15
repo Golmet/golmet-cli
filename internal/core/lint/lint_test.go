@@ -289,3 +289,107 @@ func TestLintCleanSandboxAndInvalidWorkspace(t *testing.T) {
 		t.Errorf("workspace inexistente deveria erro")
 	}
 }
+
+// ---- L8 — conformidade estrutural definitivo ↔ template ----
+
+func TestL8StructuralConformance(t *testing.T) {
+	home := t.TempDir()
+	cfg := filepath.Join(home, ".config", "opencode")
+
+	// definitivo CONFORMANTE: 5 blocos abertos+fechados + seções mínimas +
+	// seção EXTRA (evolução legítima — nunca finding)
+	agents := strings.Join([]string{
+		// token ÚNICO repetido (convenção da casa para azure-devops) —
+		// ≥2 delimitadores = aberto e fechado
+		"<!-- azure-devops -->", "tracker", "<!-- azure-devops -->",
+		"<!-- org-pack -->", "org", "<!-- /org-pack -->",
+		"### Tools MCP do kit (servidor `golmet`)", "13 tools",
+		"<!-- projeto-padrao -->", "dir", "<!-- /projeto-padrao -->",
+		"<!-- gm-pack-accumulation -->", "pack", "<!-- /gm-pack-accumulation -->",
+		"## Índice de Referências — lazy loading",
+		"<!-- knowledge-routing -->", "T1-T5", "<!-- /knowledge-routing -->",
+		"## Seção Extra que o definitivo ganhou (evolução — nunca finding)",
+	}, "\n")
+	os.MkdirAll(filepath.Join(cfg, "rules"), 0o755)
+	os.WriteFile(filepath.Join(cfg, "AGENTS.md"), []byte(agents), 0o644)
+	os.WriteFile(filepath.Join(cfg, "rules", "client-profile.md"), []byte(
+		strings.Join([]string{
+			"## Tracker (estrutura migrada da org — não é mínimo)",
+			"## Identidade e infraestrutura (IMP-105)", "| org_github | x |", "| ghcr_registry | y |", "| dns_domain | z |",
+			"## Packs (IMP-111)", "| packs | a |",
+			"## Seção extra do cliente (evolução — ok)",
+		}, "\n")), 0o644)
+	os.WriteFile(filepath.Join(cfg, "rules", "operator-profile.md"), []byte(
+		strings.Join([]string{
+			"## Identidade", "| Nome | x |",
+			"## Identidade git e contas", "| git user.name | a |", "| git user.email | b |", "| username | c |",
+		}, "\n")), 0o644)
+
+	rep := runLint(t, t.TempDir(), home)
+	if l8 := findingsOf(rep, "L8"); len(l8) != 0 {
+		t.Fatalf("definitivos conformantes deveriam zerar L8: %+v", l8)
+	}
+
+	// definitivo que PERDE estrutura: bloco não fechado + seção/campos ausentes
+	os.WriteFile(filepath.Join(cfg, "AGENTS.md"), []byte(
+		strings.Join([]string{
+			"<!-- azure-devops -->", "sem fechamento",
+			"### Tools MCP do kit",
+		}, "\n")), 0o644)
+	os.WriteFile(filepath.Join(cfg, "rules", "client-profile.md"), []byte("sem estrutura\n"), 0o644)
+	rep2 := runLint(t, t.TempDir(), home)
+	l8 := findingsOf(rep2, "L8")
+	if len(l8) == 0 {
+		t.Fatalf("definitivo sem estrutura mínima deveria flagar L8")
+	}
+	agentsFlags, clientFlags := 0, 0
+	for _, f := range l8 {
+		if f.Severity != "warning" {
+			t.Errorf("L8 é warning: %+v", f)
+		}
+		switch f.File {
+		case "AGENTS.md":
+			agentsFlags++
+		case "rules/client-profile.md":
+			clientFlags++
+		default:
+			t.Errorf("L8 inesperado em %s", f.File)
+		}
+	}
+	if agentsFlags < 2 || clientFlags < 1 { // bloco não fechado + seção Índice; client sem estrutura mínima
+		t.Fatalf("flags por arquivo insuficientes: %+v", l8)
+	}
+
+	// operator-profile CONFORMANTE não flaga (isolando o ruído do par acima)
+	for _, f := range findingsOf(rep2, "L8") {
+		if f.File == "rules/operator-profile.md" {
+			t.Errorf("operator-profile conformante não deveria flagar: %+v", f)
+		}
+	}
+
+	// definitivo AUSENTE (máquina nova antes do setup) → skip silencioso
+	home2 := t.TempDir()
+	rep4 := runLint(t, t.TempDir(), home2)
+	if len(findingsOf(rep4, "L8")) != 0 {
+		t.Fatalf("sem definitivos o L8 é silencioso: %+v", findingsOf(rep4, "L8"))
+	}
+}
+
+// template depositado no config → L7 warning específico (M12)
+
+func TestL7TemplateDepositFlag(t *testing.T) {
+	home := t.TempDir()
+	cfg := filepath.Join(home, ".config", "opencode")
+	os.MkdirAll(cfg, 0o755)
+	os.WriteFile(filepath.Join(cfg, "AGENTS.template.md"), []byte("template\n"), 0o644)
+	rep := runLint(t, t.TempDir(), home)
+	found := false
+	for _, f := range findingsOf(rep, "L7") {
+		if f.File == "AGENTS.template.md" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("L7 deveria flagar template depositado no config: %+v", findingsOf(rep, "L7"))
+	}
+}

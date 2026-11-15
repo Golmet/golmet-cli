@@ -75,6 +75,9 @@ Primary Agent → Subagent → Skill. Nunca contradiga o contrato de pack
   a busca kit-nativa (`golmet pack search <termo>`, que consulta o topic)
   ou, em fallback, `gh search repos --topic golmet-pack`; valide o contrato
   do candidato (FORMATO §3.1) antes de consumir.
+- **Pós publish/update:** rode `golmet lint` (L7 — estrutura canônica do
+  pack/config) para validar a estrutura após a mudança; findings seguem a
+  remediação do lint.
 
 ## Nunca edita
 

@@ -102,7 +102,7 @@ func NewServer() *mcp.Server {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "gm_lint",
-		Description: "Varredura estrutural determinística (L1 refs mortas, L3 órfãos, L4 manifest stale, L5 nomes fora do padrão, L6 componentes fantasmas, L7 estrutura canônica) sobre o kit/config/packs — read-only, sem confirm; findings com severidade + remediação PT-BR",
+		Description: "Varredura estrutural determinística (L1 refs mortas, L3 órfãos, L4 manifest stale, L5 nomes fora do padrão, L6 componentes fantasmas, L7 estrutura canônica, L8 conformidade estrutural definitivo↔template) sobre o kit/config/packs — read-only, sem confirm; findings com severidade + remediação PT-BR",
 	}, gmLint)
 
 	return server

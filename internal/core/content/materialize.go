@@ -181,6 +181,18 @@ func previousEntries(m *ContentManifest) map[string]FileEntry {
 	return out
 }
 
+// nonDepositTemplates — templates NÃO-depositáveis no config (decisão do
+// operador, mesmo espírito da M6): template é etapa de construção — vive no
+// kit (obtenha via `golmet template <nome>`); o config carrega só os
+// DEFINITIVOS. O render CONTINUA emitindo os 3 (golden/docs do kit mantêm
+// byte-equality); o materialize pula gravação/manifest e REMOVE proveniência
+// stale (entradas antigas do manifest saem no próximo materialize).
+var nonDepositTemplates = map[string]bool{
+	"AGENTS.template.md":                 true,
+	"rules/client-profile.template.md":   true,
+	"rules/operator-profile.template.md": true,
+}
+
 // Materialize renderiza o core FULL e grava agents/skills no config do engine.
 // Sem --force, qualquer arquivo divergente do último hash conhecido é
 // preservado e listado como conflito; nunca sobrescreve customização local.
@@ -223,6 +235,12 @@ func Materialize(fsys fs.FS, reg *Registry, opt MaterializeOptions) (*Materializ
 	}
 	fileMap := previousEntries(prev)
 	for _, r := range rendered {
+		// templates não-depositáveis: o config carrega só os definitivos —
+		// pula gravação E proveniência (entrada stale sai do manifest)
+		if nonDepositTemplates[r.Rel] {
+			delete(fileMap, r.Rel)
+			continue
+		}
 		target := filepath.Join(opt.ConfigRoot, filepath.FromSlash(r.Rel))
 		data := []byte(r.Content)
 		newHash := sha(data)

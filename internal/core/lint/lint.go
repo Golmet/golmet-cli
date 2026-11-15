@@ -94,6 +94,37 @@ var refAllowlist = map[string]string{
 	"AGENTS.template.md": "pendência declarada da wave do template AGENTS — o render ainda não existe no kit",
 }
 
+// ---- L8 — estrutura mínima definitivo ↔ template (declarativa; política
+// anti-ruído do FORMATO §9.1: evolução NÃO flaga — o mínimo é o que não
+// muda entre versões do kit; template ganhar seção nova não obriga
+// definitivos antigos; só a PERDA/ausência da estrutura mínima flaga) ----
+
+// l8MarkerBlocks — pares de blocos marcadores que o AGENTS.md definitivo
+// PRECISA ter abertos e fechados.
+var l8MarkerBlocks = []string{"azure-devops", "org-pack", "projeto-padrao", "gm-pack-accumulation", "knowledge-routing"}
+
+// l8AGENTSMinSections — seções canônicas fundamentais (substring — sufixos
+// podem evoluir).
+var l8AGENTSMinSections = []string{"Tools MCP do kit", "Índice de Referências"}
+
+// l8ClientProfileMin — seções/campos IMP-103/105/111 mínimos (calibrado ao
+// definitivo: o Tracker migrou de estrutura na org — não é mínimo).
+var l8ClientProfileMin = []string{"Identidade e infraestrutura", "Packs", "org_github", "ghcr_registry", "dns_domain"}
+
+// l8OperatorProfileMin — seções/campos IMP-136 mínimos.
+var l8OperatorProfileMin = []string{"Identidade", "Identidade git e contas", "git user.name", "git user.email", "username"}
+
+// l8Pairs — (template no embed, definitivo no config, campos mínimos).
+var l8Pairs = []struct {
+	Template string
+	Final    string
+	Min      []string
+}{
+	{"templates/AGENTS.template.md", "AGENTS.md", nil}, // blocos + seções (caso especial)
+	{"rules/client-profile.template.md", "rules/client-profile.md", l8ClientProfileMin},
+	{"rules/operator-profile.template.md", "rules/operator-profile.md", l8OperatorProfileMin},
+}
+
 // moduleStoreNames — nomes de artefato de WORKSPACE DE PRODUTO citados por
 // design nas skills (o destino existe no workspace do operador, não no
 // kit) — o L1 de kit não verifica. Declarativa e versionada.
@@ -264,6 +295,11 @@ func Run(opt Options) (*Report, error) {
 
 	// ---- L7 — estrutura canônica ----
 	lintL7(rep, ws, kitMode, configRoot)
+
+	// ---- L8 — conformidade estrutural definitivo ↔ template (warning) ----
+	if configRoot != "" {
+		lintL8(rep, configRoot)
+	}
 
 	// ---- resumo ----
 	for _, f := range rep.Findings {
@@ -801,7 +837,9 @@ func lintL7(rep *Report, ws string, kitMode bool, configRoot string) {
 			}
 		}
 	}
-	// CONFIG — 1º nível: unknown dir = warning (padrão declarado)
+	// CONFIG — 1º nível: unknown dir = warning (padrão declarado); template
+	// depositado no config = warning específico (M12: template é etapa de
+	// construção — vive no kit; obtenha via `golmet template`)
 	if entries, err := os.ReadDir(configRoot); err == nil {
 		for _, e := range entries {
 			if e.IsDir() && !containsStr(configRootDirs, e.Name()) {
@@ -809,6 +847,76 @@ func lintL7(rep *Report, ws string, kitMode bool, configRoot string) {
 					Check: "L7", Severity: "warning", File: e.Name(),
 					Description: "dir não reconhecido no 1º nível do config do engine (padrão declarado: " + strings.Join(configRootDirs, ", ") + ")",
 					Fix:         "mova o conteúdo para o lugar canônico, designe pessoal-por-design, ou amplie configRootDirs declarativa no lint",
+				})
+			}
+			if !e.IsDir() && e.Name() == "AGENTS.template.md" {
+				rep.Findings = append(rep.Findings, Finding{
+					Check: "L7", Severity: "warning", File: e.Name(),
+					Description: "template depositado no config — template é etapa de construção: vive no KIT, o config carrega só os definitivos",
+					Fix:         "apague o arquivo e use `golmet template agents` para emitir o esqueleto quando precisar",
+				})
+			}
+		}
+	}
+}
+
+// ---- L8 — conformidade estrutural definitivo ↔ template ----
+
+// lintL8 valida o MÍNIMO estrutural declarado (l8*) do definitivo contra o
+// template do embed — NUNCA conteúdo (o definitivo evolui e ganha seções;
+// seção extra = OK, nunca finding; template ganhar seção nova não obriga
+// definitivos antigos). Definitivo ausente (máquina nova antes do setup) =
+// skip silencioso. Template ausente no embed = erro de ambiente (finding).
+func lintL8(rep *Report, configRoot string) {
+	for _, p := range l8Pairs {
+		if _, terr := fs.ReadFile(golmet.CoreDataFS(), "coredata/"+p.Template); terr != nil {
+			rep.Findings = append(rep.Findings, Finding{
+				Check: "L8", Severity: "error", File: p.Template,
+				Description: "erro de ambiente: template ausente no embed do kit (" + p.Template + ")",
+				Fix:         "restaure o template no coredata do kit — o L8 não pode validar sem a referência",
+			})
+			continue
+		}
+		finalPath := filepath.Join(configRoot, filepath.FromSlash(p.Final))
+		data, rerr := os.ReadFile(finalPath)
+		if rerr != nil {
+			continue // definitivo ausente (máquina nova antes do setup) — skip silencioso
+		}
+		final := string(data)
+		syncFix := "definitivo distanciou-se da estrutura do template — sincronize a seção (o conteúdo pode divergir, a estrutura não); re-emita o esqueleto com `golmet template` se a perda foi acidental"
+		if p.Min == nil {
+			// caso especial AGENTS.md: blocos marcadores abertos E fechados —
+			// a casa usa DUAS convenções: token único repetido
+			// (`<!-- x -->` ... `<!-- x -->`) ou par com barra (`<!-- /x -->`).
+			// Estrutura OK = ≥2 delimitadores do bloco (aberto e fechado).
+			for _, b := range l8MarkerBlocks {
+				tokens := strings.Count(final, "<!-- "+b+" -->") +
+					strings.Count(final, "<!-- /"+b+" -->")
+				if tokens < 2 {
+					rep.Findings = append(rep.Findings, Finding{
+						Check: "L8", Severity: "warning", File: p.Final,
+						Description: "bloco marcador ausente ou não fechado no definitivo: " + b + " (" + fmt.Sprint(tokens) + " delimitador(es) de 2)",
+						Fix:         syncFix,
+					})
+				}
+			}
+			for _, s := range l8AGENTSMinSections {
+				if !strings.Contains(final, s) {
+					rep.Findings = append(rep.Findings, Finding{
+						Check: "L8", Severity: "warning", File: p.Final,
+						Description: "seção canônica ausente no definitivo: \"" + s + "\"",
+						Fix:         syncFix,
+					})
+				}
+			}
+			continue
+		}
+		for _, s := range p.Min {
+			if !strings.Contains(final, s) {
+				rep.Findings = append(rep.Findings, Finding{
+					Check: "L8", Severity: "warning", File: p.Final,
+					Description: "seção/campo canônico ausente no definitivo: \"" + s + "\"",
+					Fix:         syncFix,
 				})
 			}
 		}

@@ -53,7 +53,7 @@ registers the MCP server and runs the doctor in a single pass.
 
 ## Commands
 
-16 commands, one binary (`golmet`):
+17 commands, one binary (`golmet`):
 
 | Command    | What it does                                                                                                                                                                   |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -71,8 +71,9 @@ registers the MCP server and runs the doctor in a single pass.
 | `index`    | Rebuilds `golmet.index.json` from the prose (the prose is canonical; the index is a cache)                                                                                     |
 | `pack`     | Manages L2 packs (`add` / `update` / `publish` / `list`) without destroying local customizations — two archetypes: `overlay` (read-only cache) and `state` (bidirectional Git working copy)          |
 | `db`       | Database services (the `gm-dba` layer): DATA_MODEL ↔ migrations/snapshot drift                                                                                                 |
+| `template` | Emits a kit template (AGENTS.md skeleton, client/operator profile) straight from the embed — templates are construction artifacts: they live in the kit, never installed into the config |
 | `upgrade`  | Self-update of the binary from the latest GitHub release (SHA-256 verified; `--check` read-only; rollback via `<bin>.old`)                                                      |
-| `lint`     | Deterministic structural sweep (dead refs, orphans, stale manifest entries, naming, ghost `gm-*` components, canonical structure) — findings with severity + remediation; exit 0 clean, 2 with findings |
+| `lint`     | Deterministic structural sweep (dead refs, orphans, stale manifest entries, naming, ghost `gm-*` components, canonical structure, definitivo↔template conformance) — findings with severity + remediation; exit 0 clean, 2 with findings |
 
 The normative contract behind all of this is [FORMATO.md](FORMATO.md) v1.
 
