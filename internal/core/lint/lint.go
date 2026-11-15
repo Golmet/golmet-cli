@@ -720,8 +720,8 @@ func lintL7(rep *Report, ws string, kitMode bool, configRoot string) {
 	if kitMode {
 		if entries, err := os.ReadDir(filepath.Join(ws, "coredata")); err == nil {
 			for _, e := range entries {
-				if e.IsDir() && !containsStr([]string{"sources", "rules"}, e.Name()) {
-					structErr("coredata/"+e.Name(), "dir não canônico em coredata/ (canônico: sources/, rules/, registry.yaml)",
+				if e.IsDir() && !containsStr([]string{"sources", "rules", "templates"}, e.Name()) {
+					structErr("coredata/"+e.Name(), "dir não canônico em coredata/ (canônico: sources/, rules/, templates/, registry.yaml)",
 						"mova o conteúdo para o lugar canônico ou declare a exceção no lint (L7)")
 				}
 				if !e.IsDir() && e.Name() != "registry.yaml" {

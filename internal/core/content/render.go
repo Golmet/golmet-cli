@@ -51,19 +51,19 @@ func Render(fsys fs.FS, reg *Registry, engine string) ([]Rendered, []ErrMissingB
 	return out, missing
 }
 
-// renderRules anexa as rules canônicas (diretório rules/ da fonte) à
-// saída do render — markdown engine-agnóstico, conteúdo byte-fiel após a
-// normalização de resquícios de editor (BOM/EOL → canônico LF, a mesma do
-// materialize). Diretório ausente = nada a anexar (fontes externas antigas
-// sem rules/ seguem renderizando); arquivo ilegível vira item "sem corpo"
-// (mesma reportagem dos bodies do registry).
+// renderRules anexa as rules canônicas (diretório rules/ da fonte — *.md e
+// *.yaml, ex.: rules/context7.md, rules/stack-templates.yaml) à saída do
+// render, byte-fiéis após a normalização de resquícios de editor (BOM/EOL →
+// canônico LF, a mesma do materialize). Diretório ausente = nada a anexar
+// (fontes externas antigas sem rules/ seguem renderizando); arquivo
+// ilegível vira item "sem corpo" (mesma reportagem dos bodies do registry).
 func renderRules(fsys fs.FS, out *[]Rendered, missing *[]ErrMissingBody) {
 	entries, err := fs.ReadDir(fsys, "rules")
 	if err != nil {
 		return
 	}
 	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".md") {
+		if e.IsDir() || (!strings.HasSuffix(e.Name(), ".md") && !strings.HasSuffix(e.Name(), ".yaml")) {
 			continue
 		}
 		rel := "rules/" + e.Name()

@@ -345,10 +345,12 @@ legado (L2 fora do escopo por decisão do operador).
   AGENTS.template.md (materializado pelo install FULL como GERIDO — layer
   core; o template versionado e neutro vive no kit em
   `coredata/templates/`), opencode.jsonc} — dir desconhecido = warning.
-- **Kit repo**: `coredata/{sources/, rules/, registry.yaml}` com sources
-  FLAT (`*.md` + `*.agent.md`); `skills/` raiz = exatamente 16 skills
-  (`skills/<gm-x>/SKILL.md`); golden `testdata/golden-opencode/` espelha o
-  render ({agents, skills, rules}).
+- **Kit repo**: `coredata/{sources/, rules/, templates/, registry.yaml}` com sources
+  FLAT (`*.md` + `*.agent.md`); rules canônicas do kit = `rules/*.md` +
+  `rules/*.yaml` (context7, templates de perfil client/operator — IMP-103/136,
+  registry de boilerplates stack-templates.yaml); `skills/` raiz = exatamente 16
+  skills (`skills/<gm-x>/SKILL.md`); golden `testdata/golden-opencode/` espelha o
+  render ({agents, skills, rules} + AGENTS.template.md).
 
 **Heurísticas anti-falso-positivo (declaradas):** URLs/âncoras/`<placeholders>`/
 wildcards/braces não são candidatos; paths SEM `/` (nome solto) não são

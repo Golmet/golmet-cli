@@ -27,7 +27,7 @@ import (
 //   - essencial: kit do repositório — 16 skills gm-* na zona .golmet/ do
 //     workspace, versionadas com o repo (a equipe inteira herda); rodam em
 //     qualquer engine agêntico. Sem agents nativos (só o núcleo de docs).
-//   - completo: experiência completa na sua máquina — 126 componentes
+//   - completo: experiência completa na sua máquina — 129 componentes
 //     (agents + skills + rules) no formato do engine, no config global (pessoal,
 //     não versionado). Agents nativos com delegação real só em opencode e
 //     claude-code; nos demais os arquivos vão para a zona do workspace
@@ -45,7 +45,7 @@ const (
 	profileAliasFull = "full"
 )
 
-const profileBlurb = "Perfis: essencial (kit do repositório — 16 skills gm-* na zona .golmet/ do workspace, versionadas com o repo · qualquer engine) · completo (experiência completa na máquina — 126 componentes no formato do engine · agents nativos só em opencode e claude-code)."
+const profileBlurb = "Perfis: essencial (kit do repositório — 16 skills gm-* na zona .golmet/ do workspace, versionadas com o repo · qualquer engine) · completo (experiência completa na máquina — 129 componentes no formato do engine · agents nativos só em opencode e claude-code)."
 
 // Blurb devolve o resumo dos perfis para superfícies que precisam da
 // visão geral em uma linha.
@@ -300,7 +300,7 @@ func Run(opt Options) (*Result, error) {
 	// normalização do perfil: essencial (default) | completo — semântica de
 	// contrato, não de tamanho. base/full são aliases aceitos (compat);
 	// desconhecido falha listando os válidos. completo ≡ Full (a camada de
-	// 126 componentes materializa) — e --full com --profile essencial vira
+	// 129 componentes materializa) — e --full com --profile essencial vira
 	// completo (o relatório nunca cita base/full/base+full).
 	switch p := strings.ToLower(strings.TrimSpace(opt.Profile)); p {
 	case "", profileAliasBase, ProfileEssencial:

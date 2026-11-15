@@ -95,7 +95,7 @@ func TestWizardTTYDispatchNavigatesProfileFirstChoosesCompleto(t *testing.T) {
 	}
 	applyWizardKey(m, &step, keyBack) // volta ao perfil
 	applyWizardKey(m, &step, "?")
-	if !strings.Contains(m.ProfileNotice, "126 componentes") {
+	if !strings.Contains(m.ProfileNotice, "129 componentes") {
 		t.Errorf("`?` não trouxe o blurb do completo: %q", m.ProfileNotice)
 	}
 	applyWizardKey(m, &step, keyUp)
@@ -132,7 +132,7 @@ func TestWizardTTYDrawProfileStep(t *testing.T) {
 		"quem clona o projeto herda o kit",
 		"indicado para: equipes que querem o workflow versionado",
 		"limitação: sem agents nativos (nenhum subagent spawnável)",
-		"126 componentes (agents + skills + rules + template)",
+		"129 componentes (agents + skills + rules + template)",
 		"formato nativo do engine",
 		"indicado para: quem adota o workflow como padrão pessoal",
 		"compatível apenas com opencode e claude-code",

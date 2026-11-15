@@ -171,7 +171,7 @@ func newInstallCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&yes, "yes", false, "não-interativo: executa direto com as flags informadas")
 	cmd.Flags().BoolVar(&jsonOut, "json", false, "saída estruturada (relatório do install)")
 	cmd.Flags().BoolVar(&force, "force", false, "sobrescreve skills/blocos divergentes no engine")
-	cmd.Flags().BoolVar(&full, "full", false, "materializa o workflow FULL (126 componentes embarcados) no engine")
+	cmd.Flags().BoolVar(&full, "full", false, "materializa o workflow FULL (129 componentes embarcados) no engine")
 	cmd.Flags().BoolVar(&plain, "plain", false, "wizard em modo numerado (fallback sem teclas de seta)")
 	cmd.Flags().BoolVar(&listEngines, "list-engines", false, "lista os engines suportados (detectado/ausente) e sai")
 	cmd.Flags().BoolVar(&listMcps, "list-mcps", false, "lista o catálogo de MCPs e sai")
