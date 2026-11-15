@@ -395,6 +395,63 @@ func TestL7TemplateDepositFlag(t *testing.T) {
 	}
 }
 
+// ---- L7 — agregados de spec do workspace: unitário | quebrado (§7.7.1) ----
+
+func TestL7SpecAggregatesUnitaryAndBroken(t *testing.T) {
+	ws := t.TempDir()
+	os.MkdirAll(filepath.Join(ws, "specs"), 0o755)
+	// unitário PEQUENO → sem warning
+	os.WriteFile(filepath.Join(ws, "specs", "DATA_MODEL.md"), []byte(strings.Repeat("coluna\n", 10)), 0o644)
+	rep := runLint(t, ws, t.TempDir())
+	if l7 := findingsOf(rep, "L7"); len(l7) != 0 {
+		t.Fatalf("unitário pequeno não deveria flagar: %+v", l7)
+	}
+
+	// unitário acima do limiar → warning apontando o split
+	os.WriteFile(filepath.Join(ws, "specs", "DATA_MODEL.md"), []byte(strings.Repeat("coluna\n", DataModelSplitLines+1)), 0o644)
+	rep2 := runLint(t, ws, t.TempDir())
+	l7 := findingsOf(rep2, "L7")
+	if len(l7) != 1 || l7[0].Severity != "warning" || l7[0].File != "specs/DATA_MODEL.md" {
+		t.Fatalf("unitário grande = %+v, want 1 warning em specs/DATA_MODEL.md", l7)
+	}
+	if !strings.Contains(l7[0].Fix, "gm-datamodel Split") {
+		t.Errorf("warning deveria remeter ao gm-datamodel Split: %+v", l7[0])
+	}
+
+	// split simulado (procedimento gm-datamodel): INDEX + escopos +
+	// original removido → workspace limpo
+	os.Remove(filepath.Join(ws, "specs", "DATA_MODEL.md"))
+	dm := filepath.Join(ws, "specs", "data_model")
+	os.MkdirAll(dm, 0o755)
+	os.WriteFile(filepath.Join(dm, "INDEX.md"), []byte("# Modelo de Dados — índice\n- [agendamento](agendamento.md)\n- [financeiro](financeiro.md)\n"), 0o644)
+	os.WriteFile(filepath.Join(dm, "agendamento.md"), []byte("# Agendamento\nTABELA_AGENDAMENTO — RN-001\n"), 0o644)
+	os.WriteFile(filepath.Join(dm, "financeiro.md"), []byte("# Financeiro\nTABELA_PAGAMENTO — RN-002\n"), 0o644)
+	rep3 := runLint(t, ws, t.TempDir())
+	if l7 := findingsOf(rep3, "L7"); len(l7) != 0 {
+		t.Fatalf("quebrado COM INDEX deveria ser limpo: %+v", l7)
+	}
+
+	// merge no quebrado: entidade nova no escopo certo + escopo novo com
+	// entrada no INDEX continuam limpos
+	os.WriteFile(filepath.Join(dm, "clientes.md"), []byte("# Clientes\nTABELA_CLIENTE — RN-003\n"), 0o644)
+	os.WriteFile(filepath.Join(dm, "INDEX.md"), []byte("# Modelo de Dados — índice\n- [agendamento](agendamento.md)\n- [financeiro](financeiro.md)\n- [clientes](clientes.md)\n"), 0o644)
+	rep4 := runLint(t, ws, t.TempDir())
+	if l7 := findingsOf(rep4, "L7"); len(l7) != 0 {
+		t.Fatalf("escopo novo + INDEX atualizado deveria ser limpo: %+v", l7)
+	}
+
+	// quebrado SEM INDEX → error com remediação do split
+	os.Remove(filepath.Join(dm, "INDEX.md"))
+	rep5 := runLint(t, ws, t.TempDir())
+	l75 := findingsOf(rep5, "L7")
+	if len(l75) != 1 || l75[0].Severity != "error" || l75[0].File != "specs/data_model" {
+		t.Fatalf("quebrado sem INDEX = %+v, want 1 error em specs/data_model", l75)
+	}
+	if !strings.Contains(l75[0].Fix, "crie o INDEX") || !strings.Contains(l75[0].Fix, "gm-datamodel Split") {
+		t.Errorf("remediação deveria citar o INDEX e o Split: %+v", l75[0])
+	}
+}
+
 // ---- L9 — schema do registry de stack-templates (M14) ----
 
 // l9Valid é um registry CONFORMANTE: boilerplate_org placeholder (aceito —

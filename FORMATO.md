@@ -36,6 +36,8 @@ O FORMATO governa apenas o **estado normativo** do produto: o que foi decidido e
 │                                   #   IMPACT_MAP.md, GUIDES/<domínio>.md, FORMS/<domínio>.md
 │                                   #   (+ LEGACY_CONTEXT.md) — júri no topo, leitura em guia/
 └── specs/                          # downstream técnico (DATA_MODEL, API_CONTRACTS, UI_SPEC…)
+                                    #   agregado unitário (specs/DATA_MODEL.md) OU quebrado
+                                    #   por micro-contexto (specs/data_model/ + INDEX.md — §7.7.1)
 ```
 
 ### 2.1 Camadas de conteúdo do GOLMET (DR-021)
@@ -310,6 +312,20 @@ Qualquer constructo fora do subset = erro de parse com correção sugerida — o
 | Escritor | **o kit escreve `stale`** quando CR `implemented` invalida (única diretiva com escritor não-agêntico) |
 | Invariante **hard** | `stale` DEVE carregar `reason: CR-XXX` (H9) |
 
+### 7.7.1 Agregados técnicos de `specs/` — unitário e quebrado por micro-contexto
+
+Agregados downstream (`DATA_MODEL`, `API_CONTRACTS`, `UI_SPEC`) aceitam **duas formas canônicas, válidas simultaneamente** — nenhum workspace é obrigado a quebrar:
+
+| Forma | Layout | Regra |
+|---|---|---|
+| **Unitário** | `specs/DATA_MODEL.md` | válido para workspaces pequenos — continua canônico |
+| **Quebrado** | `specs/data_model/` | `INDEX.md` **OBRIGATÓRIO** — o mestre (visão geral, ER global, índice dos escopos; o leitor começa por ele) + `<escopo>.md` micro-contextos **auto-contidos** (entidades, relacionamentos e RNs *daquele escopo* — nenhuma leitura cruzada obrigatória) |
+
+- **Genérico:** o padrão vale para qualquer agregado (`specs/api_contracts/`, `specs/ui_spec/`) — a implantação começa no DATA_MODEL.
+- **Corte de escopo é decisão de conteúdo** (gm-datamodel + operador: agregados/domínios identificados no conteúdo) — nunca mecânico.
+- **Traceability mais fina:** a matriz mapeia RN → caminho de escopo específico (ex.: `RN-012 → data_model/agendamento.md`), não o agregado inteiro.
+- **Enforcement (L7):** agregado quebrado sem `INDEX.md` = **error**; agregado unitário acima do limiar de quebra (**800 linhas** — constante declarada no lint, compartilhada com o gm-datamodel) = **warning** recomendando o split.
+
 ### 7.8 ADR — `DECISIONS.md`, seções `## ADR-NNN — <título>`
 
 | | |
@@ -426,6 +442,12 @@ obriga); só a PERDA/ausência do mínimo declarado flaga.
   registry de boilerplates stack-templates.yaml — M14); `skills/` raiz = exatamente 16
   skills (`skills/<gm-x>/SKILL.md`); golden `testdata/golden-opencode/` espelha o
   render ({agents, skills, profile} + AGENTS.template.md — destino `profile/` desde o M13).
+- **Workspace de produto — agregados de specs (§7.7.1):** `specs/` aceita o
+  agregado unitário (`specs/DATA_MODEL.md`) ou quebrado (`specs/data_model/`
+  COM `INDEX.md` obrigatório — idem `api_contracts/`, `ui_spec/`);
+  quebrado sem INDEX = L7 error; unitário acima do limiar de quebra
+  (`DataModelSplitLines` = 800 linhas, constante declarada no lint e
+  compartilhada com o gm-datamodel) = L7 warning.
 
 **Heurísticas anti-falso-positivo (declaradas):** URLs/âncoras/`<placeholders>`/
 wildcards/braces não são candidatos; paths SEM `/` (nome solto) não são

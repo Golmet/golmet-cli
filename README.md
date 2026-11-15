@@ -74,7 +74,7 @@ registers the MCP server and runs the doctor in a single pass.
 | `template` | Emits a kit template (AGENTS.md skeleton, client/operator profile) straight from the embed — templates are construction artifacts: they live in the kit, never installed into the config |
 | `uninstall` | Removes the global Golmet structure layer by layer (ferramental, kit state, packs, personal, unmanaged, engine registry) — everything selected by default EXCEPT packs; pack removal deletes ONLY the local working copy, the remote repo is manual |
 | `upgrade`  | Self-update of the binary from the latest GitHub release (SHA-256 verified; `--check` read-only; rollback via `<bin>.old`)                                                      |
-| `lint`     | Deterministic structural sweep (dead refs, orphans, stale manifest entries, naming, ghost `gm-*` components, canonical structure, definitivo↔template conformance, stack-templates schema — kit materializado + registries de pack) — findings with severity + remediation; exit 0 clean, 2 with findings |
+| `lint`     | Deterministic structural sweep (dead refs, orphans, stale manifest entries, naming, ghost `gm-*` components, canonical structure, definitivo↔template conformance, stack-templates schema — kit materializado + registries de pack + workspace spec aggregates: unitário OR broken-with-INDEX per FORMATO §7.7.1) — findings with severity + remediation; exit 0 clean, 2 with findings |
 
 The normative contract behind all of this is [FORMATO.md](FORMATO.md) v1.
 

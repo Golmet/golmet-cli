@@ -61,6 +61,27 @@ var accumulationOnly = []string{"patterns", "metrics", "nuances"}
 // library). Tipo fora do conjunto = estrutura não canônica.
 var patternTypes = []string{"process", "architecture", "code", "ui", "test", "data"}
 
+// specAggregates — agregados técnicos do workspace de produto que aceitam
+// QUEBRA por micro-contexto (FORMATO §7.7.1): `specs/<dir>/` (formato
+// quebrado — INDEX.md obrigatório + `<escopo>.md` auto-contidos) ou o
+// unitário `specs/<file>.md` (continua válido). AS DUAS formas são
+// canônicas simultaneamente; a implantação começa no DATA_MODEL.
+var specAggregates = []struct {
+	Dir  string // formato quebrado — specs/<dir>/
+	File string // formato unitário — specs/<file>
+}{
+	{"data_model", "DATA_MODEL.md"},
+	{"api_contracts", "API_CONTRACTS.md"},
+	{"ui_spec", "UI_SPEC.md"},
+}
+
+// DataModelSplitLines — limiar (em linhas) do aviso de quebra do agregado
+// unitário specs/DATA_MODEL.md: acima disso o L7 emite warning recomendando
+// o split por micro-contexto. Constante COMPARTILHADA com o gm-datamodel (a
+// skill cita o mesmo número no procedimento de Split) e declarada no
+// FORMATO §7.7.1 — mudar aqui = mudar lá.
+const DataModelSplitLines = 800
+
 // configRootDirs — dirs canônicos de 1º nível do config do engine.
 // knowledge/ é legado reconhecido. Unknown dir → warning.
 var configRootDirs = []string{"agents", "skills", "profile", "packs", "plugins", "knowledge", ".golmet"}
@@ -310,6 +331,9 @@ func Run(opt Options) (*Report, error) {
 
 	// ---- L7 — estrutura canônica ----
 	lintL7(rep, ws, kitMode, configRoot)
+
+	// ---- L7 — agregados de spec do workspace (unitário | quebrado, §7.7.1) ----
+	lintL7SpecAggregates(rep, ws)
 
 	// ---- L8 — conformidade estrutural definitivo ↔ template (warning) ----
 	if configRoot != "" {
@@ -878,6 +902,49 @@ func lintL7(rep *Report, ws string, kitMode bool, configRoot string) {
 			}
 		}
 	}
+}
+
+// ---- L7 — agregados de spec do workspace (unitário | quebrado) ----
+
+// lintL7SpecAggregates — L7 sobre os agregados técnicos do WORKSPACE de
+// produto (specs/, FORMATO §7.7.1): reconhece AS DUAS formas canônicas —
+// unitário (`specs/DATA_MODEL.md`) e quebrado (`specs/data_model/` com
+// INDEX.md OBRIGATÓRIO, o mestre: visão global + índice dos escopos) — e
+// avisa quando o unitário passa do limiar de quebra (DataModelSplitLines).
+// Roda em qualquer workspace (kit e produto); sem specs/ é silencioso.
+func lintL7SpecAggregates(rep *Report, ws string) {
+	for _, agg := range specAggregates {
+		dir := filepath.Join(ws, "specs", filepath.FromSlash(agg.Dir))
+		if dirExists(dir) && !fileExists(filepath.Join(dir, "INDEX.md")) {
+			rep.Findings = append(rep.Findings, Finding{
+				Check: "L7", Severity: "error", File: "specs/" + agg.Dir,
+				Description: "agregado quebrado sem INDEX.md — no formato quebrado o mestre é o INDEX (visão global, ER agregado e índice dos escopos; o leitor começa por ele)",
+				Fix:         "crie o INDEX — veja gm-datamodel Split (procedimento de quebra por micro-contexto)",
+			})
+		}
+	}
+	if n, ok := lineCount(filepath.Join(ws, "specs", "DATA_MODEL.md")); ok && n > DataModelSplitLines {
+		rep.Findings = append(rep.Findings, Finding{
+			Check: "L7", Severity: "warning", File: "specs/DATA_MODEL.md",
+			Description: fmt.Sprintf("agregado unitário com %d linhas (limiar de quebra: %d) — contexto inteiro carregado a cada RN deixa de pagar o preço", n, DataModelSplitLines),
+			Fix:         "considere quebrar por micro-contexto (specs/data_model/ com INDEX.md + escopos auto-contidos) — veja gm-datamodel Split",
+		})
+	}
+}
+
+// lineCount — nº de linhas do arquivo (split em \n com newline final
+// normalizado — mesma contagem de `wc -l`); segundo retorno false =
+// arquivo ausente/ilegível.
+func lineCount(p string) (int, bool) {
+	data, err := os.ReadFile(p)
+	if err != nil {
+		return 0, false
+	}
+	text := strings.TrimSuffix(string(data), "\n")
+	if text == "" {
+		return 0, true
+	}
+	return len(strings.Split(text, "\n")), true
 }
 
 // ---- L8 — conformidade estrutural definitivo ↔ template ----
