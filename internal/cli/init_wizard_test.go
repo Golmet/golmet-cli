@@ -11,24 +11,47 @@ import (
 // ---- passo VISUAL da escolha (o padrão do wizard do install) ----
 
 // O frame visual usa o MESMO componente do install (renderListLineColored
-// com checkbox vazio — a mesma assinatura do drawEngineStep): header ◆ com
-// a dica de navegação, seta "> " de largura fixa, nome bold no ativo,
-// detail cinza embaixo — NADA de menu numerado quando TTY.
+// + writeActiveFooter): header ◆ com a dica de navegação, seta "> " de
+// largura fixa, nome bold no ativo, detail CURTO ao lado e a linha de
+// descrição contextual do item ativo embaixo do frame — SEM jargão de
+// implementação no menu (golmet.yaml/container: true/CONSTITUTION.md são
+// do resumo de confirmação, não do menu).
 func TestInitChoiceFrameVisual(t *testing.T) {
 	var b strings.Builder
 	w := &rawWriter{alt: &b, c: newTTYColors(false)} // sem cor — colunas visíveis
-	drawInitChoice(w, 0, w.c)
+	drawInitChoice(w, 0, w.c, 100)
 	frame := b.String()
 	for _, want := range []string{
 		"◆ O que inicializar?",
 		"(↑/↓ move · enter confirma · esc cancela)",
-		">   Organização — a raiz que agrupa os workspaces da empresa",
-		"      cria golmet.yaml com container: true · CONSTITUTION.md · INDEX.md",
+		">   Organização a raiz que agrupa os workspaces",
 		"    Workspace-produto dentro de uma Organização existente",
-		"    Workspace-produto raiz livre (sem Organização)",
+		"    Workspace-produto raiz livre",
+		// a linha contextual do item ATIVO (opção 1), embaixo do frame —
+		// truncada na largura do terminal (o comportamento do install)
+		"Organização é a raiz da empresa que agrupa os workspaces.",
 	} {
 		if !strings.Contains(frame, want) {
 			t.Errorf("frame visual sem %q:\n%s", want, frame)
+		}
+	}
+	// largura generosa → descrição INTEIRA no rodapé (TruncateWidth)
+	var wide strings.Builder
+	drawInitChoice(&rawWriter{alt: &wide, c: newTTYColors(false)}, 0, newTTYColors(false), 200)
+	if !strings.Contains(wide.String(), "os produtos nascem dentro dela.") {
+		t.Errorf("descrição completa esperada com largura 200:\n%s", wide.String())
+	}
+	// largura estreita → truncada com "…" (a marca conta na largura — o
+	// rodapé nunca passa de width)
+	var narrow strings.Builder
+	drawInitChoice(&rawWriter{alt: &narrow, c: newTTYColors(false)}, 0, newTTYColors(false), 40)
+	if !strings.Contains(narrow.String(), "…") {
+		t.Errorf("rodapé deveria truncar com … na largura 40:\n%s", narrow.String())
+	}
+	// jargão de implementação NUNCA no menu
+	for _, jargao := range []string{"container: true", "CONSTITUTION.md", "golmet.yaml", "INDEX.md"} {
+		if strings.Contains(frame, jargao) {
+			t.Errorf("jargão de implementação no menu: %q\n%s", jargao, frame)
 		}
 	}
 	if strings.Contains(frame, "número [1-3]") {
@@ -36,17 +59,31 @@ func TestInitChoiceFrameVisual(t *testing.T) {
 	}
 }
 
-// O cursor anda no frame (↓ → segunda opção ativa, primeira inativa).
+// A linha contextual muda com o cursor (o padrão do install — a descrição
+// do item ATIVO embaixo do frame).
 func TestInitChoiceFrameCursorMoves(t *testing.T) {
 	var b strings.Builder
 	w := &rawWriter{alt: &b, c: newTTYColors(false)}
-	drawInitChoice(w, 1, w.c)
+	drawInitChoice(w, 1, w.c, 200)
 	frame := b.String()
 	if !strings.Contains(frame, ">   Workspace-produto dentro de uma Organização existente") {
 		t.Errorf("cursor não está na opção 2:\n%s", frame)
 	}
 	if strings.Contains(frame, ">   Organização") {
 		t.Errorf("opção 1 não deveria estar ativa:\n%s", frame)
+	}
+	// descrição da opção 2 no rodapé (a da opção 1 fora)
+	if !strings.Contains(frame, "registrado na lista de produtos dela.") {
+		t.Errorf("descrição contextual da opção 2 ausente:\n%s", frame)
+	}
+	if strings.Contains(frame, "os produtos nascem dentro dela.") {
+		t.Errorf("descrição da opção 1 não deveria aparecer com o cursor na 2:\n%s", frame)
+	}
+	// opção 3 — desmancha a dúvida do cursor (o footer troca de linha)
+	b.Reset()
+	drawInitChoice(w, 2, w.c, 200)
+	if !strings.Contains(b.String(), "para trabalho isolado ou repositório próprio.") {
+		t.Errorf("descrição contextual da opção 3 ausente:\n%s", b.String())
 	}
 }
 

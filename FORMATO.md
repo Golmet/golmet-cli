@@ -46,8 +46,13 @@ permanece o termo interno do `golmet.yaml`/FORMATO — / workspace-produto em
 Organização existente / workspace-produto raiz livre) e **confirma antes de
 criar** (nome/destino exibidos); nunca cria no cwd silenciosamente. A
 escolha é **wizard visual com setas quando TTY** (o mesmo padrão do wizard
-do install — `◆` · `↑/↓ move · enter confirma · esc cancela`) · **numerado
-como fallback** (`--plain` ou terminal sem VT). Campos de texto e confirmação
+do install — `◆` · `↑/↓ move · enter confirma · esc cancela`; itens com
+**detail curto ao lado** e a **descrição contextual do item ativo**
+embaixo do frame, que muda com o cursor — o mesmo mecanismo do install;
+SEM jargão de implementação no menu: golmet.yaml/container: true/
+CONSTITUTION.md são consequências da escolha, exibidas no resumo de
+confirmação) · **numerado como fallback** (`--plain` ou terminal sem VT).
+Campos de texto e confirmação
 final são linha-a-linha (o estilo dos campos livres do install). Scripts
 e CI exigem flags explícitos (`--org` ou `--into <container>`) com `--yes`;
 sem TTY e sem flags → fail-closed com o comando a rodar (exit 2, nada

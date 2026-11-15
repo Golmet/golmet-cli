@@ -43,12 +43,21 @@ type initWizard struct {
 }
 
 // initChoiceOptions — as 3 opções do menu (fonte única do wizard visual e
-// do numerado): o que cada modo inicializa.
-var initChoiceOptions = []struct{ label, detail string }{
-	{"Organização — a raiz que agrupa os workspaces da empresa",
-		"cria golmet.yaml com container: true · CONSTITUTION.md · INDEX.md"},
-	{"Workspace-produto dentro de uma Organização existente", ""},
-	{"Workspace-produto raiz livre (sem Organização)", ""},
+// do numerado): label + detail curto ao lado (o padrão do install —
+// "obrigatório", "remoto") + descrição CONTEXTUAL do item ativo (a linha
+// embaixo do frame que muda com o cursor — writeActiveFooter). SEM jargão
+// de implementação no menu/descrições — golmet.yaml, container: true,
+// CONSTITUTION.md são consequências da escolha, mostradas no resumo de
+// confirmação (initWizardCollect).
+var initChoiceOptions = []struct {
+	label, detail, description string
+}{
+	{"Organização", "a raiz que agrupa os workspaces",
+		"Organização é a raiz da empresa que agrupa os workspaces. Crie-a se você está estruturando a empresa — os produtos nascem dentro dela."},
+	{"Workspace-produto dentro de uma Organização existente", "projeto novo dentro da raiz",
+		"Workspace-produto é um projeto do workflow (charter, requisitos, specs, entrega) — este nasce dentro de uma Organização que você indicar e é registrado na lista de produtos dela."},
+	{"Workspace-produto raiz livre", "projeto novo independente",
+		"Workspace-produto raiz livre é um projeto independente, sem Organização — para trabalho isolado ou repositório próprio."},
 }
 
 func (w *initWizard) prompt(question string) (string, error) {
@@ -138,19 +147,22 @@ func suggestedOrg(cwd string) string {
 
 // drawInitChoice desenha o frame VISUAL da escolha — o padrão do render
 // do install (rawWriter + renderListLineColored: seta ">" fixa, nome bold
-// no ativo, detail cinza embaixo).
-func drawInitChoice(w *rawWriter, cursor int, c ttyColors) {
+// no ativo, detail curto ao lado) + a linha de descrição CONTEXTUAL do
+// item ATIVO embaixo do frame (o mesmo mecanismo writeActiveFooter do
+// install — muda conforme o cursor navega).
+func drawInitChoice(w *rawWriter, cursor int, c ttyColors, width int) {
 	fmt.Fprintf(w, "\n%s◆ O que inicializar?%s %s(↑/↓ move · enter confirma · esc cancela)%s\n\n",
 		c.bold, c.reset, c.gray, c.reset)
+	if cursor < 0 || cursor >= len(initChoiceOptions) {
+		cursor = 0 // defensivo — initChoiceApply já constrange
+	}
 	for i, o := range initChoiceOptions {
 		if i > 0 {
 			fmt.Fprint(w, "\n") // respiro entre as opções (padrão do install)
 		}
-		fmt.Fprint(w, renderListLineColored(i == cursor, c, "", o.label, "", 0)+c.reset+"\n")
-		if o.detail != "" {
-			fmt.Fprintf(w, "%s      %s%s\n", c.gray, o.detail, c.reset)
-		}
+		fmt.Fprint(w, renderListLineColored(i == cursor, c, "", o.label, c.gray+o.detail+c.reset, 0)+c.reset+"\n")
 	}
+	writeActiveFooter(w, c, width, initChoiceOptions[cursor].description)
 }
 
 // initChoiceApply — mapeamento puro tecla→transição do passo visual (o
@@ -190,7 +202,7 @@ func runInitChoiceTTY() (int, bool, error) {
 	w := &rawWriter{out: os.Stdout, c: newTTYColors(true)}
 
 	cur := 0
-	drawInitChoice(w, cur, w.c)
+	drawInitChoice(w, cur, w.c, terminalWidth())
 	single := make([]byte, 1)
 	for {
 		if _, rerr := os.Stdin.Read(single); rerr != nil {
@@ -220,20 +232,18 @@ func runInitChoiceTTY() (int, bool, error) {
 			return selection, false, nil
 		}
 		w.erase()
-		drawInitChoice(w, cur, w.c)
+		drawInitChoice(w, cur, w.c, terminalWidth())
 	}
 }
 
-// printNumberedMenu — o menu NUMERADO do fallback (--plain/sem VT), texto
-// da M22 preservado (o que os testes de regressão do numerado enxergam).
+// printNumberedMenu — o menu NUMERADO do fallback (--plain/sem VT), os
+// mesmos itens com detail curto ao lado (a descrição contextual é do
+// render visual; o numerado é o fallback compacto).
 func (w *initWizard) printNumberedMenu() {
 	fmt.Fprintf(w.out, "\n%s◆ O que inicializar?%s %s(ENTER = opção 1)%s\n\n",
 		wizardANSI("\x1b[1m"), wizardANSI("\x1b[0m"), wizardANSI("\x1b[90m"), wizardANSI("\x1b[0m"))
 	for i, o := range initChoiceOptions {
-		fmt.Fprintf(w.out, "  %d. %s\n", i+1, o.label)
-		if o.detail != "" {
-			fmt.Fprintf(w.out, "     (%s)\n", o.detail)
-		}
+		fmt.Fprintf(w.out, "  %d. %s — %s\n", i+1, o.label, o.detail)
 	}
 }
 
