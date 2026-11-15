@@ -9,6 +9,17 @@
 # (IMP-103), gravado pelo gm-setup. O gm-stack-boilerplate resolve
 # `<boilerplate_org>` antes de clonar. Sem perfil, pergunte ao operador.
 #
+# Determinismo do bootstrap — campos OPCIONAIS por template (M14):
+#   ref: tag/branch do boilerplate a clonar. Determinismo: clona um estado
+#     fixo (`git clone --branch <ref> --depth 1`) em vez de HEAD/main, que
+#     pode mudar e quebrar o pós-clone. Ausente = HEAD/main (intocado).
+#   post_setup_script: path RELATIVO AO BOILERPLATE de um script executável
+#     que o próprio boilerplate traz (ex.: scripts/setup.ps1). Presente →
+#     o gm-stack-boilerplate EXECUTA-o pós-clone (determinístico; shell pela
+#     extensão: .ps1 → powershell, .sh → bash; falha = erro claro com a
+#     saída) e o `post_setup` (prosa) vira checklist de VERIFICAÇÃO.
+#     Ausente → `post_setup` é prosa guiada (comportamento original).
+#
 # Exemplo Acme (pack rules/<pack-da-organizacao>.md): boilerplate_org: Acme-Group
 #   → .NET resolve para Acme-Group/Boilerplate.NET-API
 #

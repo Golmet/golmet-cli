@@ -73,7 +73,7 @@ registers the MCP server and runs the doctor in a single pass.
 | `db`       | Database services (the `gm-dba` layer): DATA_MODEL ↔ migrations/snapshot drift                                                                                                 |
 | `template` | Emits a kit template (AGENTS.md skeleton, client/operator profile) straight from the embed — templates are construction artifacts: they live in the kit, never installed into the config |
 | `upgrade`  | Self-update of the binary from the latest GitHub release (SHA-256 verified; `--check` read-only; rollback via `<bin>.old`)                                                      |
-| `lint`     | Deterministic structural sweep (dead refs, orphans, stale manifest entries, naming, ghost `gm-*` components, canonical structure, definitivo↔template conformance) — findings with severity + remediation; exit 0 clean, 2 with findings |
+| `lint`     | Deterministic structural sweep (dead refs, orphans, stale manifest entries, naming, ghost `gm-*` components, canonical structure, definitivo↔template conformance, stack-templates schema) — findings with severity + remediation; exit 0 clean, 2 with findings |
 
 The normative contract behind all of this is [FORMATO.md](FORMATO.md) v1.
 
@@ -117,7 +117,7 @@ drive the same flow via the MCP `gm_upgrade` tool (`check=true` /
 | `gm_pack_update`  | Re-syncs and applies a pack (overlay or state - state preserves local accumulation with auto-commit + rebase) |
 | `gm_pack_list`    | Lists installed packs (with `kind`: overlay or state)                |
 | `gm_upgrade`      | Self-update of the binary (`check=true` read-only; applying requires `confirm=true`) |
-| `gm_lint`         | Deterministic structural sweep (dead refs, orphans, stale manifest, naming, ghost components, canonical structure) - read-only |
+| `gm_lint`         | Deterministic structural sweep (dead refs, orphans, stale manifest, naming, ghost components, canonical structure, stack-templates schema) - read-only |
 
 Example registration in `opencode.json`:
 

@@ -73,6 +73,42 @@ operador). A precedência é `local > pack > full > base`.
 - **Variante legada tolerada no `golmet adopt`:** `delivery/<grupo>/<RN-NNN — <título>>/RN-NNN — <título> — Feature.md` (Feature dentro de pasta própria). O `adopt` não move arquivos; o `validate` aceita ambos e recomenda a normalização.
 - **Container de organização** (opcional): raiz com `golmet.yaml` (`container: true`), `CONSTITUTION.md`, `INDEX.md` (gerado pelo kit) e workspaces como subpastas.
 
+### 2.2 Registry de stack-templates (kit-canônico — o kit sabe COMO, a org define O QUÊ)
+
+O registry de boilerplates por stack é conteúdo KIT-CANÔNICO (asset do kit,
+organização-neutra — IMP-105): a fonte vive em `coredata/rules/stack-templates.yaml`
+e o install materializa em `<config>/profile/stack-templates.yaml` (camada
+core). O kit sabe COMO bootstrapar (mecânica de clone, rename, env,
+`post_setup_script`); a organização define O QUÊ via `boilerplate_org` do
+`profile/client-profile.md` (IMP-103) — o campo `boilerplate` é RELATIVO à
+org e os boilerplates em si vivem nos REPOS da organização: o kit nunca os
+embute.
+
+```yaml
+boilerplate_org: <do client-profile — campo boilerplate_org (IMP-105)>  # placeholder <...> aceito
+templates:
+  <stack>:                # ex.: .NET, Angular, Rust — id usado nos playbooks e no detector
+    boilerplate: <boilerplate_org>/<repo> | null   # null = stack sem boilerplate criado na org ainda
+    detect: [<glob>, …]   # padrões de arquivo para detectar a stack
+    description: …        # exigido quando boilerplate é não-null
+    ref: <tag|branch>     # OPCIONAL — determinismo: clona um estado fixo (`git clone --branch <ref> --depth 1`)
+                          #   em vez de HEAD/main, que pode mudar e quebrar o pós-clone; ausente = HEAD/main
+    post_setup_script: <path rel. ao boilerplate>  # OPCIONAL — script que o PRÓPRIO boilerplate traz
+                          #   (ex.: scripts/setup.ps1); presente → execução determinística pós-clone
+                          #   (shell pela extensão: .ps1 → powershell, .sh → bash; falha = erro claro)
+                          #   e `post_setup` (prosa) vira checklist de VERIFICAÇÃO; ausente → prosa guiada
+    pre_setup: … | null   # prosa — o que fazer antes de clonar
+    post_setup: … | null  # prosa guiada (sem script) ou checklist de verificação (com script)
+    base_image / db_image / compose_ports / conventions: …   # metadados da stack
+```
+
+Edição local do arquivo materializado = customização detectada (o arquivo é
+gerido pelo manifest de conteúdo; o install FULL rematerializa). O lint
+valida o schema mínimo da cópia no config (check **L9** — §9.1): YAML
+parseável, `boilerplate_org` presente, cada template com `detect` não-vazio
+e chave `boilerplate` presente (null aceito), `description` presente quando
+`boilerplate` é não-null.
+
 ## 3. `golmet.yaml`
 
 ```yaml
@@ -321,7 +357,7 @@ Cache **commitado**, com **único escritor = kit** (padrão registry-render: can
 ### 9.1 `golmet lint` — varredura estrutural determinística (read-only)
 
 O lint carrega o estado todo e APONTA inconsistências; a correção é do
-agent/operador. Executor: os checks L1-L8 rodam via **CLI `golmet lint`**
+agent/operador. Executor: os checks L1-L9 rodam via **CLI `golmet lint`**
 (ou **MCP `gm_lint`** — read-only, sem confirm). Skills de manutenção que o
 invocam: gm-agent-health-monitor (saúde estrutural), gm-setup (validação
 pós-install), gm-workflow-improver (gate pós-correção),
@@ -337,6 +373,7 @@ Sem check de vocabulário legado (L2 fora do escopo por decisão do operador).
 | L6 | error/warning | Componente fantasma: `gm-*` citado que não existe no registry — **error** em `coredata/sources` (contrato vivo), **warning** em docs/AGENTS.md (histórico) |
 | L7 | error | Estrutura fora do padrão canônico (declarado abaixo) |
 | L8 | warning | Conformidade estrutural definitivo ↔ template: o definitivo (AGENTS.md, perfis) perdeu o MÍNIMO estrutural declarado (blocos marcadores/seções/campos). Conteúdo extra = OK (evolução); definitivo ausente = skip; template depositado no config = L7 warning |
+| L9 | error | Schema do registry de stack-templates materializado (`profile/stack-templates.yaml` do config — M14, contrato §2.2): YAML parseável, `boilerplate_org` presente (placeholder `<...>` aceito), cada template com `detect` não-vazio, chave `boilerplate` presente (`null` aceito) e `description` presente quando `boilerplate` é não-null. Arquivo ausente = skip silencioso (o install é quem materializa). Check separado do L7 de propósito: L7 é estrutura de diretórios; L9 é schema de conteúdo — o by_check diagnostica com precisão |
 
 **Template é etapa de construção — vive no kit, não se instala; o config
 carrega só os definitivos.** O render emite os templates (byte-equality do
@@ -367,9 +404,9 @@ obriga); só a PERDA/ausência do mínimo declarado flaga.
 - **Kit repo**: `coredata/{sources/, rules/, templates/, registry.yaml}` com sources
   FLAT (`*.md` + `*.agent.md`); rules canônicas do kit = `rules/*.md` +
   `rules/*.yaml` (context7, templates de perfil client/operator — IMP-103/136,
-  registry de boilerplates stack-templates.yaml); `skills/` raiz = exatamente 16
+  registry de boilerplates stack-templates.yaml — M14); `skills/` raiz = exatamente 16
   skills (`skills/<gm-x>/SKILL.md`); golden `testdata/golden-opencode/` espelha o
-  render ({agents, skills, rules} + AGENTS.template.md).
+  render ({agents, skills, profile} + AGENTS.template.md — destino `profile/` desde o M13).
 
 **Heurísticas anti-falso-positivo (declaradas):** URLs/âncoras/`<placeholders>`/
 wildcards/braces não são candidatos; paths SEM `/` (nome solto) não são

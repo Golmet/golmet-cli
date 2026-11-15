@@ -1,7 +1,9 @@
 // Package lint implementa `golmet lint` — varredura estrutural
 // determinística do kit/config/packs: referências mortas (L1), órfãos (L3),
 // manifest stale (L4), nomes fora do padrão (L5), componentes fantasmas
-// (L6) e estrutura de pastas canônica (L7). Read-only — nunca muta. A IA
+// (L6), estrutura de pastas canônica (L7), conformidade estrutural
+// definitivo ↔ template (L8) e schema do registry de stack-templates
+// materializado no config (L9). Read-only — nunca muta. A IA
 // corrige o que o lint aponta: o lint carrega o estado todo, o julgamento
 // fica com o agent/operador. Sem check de vocabulário legado (L2 ficou
 // fora por decisão do operador).
@@ -20,12 +22,13 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core/content"
 	"github.com/Golmet/golmet-cli/internal/core/doctor"
 	"github.com/Golmet/golmet-cli/internal/core/pack"
+	"gopkg.in/yaml.v3"
 )
 
 // Finding é um apontamento do lint: severidade, arquivo (+linha quando
 // aplicável), descrição e remediação sugerida (PT-BR).
 type Finding struct {
-	Check       string `json:"check"`          // L1 | L3 | L4 | L5 | L6 | L7
+	Check       string `json:"check"`          // L1 | L3 | L4 | L5 | L6 | L7 | L8 | L9
 	Severity    string `json:"severity"`       // error | warning
 	File        string `json:"file,omitempty"` // rel ao alvo do check (slash)
 	Line        int    `json:"line,omitempty"` // 0 = arquivo inteiro
@@ -311,6 +314,11 @@ func Run(opt Options) (*Report, error) {
 	// ---- L8 — conformidade estrutural definitivo ↔ template (warning) ----
 	if configRoot != "" {
 		lintL8(rep, configRoot)
+	}
+
+	// ---- L9 — schema do registry de stack-templates no config (error) ----
+	if configRoot != "" {
+		lintL9(rep, configRoot)
 	}
 
 	// ---- resumo ----
@@ -930,6 +938,129 @@ func lintL8(rep *Report, configRoot string) {
 					Description: "seção/campo canônico ausente no definitivo: \"" + s + "\"",
 					Fix:         syncFix,
 				})
+			}
+		}
+	}
+}
+
+// ---- L9 — schema do registry de stack-templates (config do engine) ----
+
+// lintL9 valida o schema mínimo do registry de boilerplates MATERIALIZADO
+// no config (`profile/stack-templates.yaml` — M14, determinismo do
+// bootstrap): (a) YAML parseável; (b) `boilerplate_org` presente
+// (placeholder `<...>` aceito); (c) cada template com `detect` não-vazio;
+// (d) chave `boilerplate` presente (null aceito — stack sem boilerplate
+// ainda); (e) `description` presente quando `boilerplate` é não-null.
+// Severidade error. Arquivo ausente = skip silencioso (máquina nova antes
+// do install — mesmo padrão do L8). Check SEPARADO do L7 de propósito: L7
+// é estrutura de DIRETÓRIOS declarativa; L9 é schema de CONTEÚDO de um
+// arquivo específico — separados, o by_check do gm_lint diagnostica com
+// precisão (contrato documentado no FORMATO §9.1 e §2.2).
+func lintL9(rep *Report, configRoot string) {
+	const rel = "profile/stack-templates.yaml"
+	data, err := os.ReadFile(filepath.Join(configRoot, filepath.FromSlash(rel)))
+	if err != nil {
+		return // ausente = skip silencioso (o install é quem materializa)
+	}
+	flag := func(line int, desc, fix string) {
+		rep.Findings = append(rep.Findings, Finding{
+			Check: "L9", Severity: "error", File: rel, Line: line,
+			Description: desc, Fix: fix,
+		})
+	}
+	fixRoot := "restaure o registry a partir do kit-canônico (`coredata/rules/stack-templates.yaml` — materializado pelo install FULL) ou corrija o schema local"
+	var root yaml.Node
+	if uerr := yaml.Unmarshal(data, &root); uerr != nil {
+		flag(0, "stack-templates.yaml não é YAML parseável: "+uerr.Error(),
+			"corrija a sintaxe YAML do registry de boilerplates (fonte kit-canônica: coredata/rules/stack-templates.yaml)")
+		return
+	}
+	if root.Kind == 0 || len(root.Content) == 0 {
+		flag(0, "stack-templates.yaml está vazio (sem mapeamento raiz)", fixRoot)
+		return
+	}
+	doc := root.Content[0]
+	if doc.Kind != yaml.MappingNode {
+		flag(doc.Line, "stack-templates.yaml não tem mapeamento raiz (esperado: `boilerplate_org` + `templates`)", fixRoot)
+		return
+	}
+	// mappingValue devolve o value node da chave name (nil se ausente) —
+	// em mapping YAML, Content é [k1, v1, k2, v2, ...].
+	mappingValue := func(n *yaml.Node, name string) *yaml.Node {
+		if n == nil || n.Kind != yaml.MappingNode {
+			return nil
+		}
+		for i := 0; i+1 < len(n.Content); i += 2 {
+			if n.Content[i].Value == name {
+				return n.Content[i+1]
+			}
+		}
+		return nil
+	}
+	isEmptyScalar := func(n *yaml.Node) bool {
+		return n == nil || n.Tag == "!!null" || strings.TrimSpace(n.Value) == ""
+	}
+	// (b) boilerplate_org presente — placeholder `<...>` é aceito (IMP-105:
+	// a org real vem do client-profile, o registry é organização-neutro).
+	if org := mappingValue(doc, "boilerplate_org"); isEmptyScalar(org) {
+		line := 0
+		if org != nil {
+			line = org.Line
+		}
+		flag(line, "campo `boilerplate_org` ausente ou vazio no registry de stack-templates",
+			"declare `boilerplate_org` (org donosa dos boilerplates — resolve a partir do client-profile, IMP-105; placeholder `<...>` é aceito)")
+	}
+	// templates: mapeamento obrigatório — um template por stack.
+	templates := mappingValue(doc, "templates")
+	if templates == nil || templates.Tag == "!!null" {
+		line := 0
+		if templates != nil {
+			line = templates.Line
+		}
+		flag(line, "seção `templates` ausente ou vazia no registry de stack-templates",
+			"declare a seção `templates:` com um template por stack (detect + boilerplate) — "+fixRoot)
+		return
+	}
+	if templates.Kind != yaml.MappingNode {
+		flag(templates.Line, "seção `templates` não é um mapeamento (esperado: nome da stack → campos do template)", fixRoot)
+		return
+	}
+	for i := 0; i+1 < len(templates.Content); i += 2 {
+		stack := templates.Content[i].Value
+		line := templates.Content[i].Line
+		t := templates.Content[i+1]
+		if t.Kind != yaml.MappingNode {
+			flag(t.Line, "template `"+stack+"` não é um mapeamento de campos (esperado: detect, boilerplate, …)", fixRoot)
+			continue
+		}
+		// (c) detect: sequência não-vazia de padrões não-vazios.
+		detect := mappingValue(t, "detect")
+		detectOK := detect != nil && detect.Kind == yaml.SequenceNode && len(detect.Content) > 0
+		if detectOK {
+			for _, pat := range detect.Content {
+				if isEmptyScalar(pat) {
+					detectOK = false
+					break
+				}
+			}
+		}
+		if !detectOK {
+			flag(line, "template `"+stack+"` sem `detect` não-vazio (array de padrões de arquivo para detectar a stack)",
+				"declare `detect: [<glob>, …]` (ex.: [\"*.csproj\", \"*.sln\"]) no template `"+stack+"`")
+		}
+		// (d) chave `boilerplate` presente — null aceito (placeholder de
+		// stack cujo boilerplate ainda não existe na org).
+		bp := mappingValue(t, "boilerplate")
+		if bp == nil {
+			flag(line, "template `"+stack+"` sem a chave `boilerplate`",
+				"declare `boilerplate: <boilerplate_org>/<repo>` ou `boilerplate: null` (stack sem boilerplate criado na org ainda) no template `"+stack+"`")
+			continue
+		}
+		// (e) boilerplate definido ⇒ description presente.
+		if !isEmptyScalar(bp) {
+			if desc := mappingValue(t, "description"); isEmptyScalar(desc) {
+				flag(line, "template `"+stack+"` com `boilerplate` definido exige `description`",
+					"declare a `description` do boilerplate no template `"+stack+"` (o que o boilerplate traz)")
 			}
 		}
 	}

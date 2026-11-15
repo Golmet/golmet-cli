@@ -393,3 +393,106 @@ func TestL7TemplateDepositFlag(t *testing.T) {
 		t.Fatalf("L7 deveria flagar template depositado no config: %+v", findingsOf(rep, "L7"))
 	}
 }
+
+// ---- L9 — schema do registry de stack-templates (M14) ----
+
+// l9Valid é um registry CONFORMANTE: boilerplate_org placeholder (aceito —
+// IMP-105), template completo (.NET) e template placeholder (boilerplate
+// null, sem description — aceito).
+const l9Valid = `# Stack Templates Registry
+boilerplate_org: <do client-profile — campo boilerplate_org (IMP-105)>
+
+templates:
+  .NET:
+    boilerplate: <boilerplate_org>/Boilerplate.NET-API
+    detect: ["*.csproj", "*.sln"]
+    description: |
+      Clean Architecture .NET + CQRS/MediatR + PostgreSQL + Docker.
+    post_setup: |
+      # 1. Clona boilerplate
+      # 2. Roda rename-project.ps1
+  Angular:
+    boilerplate: null      # não existe ainda (a criar na org)
+    detect: ["angular.json"]
+    description: "Angular MFE — a criar boilerplate"
+`
+
+func l9Write(t *testing.T, content string) (ws, home string) {
+	t.Helper()
+	home = t.TempDir()
+	cfg := filepath.Join(home, ".config", "opencode", "profile")
+	os.MkdirAll(cfg, 0o755)
+	os.WriteFile(filepath.Join(cfg, "stack-templates.yaml"), []byte(content), 0o644)
+	return t.TempDir(), home
+}
+
+func TestL9StackTemplatesSchema(t *testing.T) {
+	// (a)-(e) conformante → zero L9; by_check registra L9 apenas com findings
+	ws, home := l9Write(t, l9Valid)
+	rep := runLint(t, ws, home)
+	if l9 := findingsOf(rep, "L9"); len(l9) != 0 {
+		t.Fatalf("registry conforme deveria zerar L9: %+v", l9)
+	}
+	if rep.ByCheck["L9"] != 0 {
+		t.Errorf("by_check L9 = %d, want 0", rep.ByCheck["L9"])
+	}
+
+	// arquivo AUSENTE (máquina nova antes do install) → skip silencioso
+	rep0 := runLint(t, t.TempDir(), t.TempDir())
+	if l9 := findingsOf(rep0, "L9"); len(l9) != 0 {
+		t.Fatalf("sem stack-templates.yaml o L9 é silencioso: %+v", l9)
+	}
+
+	tt := map[string]struct {
+		content string
+		want    string // substring esperada na description do finding
+	}{
+		"yaml quebrado":       {"boilerplate_org: [unclosed\n  templates: {", "não é YAML parseável"},
+		"arquivo vazio":       {"\n", "vazio"},
+		"sem boilerplate_org": {"templates:\n  .NET:\n    boilerplate: null\n    detect: [\"x\"]\n", "boilerplate_org"},
+		"boilerplate_org vazio": {"boilerplate_org: \"\"\ntemplates:\n  .NET:\n    boilerplate: null\n    detect: [\"x\"]\n",
+			"boilerplate_org"},
+		"sem templates": {"boilerplate_org: Acme\n", "templates"},
+		"template sem detect": {"boilerplate_org: Acme\ntemplates:\n  .NET:\n    boilerplate: null\n",
+			"detect"},
+		"detect vazio": {"boilerplate_org: Acme\ntemplates:\n  .NET:\n    boilerplate: null\n    detect: []\n",
+			"detect"},
+		"sem chave boilerplate": {"boilerplate_org: Acme\ntemplates:\n  .NET:\n    detect: [\"x\"]\n    description: d\n",
+			"chave `boilerplate`"},
+		"sem description": {"boilerplate_org: Acme\ntemplates:\n  .NET:\n    boilerplate: Acme/Boilerplate.NET-API\n    detect: [\"x\"]\n",
+			"description"},
+	}
+	for name, tc := range tt {
+		ws, home := l9Write(t, tc.content)
+		rep := runLint(t, ws, home)
+		l9 := findingsOf(rep, "L9")
+		if len(l9) != 1 {
+			t.Errorf("%s: want 1 finding L9, got %d: %+v", name, len(l9), l9)
+			continue
+		}
+		f := l9[0]
+		if f.Severity != "error" {
+			t.Errorf("%s: L9 é error, got %s", name, f.Severity)
+		}
+		if f.File != "profile/stack-templates.yaml" {
+			t.Errorf("%s: file = %s, want profile/stack-templates.yaml", name, f.File)
+		}
+		if !strings.Contains(f.Description, tc.want) {
+			t.Errorf("%s: description %q não contém %q", name, f.Description, tc.want)
+		}
+		if f.Fix == "" {
+			t.Errorf("%s: finding sem remediação", name)
+		}
+	}
+
+	// múltiplas violações num mesmo registry → um finding por template
+	multi := "boilerplate_org: Acme\ntemplates:\n" +
+		"  A:\n    detect: [\"x\"]\n" + // sem chave boilerplate
+		"  B:\n    boilerplate: Acme/B\n    detect: []\n    description: d\n" + // detect vazio
+		"  C:\n    boilerplate: Acme/C\n    detect: [\"y\"]\n" // sem description
+	ws, home = l9Write(t, multi)
+	repM := runLint(t, ws, home)
+	if l9 := findingsOf(repM, "L9"); len(l9) != 3 {
+		t.Fatalf("registry com 3 violações: want 3 findings L9, got %d: %+v", len(l9), l9)
+	}
+}
