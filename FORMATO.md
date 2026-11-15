@@ -102,12 +102,31 @@ templates:
     base_image / db_image / compose_ports / conventions: …   # metadados da stack
 ```
 
-Edição local do arquivo materializado = customização detectada (o arquivo é
-gerido pelo manifest de conteúdo; o install FULL rematerializa). O lint
-valida o schema mínimo da cópia no config (check **L9** — §9.1): YAML
-parseável, `boilerplate_org` presente, cada template com `detect` não-vazio
-e chave `boilerplate` presente (null aceito), `description` presente quando
-`boilerplate` é não-null.
+Edição local do arquivo materializado `profile/stack-templates.yaml` =
+customização detectada (o arquivo é gerido pelo manifest de conteúdo; o
+install FULL rematerializa o canônico por cima).
+
+**Registry da org IN-PLACE no pack (pack-first — M15):** o registry
+PREENCHIDO da organização (boilerplates reais + `ref`s) mora no state pack
+da org: `packs/<id>/rules/stack-templates.yaml` (convenção T3 da prateleira:
+config `profile/*` · pack `packs/<id>/rules/*`) — aí a equipe herda os
+boilerplates da org via `golmet pack add`/`pack update`, sem customização
+local silenciosa. O `gm-stack-boilerplate` carrega PACK-FIRST com fallback:
+registry do pack existente SOBREPOE o do kit por stack (mesma chave = o pack
+manda; stacks só no kit = mantidas); múltiplos packs com registry → `ask`;
+ausente → fallback para o canônico do kit em `profile/stack-templates.yaml`.
+
+O lint valida o schema mínimo dos DOIS registries com a mesma regra
+(check **L9** — §9.1): YAML parseável, `boilerplate_org` presente, cada
+template com `detect` não-vazio e chave `boilerplate` presente (null aceito),
+`description` presente quando `boilerplate` é não-null; arquivo ausente =
+skip silencioso (o install materializa o do kit; pack sem registry é estado
+legítimo).
+
+**Release de boilerplate (ciclo da org, 4 passos):** (1) tagueie o
+boilerplate (ex.: `v0.1.1` no repo `Boilerplate.*`) → (2) atualize o `ref` no
+`rules/stack-templates.yaml` do pack → (3) commit + `golmet pack publish` →
+(4) equipe: `golmet pack update`.
 
 ## 3. `golmet.yaml`
 
@@ -373,7 +392,7 @@ Sem check de vocabulário legado (L2 fora do escopo por decisão do operador).
 | L6 | error/warning | Componente fantasma: `gm-*` citado que não existe no registry — **error** em `coredata/sources` (contrato vivo), **warning** em docs/AGENTS.md (histórico) |
 | L7 | error | Estrutura fora do padrão canônico (declarado abaixo) |
 | L8 | warning | Conformidade estrutural definitivo ↔ template: o definitivo (AGENTS.md, perfis) perdeu o MÍNIMO estrutural declarado (blocos marcadores/seções/campos). Conteúdo extra = OK (evolução); definitivo ausente = skip; template depositado no config = L7 warning |
-| L9 | error | Schema do registry de stack-templates materializado (`profile/stack-templates.yaml` do config — M14, contrato §2.2): YAML parseável, `boilerplate_org` presente (placeholder `<...>` aceito), cada template com `detect` não-vazio, chave `boilerplate` presente (`null` aceito) e `description` presente quando `boilerplate` é não-null. Arquivo ausente = skip silencioso (o install é quem materializa). Check separado do L7 de propósito: L7 é estrutura de diretórios; L9 é schema de conteúdo — o by_check diagnostica com precisão |
+| L9 | error | Schema do registry de stack-templates — o materializado do kit (`profile/stack-templates.yaml`) E os registries da org in-place nos packs (`packs/*/rules/stack-templates.yaml` — M15 pack-first, mesma regra, contrato §2.2): YAML parseável, `boilerplate_org` presente (placeholder `<...>` aceito), cada template com `detect` não-vazio, chave `boilerplate` presente (`null` aceito) e `description` presente quando `boilerplate` é não-null. Arquivo ausente = skip silencioso (o install materializa o do kit; pack sem registry é estado legítimo). Check separado do L7 de propósito: L7 é estrutura de diretórios; L9 é schema de conteúdo — o by_check diagnostica com precisão |
 
 **Template é etapa de construção — vive no kit, não se instala; o config
 carrega só os definitivos.** O render emite os templates (byte-equality do

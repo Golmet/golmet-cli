@@ -945,34 +945,63 @@ func lintL8(rep *Report, configRoot string) {
 
 // ---- L9 — schema do registry de stack-templates (config do engine) ----
 
-// lintL9 valida o schema mínimo do registry de boilerplates MATERIALIZADO
-// no config (`profile/stack-templates.yaml` — M14, determinismo do
-// bootstrap): (a) YAML parseável; (b) `boilerplate_org` presente
-// (placeholder `<...>` aceito); (c) cada template com `detect` não-vazio;
-// (d) chave `boilerplate` presente (null aceito — stack sem boilerplate
-// ainda); (e) `description` presente quando `boilerplate` é não-null.
+// lintL9 valida o schema mínimo dos registries de boilerplates no config
+// do engine (M14 determinismo do bootstrap; M15 pack-first):
+// (1) o kit-canônico materializado (`profile/stack-templates.yaml`) e
+// (2) os registries da org IN-PLACE nos packs (`packs/*/rules/stack-templates.yaml`
+// — fonte primária do gm-stack-boilerplate), ambos com o MESMO schema:
+// (a) YAML parseável; (b) `boilerplate_org` presente (placeholder `<...>`
+// aceito); (c) cada template com `detect` não-vazio; (d) chave
+// `boilerplate` presente (null aceito — stack sem boilerplate ainda);
+// (e) `description` presente quando `boilerplate` é não-null.
 // Severidade error. Arquivo ausente = skip silencioso (máquina nova antes
-// do install — mesmo padrão do L8). Check SEPARADO do L7 de propósito: L7
-// é estrutura de DIRETÓRIOS declarativa; L9 é schema de CONTEÚDO de um
-// arquivo específico — separados, o by_check do gm_lint diagnostica com
-// precisão (contrato documentado no FORMATO §9.1 e §2.2).
+// do install; pack sem registry é estado legítimo). Check SEPARADO do L7
+// de propósito: L7 é estrutura de DIRETÓRIOS declarativa; L9 é schema de
+// CONTEÚDO de arquivos específicos — separados, o by_check do gm_lint
+// diagnostica com precisão (contrato documentado no FORMATO §9.1 e §2.2).
 func lintL9(rep *Report, configRoot string) {
+	// (1) registry kit-canônico materializado no config.
 	const rel = "profile/stack-templates.yaml"
-	data, err := os.ReadFile(filepath.Join(configRoot, filepath.FromSlash(rel)))
-	if err != nil {
-		return // ausente = skip silencioso (o install é quem materializa)
+	if data, err := os.ReadFile(filepath.Join(configRoot, filepath.FromSlash(rel))); err == nil {
+		l9CheckRegistry(rep, rel, data,
+			"restaure o registry a partir do kit-canônico (`coredata/rules/stack-templates.yaml` — materializado pelo install FULL) ou corrija o schema local",
+			"corrija a sintaxe YAML do registry de boilerplates (fonte kit-canônica: coredata/rules/stack-templates.yaml)")
 	}
+	// (2) registries de pack (registry da org in-place — M15 pack-first):
+	// mesmo schema do kit; a remediação aponta o working copy do pack.
+	packsDir := filepath.Join(configRoot, "packs")
+	entries, err := os.ReadDir(packsDir)
+	if err != nil {
+		return
+	}
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		rel := "packs/" + e.Name() + "/rules/stack-templates.yaml"
+		data, err := os.ReadFile(filepath.Join(configRoot, filepath.FromSlash(rel)))
+		if err != nil {
+			continue // pack sem registry = skip silencioso (estado legítimo)
+		}
+		l9CheckRegistry(rep, rel, data,
+			"corrija o schema no registry do pack (working copy `packs/"+e.Name()+"/` — repo da org) e publique (`golmet pack publish`)",
+			"corrija a sintaxe YAML do registry de boilerplates do pack (working copy: packs/"+e.Name()+"/rules/stack-templates.yaml)")
+	}
+}
+
+// l9CheckRegistry valida UM registry de boilerplates (kit materializado em
+// profile/ ou org in-place no pack — mesmo schema). fixRoot/fixParse
+// personalizam a remediação pela origem do arquivo.
+func l9CheckRegistry(rep *Report, rel string, data []byte, fixRoot, fixParse string) {
 	flag := func(line int, desc, fix string) {
 		rep.Findings = append(rep.Findings, Finding{
 			Check: "L9", Severity: "error", File: rel, Line: line,
 			Description: desc, Fix: fix,
 		})
 	}
-	fixRoot := "restaure o registry a partir do kit-canônico (`coredata/rules/stack-templates.yaml` — materializado pelo install FULL) ou corrija o schema local"
 	var root yaml.Node
 	if uerr := yaml.Unmarshal(data, &root); uerr != nil {
-		flag(0, "stack-templates.yaml não é YAML parseável: "+uerr.Error(),
-			"corrija a sintaxe YAML do registry de boilerplates (fonte kit-canônica: coredata/rules/stack-templates.yaml)")
+		flag(0, "stack-templates.yaml não é YAML parseável: "+uerr.Error(), fixParse)
 		return
 	}
 	if root.Kind == 0 || len(root.Content) == 0 {

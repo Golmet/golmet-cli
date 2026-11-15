@@ -46,6 +46,7 @@ continuam legíveis durante a transição.
 - `<modulo>/<projeto>/quality/PROPAGATION_STATUS.md` (se existir)
 - `<modulo>/<projeto>/quality/TRACEABILITY.md` (se existir)
 - `<modulo>/<projeto>/` — todos os artefatos (para verificação de staleness e integridade)
+- Registries de boilerplates na config do engine: `packs/<id>/rules/stack-templates.yaml` (org, pack-first) e `profile/stack-templates.yaml` (fallback kit) — Verificação J
 - Artefatos da DAG (specs/, quality/, delivery/, support/, glossaries/, docs/)
 
 ## Gera (downstream)
@@ -301,9 +302,33 @@ canônica (L7) e conformidade definitivo↔template (L8).
   decisões (apagar órfão com dado, ampliar allowlist) → operador.
 - Findings entram na seção de saúde do relatório com severidade + remediação.
 
+### Passo 7e — Verificação J: Drift de boilerplates (registry de stack-templates)
+
+Verificação agêntica/opcional — compara cada `ref` declarada nos registries
+de boilerplates com as tags reais dos repos dos boilerplates. Sem `gh`
+autenticado → declare **"N/A — sem gh"** no relatório (nunca bloqueia).
+
+1. Localize os registries na config do engine: `packs/<id>/rules/stack-templates.yaml`
+   (org — pack-first) e `profile/stack-templates.yaml` (fallback kit).
+   Nenhum existente → "Não avaliado — sem registry de boilerplates".
+2. Para cada template com `boilerplate` não-null **E** `ref` declarada:
+   - Resolva `<org>/<repo>` a partir de `boilerplate_org` (client-profile,
+     IMP-105) + o valor do campo `boilerplate`.
+   - Compare a `ref` com as tags do repo:
+     `gh api repos/<org>/<repo>/tags --jq '.[].name'`.
+   - `ref` ≠ tag mais recente (semver) = ⚠️ **DRIFT** — remediação:
+     "atualize o `ref` no `rules/stack-templates.yaml` do pack +
+     `golmet pack publish`; a equipe atualiza com `golmet pack update`".
+   - `ref` declarada e INEXISTENTE entre as tags = ❌ (o clone determinístico
+     do `gm-stack-boilerplate` vai falhar — criar a tag ou remover o campo).
+   - Template sem `ref` = ✅ por definição (HEAD/main é o comportamento
+     declarado — não há drift conceituável).
+3. Reporte por registry: N refs OK / N drift / N refs inexistentes / N skip
+   (sem gh), com o par `repo ↔ ref ↔ tag mais recente` dos drifts.
+
 ### Passo 8 — Montar e salvar relatório
 
-Combine as 9 verificações (A-I) num relatório único com resumo executivo,
+Combine as 10 verificações (A-J) num relatório único com resumo executivo,
 seções detalhadas e recomendações. Salve em
 `<modulo>/<projeto>/quality/AGENT_HEALTH_REPORT_<timestamp>.md`.
 
@@ -338,6 +363,9 @@ generated_at: "YYYY-MM-DDTHH:mm:ssZ"
 | E. Propagation | ✅/⚠️/❌ | N pendentes |
 | F. Conformidade (checklists) | ✅/⚠️/❌ | N conformes / N violações |
 | G. Índice lazy (AGENTS.md) | ✅/⚠️/❌ | N refs OK / N quebradas |
+| H. Coerência PERMISSIONS.md | ✅/⚠️/❌ | N coerentes / N divergências |
+| I. Lint estrutural (gm_lint) | ✅/⚠️/❌ | N findings por severidade |
+| J. Drift de boilerplates | ✅/⚠️/❌/N/A | N refs OK / N drift / N skip |
 
 ---
 

@@ -10,7 +10,9 @@ degrades: [edit, write, webfetch]
 
 Template engine para bootstrapping de projetos a partir de boilerplates
 pré-definidos por stack. Lê o registry T3 de templates por stack
-(`profile/stack-templates.yaml` — lazy-loaded via AGENTS.md),
+(pack-first com fallback: `packs/<pack-ativo>/rules/stack-templates.yaml`
+— registry da org IN-PLACE no state pack; ausente → fallback
+`profile/stack-templates.yaml`, canônico do kit — lazy-loaded via AGENTS.md),
 clona o boilerplate correspondente (em ref fixa quando o template declara
 `ref` — determinismo do bootstrap), executa o setup pós-clone
 (rename, env, restore; script do próprio boilerplate quando o template
@@ -30,7 +32,7 @@ cliente).
 
 ## Lê (upstream)
 
-- `profile/stack-templates.yaml` (T3) — registry de boilerplates por stack (lazy-loaded via AGENTS.md). Por template: `boilerplate` (relativo à org do `boilerplate_org` — null = stack sem boilerplate), `detect`, `description`, `pre_setup`/`post_setup` (prosa) e os campos OPCIONAIS de determinismo: `ref` (tag/branch fixa a clonar; ausente = HEAD/main) e `post_setup_script` (path relativo AO BOILERPLATE de um script executável que o boilerplate traz, ex.: `scripts/setup.ps1`; presente → execução determinística pós-clone e o `post_setup` vira checklist de verificação)
+- Registries de boilerplates (T3), na ordem: 1) `packs/<pack-ativo>/rules/stack-templates.yaml` — registry da org IN-PLACE no state pack; se existir, é a fonte primária e SOBREPOE o kit por stack (mesma chave = o pack manda; stacks só no kit = mantidas); múltiplos packs com registry → `ask`; 2) fallback `profile/stack-templates.yaml` — canônico do kit (lazy-loaded via AGENTS.md). Por template: `boilerplate` (relativo à org do `boilerplate_org` — null = stack sem boilerplate), `detect`, `description`, `pre_setup`/`post_setup` (prosa) e os campos OPCIONAIS de determinismo: `ref` (tag/branch fixa a clonar; ausente = HEAD/main) e `post_setup_script` (path relativo AO BOILERPLATE de um script executável que o boilerplate traz, ex.: `scripts/setup.ps1`; presente → execução determinística pós-clone e o `post_setup` vira checklist de verificação)
 - `AGENTS.md` do repo alvo — convenções específicas do projeto
 
 ## Gera (downstream)
@@ -40,7 +42,7 @@ cliente).
 
 ## Nunca edita
 
-- `profile/stack-templates.yaml` (adicionar stacks manualmente ou via CR)
+- Registries de boilerplates (`profile/stack-templates.yaml` e `packs/<pack-ativo>/rules/stack-templates.yaml` — adicionar stacks/boilerplates é via pack da org ou CR, nunca por este skill)
 - Boilerplate repos (são lidos como template, nunca modificados)
 - Código existente no repo alvo (só escreve em repo vazio)
 
@@ -62,7 +64,13 @@ Boilerplate não encontrado ou repo privado sem acesso → orientar fallback a s
    Se mais de uma stack combinar, pergunte (`ask`). Se nenhuma, reporte que a stack não tem
    boilerplate no registry e encerre (deixando o executor cair no scaffold genérico).
 
-2. **Carregar o registry:** leia `profile/stack-templates.yaml` e busque o template da stack detectada.
+2. **Carregar o registry (pack-first com fallback):** se o pack ativo da org
+   tiver `packs/<pack-ativo>/rules/stack-templates.yaml`, ele é a fonte
+   primária e SOBREPOE o kit por stack — mesma chave = o pack manda; stacks
+   que só existem no kit são mantidas. Múltiplos packs com registry →
+   pergunte (`ask`). Registry do pack ausente → fallback
+   `profile/stack-templates.yaml` (canônico do kit). Busque o template da
+   stack detectada no registry efetivo.
 
 3. **Verificar boilerplate disponível:** se `templates.<stack>.boilerplate` for `null`,
    reporte que não há boilerplate para esta stack e encerre (executor usará scaffold genérico).

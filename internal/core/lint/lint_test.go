@@ -6,6 +6,7 @@ package lint
 import (
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -494,5 +495,96 @@ func TestL9StackTemplatesSchema(t *testing.T) {
 	repM := runLint(t, ws, home)
 	if l9 := findingsOf(repM, "L9"); len(l9) != 3 {
 		t.Fatalf("registry com 3 violações: want 3 findings L9, got %d: %+v", len(l9), l9)
+	}
+}
+
+// ---- L9 — registries de pack (M15: registry da org IN-PLACE no pack) ----
+
+// l9WritePack grava o registry no working copy do pack no config
+// (`<home>/.config/opencode/packs/techminds/rules/stack-templates.yaml`).
+func l9WritePack(t *testing.T, content string) (ws, home string) {
+	t.Helper()
+	home = t.TempDir()
+	pack := filepath.Join(home, ".config", "opencode", "packs", "techminds", "rules")
+	os.MkdirAll(pack, 0o755)
+	os.WriteFile(filepath.Join(pack, "stack-templates.yaml"), []byte(content), 0o644)
+	return t.TempDir(), home
+}
+
+func TestL9PackRegistrySchema(t *testing.T) {
+	// registry de pack CONFORME → zero L9 (mesmo schema do kit)
+	ws, home := l9WritePack(t, l9Valid)
+	rep := runLint(t, ws, home)
+	if l9 := findingsOf(rep, "L9"); len(l9) != 0 {
+		t.Fatalf("registry de pack conforme deveria zerar L9: %+v", l9)
+	}
+
+	// pack SEM registry (e sem profile) → skip silencioso (estado legítimo)
+	rep0 := runLint(t, t.TempDir(), t.TempDir())
+	if l9 := findingsOf(rep0, "L9"); len(l9) != 0 {
+		t.Fatalf("sem registry nenhum o L9 é silencioso: %+v", l9)
+	}
+
+	// violação no registry do pack → finding L9 apontando o arquivo DO pack,
+	// severity error, com remediação apontando o pack publish
+	broken := "boilerplate_org: Acme\ntemplates:\n  Rust:\n    boilerplate: null\n"
+	ws, home = l9WritePack(t, broken)
+	rep = runLint(t, ws, home)
+	l9 := findingsOf(rep, "L9")
+	if len(l9) != 1 {
+		t.Fatalf("pack registry violado: want 1 finding L9, got %d: %+v", len(l9), l9)
+	}
+	f := l9[0]
+	if f.File != "packs/techminds/rules/stack-templates.yaml" {
+		t.Errorf("file = %s, want packs/techminds/rules/stack-templates.yaml", f.File)
+	}
+	if f.Severity != "error" {
+		t.Errorf("L9 de pack é error, got %s", f.Severity)
+	}
+	if !strings.Contains(f.Description, "detect") {
+		t.Errorf("description %q não menciona detect", f.Description)
+	}
+	if f.Fix == "" {
+		t.Errorf("finding sem remediação")
+	}
+
+	// violação de RAIZ no registry do pack: yaml quebrado → remediação aponta
+	// o working copy do pack; arquivo vazio → remediação com golmet pack publish
+	ws, home = l9WritePack(t, "boilerplate_org: [unclosed\n")
+	rep = runLint(t, ws, home)
+	l9 = findingsOf(rep, "L9")
+	if len(l9) != 1 {
+		t.Fatalf("pack yaml quebrado: want 1 finding L9, got %d: %+v", len(l9), l9)
+	}
+	if !strings.Contains(l9[0].Fix, "packs/techminds/") {
+		t.Errorf("fix %q deveria apontar o working copy do pack", l9[0].Fix)
+	}
+	ws, home = l9WritePack(t, "\n")
+	rep = runLint(t, ws, home)
+	l9 = findingsOf(rep, "L9")
+	if len(l9) != 1 {
+		t.Fatalf("pack registry vazio: want 1 finding L9, got %d: %+v", len(l9), l9)
+	}
+	if !strings.Contains(l9[0].Fix, "packs/techminds/") || !strings.Contains(l9[0].Fix, "pack publish") {
+		t.Errorf("fix %q deveria apontar o working copy do pack + pack publish", l9[0].Fix)
+	}
+
+	// registry do kit E do pack quebrados ao mesmo tempo → 2 findings
+	// independentes (o pack NÃO mascara o kit nem vice-versa)
+	home2 := t.TempDir()
+	prof := filepath.Join(home2, ".config", "opencode", "profile")
+	os.MkdirAll(prof, 0o755)
+	os.WriteFile(filepath.Join(prof, "stack-templates.yaml"), []byte("boilerplate_org: [unclosed\n"), 0o644)
+	os.MkdirAll(filepath.Join(home2, ".config", "opencode", "packs", "techminds", "rules"), 0o755)
+	os.WriteFile(filepath.Join(home2, ".config", "opencode", "packs", "techminds", "rules", "stack-templates.yaml"), []byte(broken), 0o644)
+	rep2 := runLint(t, t.TempDir(), home2)
+	l9both := findingsOf(rep2, "L9")
+	if len(l9both) != 2 {
+		t.Fatalf("kit+pack quebrados: want 2 findings L9, got %d: %+v", len(l9both), l9both)
+	}
+	files := []string{l9both[0].File, l9both[1].File}
+	sort.Strings(files)
+	if files[0] != "packs/techminds/rules/stack-templates.yaml" || files[1] != "profile/stack-templates.yaml" {
+		t.Errorf("files = %v, want [packs/techminds/..., profile/...]", files)
 	}
 }
