@@ -264,9 +264,9 @@ func TestRemoveJSONCKey(t *testing.T) {
 			wantOK:  true,
 		},
 		{
-			name:    "com comentários jsonc dentro do bloco",
-			in:      "{\n  // MCP do kit\n  \"golmet\": { // inline\n    \"cmd\": 1 // comentário de linha\n  },\n  \"b\": 2\n}",
-			key:     "golmet",
+			name: "com comentários jsonc dentro do bloco",
+			in:   "{\n  // MCP do kit\n  \"golmet\": { // inline\n    \"cmd\": 1 // comentário de linha\n  },\n  \"b\": 2\n}",
+			key:  "golmet",
 			// comentário órfão antes do bloco remanesce — jsonc válido
 			wantOut: "{\n  // MCP do kit\n  \n  \"b\": 2\n}",
 			wantOK:  true,

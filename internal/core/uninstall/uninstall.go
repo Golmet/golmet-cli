@@ -58,13 +58,13 @@ type Options struct {
 
 // Layer descoberta: o que seria removido.
 type Layer struct {
-	ID    string   `json:"id"`
-	Label string   `json:"label"`
-	Hint  string   `json:"hint"`
-	Default bool   `json:"default"`
-	Files []string `json:"files"`            // arquivos (rel ao config)
-	Dirs  []string `json:"dirs,omitempty"`   // dirs inteiros (rel ao config)
-	Count int      `json:"count"`            // total de alvos (files + dirs)
+	ID      string   `json:"id"`
+	Label   string   `json:"label"`
+	Hint    string   `json:"hint"`
+	Default bool     `json:"default"`
+	Files   []string `json:"files"`          // arquivos (rel ao config)
+	Dirs    []string `json:"dirs,omitempty"` // dirs inteiros (rel ao config)
+	Count   int      `json:"count"`          // total de alvos (files + dirs)
 }
 
 // Plan — descoberta completa (read-only).
@@ -495,7 +495,7 @@ func Run(plan *Plan, selected []string) (*Report, error) {
 				removeFile(&lr, plan.ConfigRoot, f)
 			}
 			rep.PackReminder = true
-			lr.Note = "apenas o working copy LOCAL — o repositório remoto NÃO é tocado (delete manual no GitHub)"
+			lr.Note = "apenas o working copy LOCAL - o repositório remoto NÃO é tocado (delete manual no GitHub)"
 		default:
 			for _, f := range l.Files {
 				removeFile(&lr, plan.ConfigRoot, f)
@@ -505,6 +505,11 @@ func Run(plan *Plan, selected []string) (*Report, error) {
 	}
 	for _, id := range layerOrder {
 		runLayer(id)
+	}
+	// o pack working copy NUNCA vai ao remote: removido ou mantido, o operador
+	// merece o aviso (remote só sai por delete manual no GitHub)
+	if _, hasPacks := byID["packs"]; hasPacks {
+		rep.PackReminder = true
 	}
 
 	// dirs vazios que o kit criou (nunca opencode.jsonc; nunca dir com conteúdo)
@@ -522,15 +527,37 @@ func Run(plan *Plan, selected []string) (*Report, error) {
 func removeEmptyKitDirs(configRoot string, selected []string, byID map[string]Layer) LayerResult {
 	lr := LayerResult{ID: "vazios", Label: "Diretórios vazios removidos", Removed: []string{}}
 	kitDirs := []string{"agents", "skills", "profile", "packs", "plugins", "knowledge"}
+	// prune bottom-up: remove sub-dirs vazios e depois o próprio dir se ficar vazio
+	var prune func(dir string) (removedSelf bool, stillExists bool)
+	prune = func(dir string) (removedSelf bool, stillExists bool) {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			return false, false // inexistente - no-op silencioso
+		}
+		for _, e := range entries {
+			if e.IsDir() {
+				sub := filepath.Join(dir, e.Name())
+				if removed, _ := prune(sub); removed {
+					lr.Removed = append(lr.Removed, sub+string(os.PathSeparator))
+				}
+			}
+		}
+		entries, err = os.ReadDir(dir)
+		if err != nil {
+			return false, true
+		}
+		if len(entries) == 0 {
+			if err := os.Remove(dir); err == nil {
+				lr.Removed = append(lr.Removed, dir+string(os.PathSeparator))
+				return true, false
+			}
+		}
+		return false, true
+	}
 	for _, d := range kitDirs {
 		p := filepath.Join(configRoot, d)
-		if !dirExists(p) {
-			continue
-		}
-		if entries, err := os.ReadDir(p); err == nil && len(entries) == 0 {
-			if err := os.Remove(p); err == nil {
-				lr.Removed = append(lr.Removed, d+"/")
-			}
+		if dirExists(p) {
+			prune(p)
 		}
 	}
 	return lr
@@ -564,8 +591,12 @@ func uninstallEngineEntries(configRoot string) (removed, errs []string, note str
 		}
 	}
 	if !changed {
-		return nil, nil, "nenhuma entrada do Golmet no opencode.jsonc — no-op"
+		return nil, nil, "nenhuma entrada do Golmet no opencode.jsonc - no-op"
 	}
+	// normaliza vírgulas pendentes antes de }/] - remover a ÚLTIMA key de um
+	// objeto deixa a vírgula da key anterior pendente (JSONC tolera; o JSON
+	// resultante precisa ser válido)
+	orig = stripDanglingCommas(orig)
 	// validação: o resultado (sem comentários) precisa ser JSON válido
 	stripped := stripJSONCComments([]byte(orig))
 	if !json.Valid(stripped) {
