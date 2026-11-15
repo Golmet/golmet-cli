@@ -117,11 +117,23 @@ func newValidateCmd() *cobra.Command {
 }
 
 func printHuman(w io.Writer, res *scan.Result) {
+	ctx := res.Context
+	if ctx == "" {
+		ctx = scan.ContextWorkspace
+	}
+	fmt.Fprintf(w, "contexto: %s\n", ctx)
 	for _, e := range res.Errors {
 		printFinding(w, e, "")
 	}
 	for _, wn := range res.Warnings {
 		printFinding(w, wn, "AVISO ")
+	}
+	if ctx == scan.ContextContainer && res.Container != nil {
+		if len(res.Errors) == 0 && len(res.Warnings) == 0 {
+			fmt.Fprintln(w, "ok — declaração do container íntegra")
+		}
+		fmt.Fprintln(w, res.Container.Summary())
+		return
 	}
 	if len(res.Errors) == 0 && len(res.Warnings) == 0 {
 		fmt.Fprintln(w, "ok — workspace conforme (FORMATO v1)")

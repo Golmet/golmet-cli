@@ -447,6 +447,22 @@ Cache **commitado**, com **único escritor = kit** (padrão registry-render: can
 | S4 | Evidência legado sem hash |
 | S5 | Capacidade de kit (`kit.jev`/`kit.graph`) declarada e ausente no ambiente — `doctor` emite AVISO com remediação (DR-015/016) |
 
+**Contexto de execução (M21) — `validate` e `doctor` são contexto-aware.**
+O modo é detectado pelo dir dado (o `golmet.yaml` dele, ou o match com o
+config root do engine — `--engine`/home) e orienta quais checks se aplicam;
+a gramática de workspace-produto NUNCA se aplica fora dela:
+
+| Contexto | Detectado por | `golmet validate` | `golmet doctor` |
+|---|---|---|---|
+| container | `golmet.yaml` com `container: true` | valida a **declaração da org** — regra **C1**: produto declarado no `products:` sem dir no disco = erro (exit 0 ⇔ declaração íntegra) — e reporta o estado de adoção: produto filho com `golmet.yaml` próprio = **adotado** (validate de produto disponível via `golmet validate <produto>`), com dir sem `golmet.yaml` = **não-adotado** (estado legítimo, sem finding). Relatório: `container <nome>: N produto(s) — Y adotado(s) · Z não-adotado(s)` | checklist de hierarquia do container (§2.3) + checks de máquina |
+| workspace-produto | `golmet.yaml` sem `container` | como sempre — gramática integral (H1–H10/S1–S5) + índice §8 | como sempre — índice + S1–S5 + manifest + capacidades + máquina (engine-config compacto) |
+| engine-config | dir == config root do engine (resolvido por `--engine`/home; sem `golmet.yaml` por natureza) | não se aplica — validate exige `golmet.yaml` (erro do contexto "nenhum") | **estado INTEGRAL do config do engine como corpo principal** (geridos por camada, pessoal-por-design listado, não-reconstrutíveis com arquivos, state packs) + SOMENTE os checks de máquina (git/kit.jev/kit.graph) — os checks de workspace-produto não se aplicam (o config não é workspace; antes do M21 o doctor aqui relatava "0 ok, 0 aviso, 1 falha" inválida — a falha era o `golmet.yaml` ausente, que não é doença do config) |
+| nenhum | sem `golmet.yaml` e sem match de config root | erro claro (exit 2): "não é workspace nem container — rode `golmet init` no dir, ou `golmet init <produto> --into <container>` para criar dentro de um container existente" | erro claro (exit 2): workspace não inicializado (rode `golmet init`) |
+
+O relatório humano carrega a mensagem de contexto: `contexto: container |
+workspace-produto` (validate) e `contexto: engine-config | container |
+workspace-produto` (doctor, na 1ª linha junto à versão do kit).
+
 ### 9.1 `golmet lint` — varredura estrutural determinística (read-only)
 
 O lint carrega o estado todo e APONTA inconsistências; a correção é do

@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -55,7 +56,11 @@ type Options struct {
 
 // Report agrega o checklist.
 type Report struct {
-	Workspace    string               `json:"workspace"`
+	Workspace string `json:"workspace"`
+	// Contexto do relatório (M21): o doctor é contexto-aware — o modo
+	// detectado orienta quais checks se aplicam (ver ContextEngineConfig
+	// e irmãs).
+	Context      string               `json:"context"`
 	Version      string               `json:"version"` // versão do kit servindo — diagnóstico instantâneo de binário velho (MCP/CLI --json)
 	Checks       []Check              `json:"checks"`
 	OKs          int                  `json:"ok"`
@@ -76,10 +81,22 @@ func (r *Report) add(item string, st Status, detail, fix string) {
 	}
 }
 
+// Contextos do doctor (M21): workspace-produto (checks S1-S5 + índice +
+// manifest + capacidades + máquina), container de organização (checklist
+// de hierarquia §2.3 + máquina) e engine-config (o dir dado É o config
+// root do engine — estado INTEGRAL do config como corpo principal + só os
+// checks de máquina; o config não é workspace, os checks de produto não se
+// aplicam).
+const (
+	ContextEngineConfig     = "engine-config"
+	ContextContainer        = "container"
+	ContextWorkspaceProduct = "workspace-produto"
+)
+
 // Run executa o checklist. Erro de retorno = workspace inválido (CLI 2);
 // os checks já coletados voltam no Report para exibição.
 func Run(dir string, opt Options) (*Report, error) {
-	rep := &Report{Version: indexstate.KitVersion}
+	rep := &Report{Version: indexstate.KitVersion, Context: ContextWorkspaceProduct}
 	root, err := filepath.Abs(dir)
 	if err != nil {
 		rep.add("golmet.yaml", Fail, "caminho inválido: "+err.Error(), "informe um caminho válido")
@@ -87,6 +104,12 @@ func Run(dir string, opt Options) (*Report, error) {
 	}
 	rep.Workspace = filepath.Base(root)
 	if st, serr := os.Stat(root); serr != nil || !st.IsDir() {
+		// dir inexistente pode ser o config root do engine apontado antes
+		// do primeiro install — o contexto engine-config trata com mensagem
+		// própria ("raiz inexistente — nada gerido, nada a perder")
+		if opt.EngineConfigRoot != "" && samePath(root, opt.EngineConfigRoot) {
+			return rep.runEngineConfigContext(root, opt)
+		}
 		rep.add("golmet.yaml", Fail, "workspace não encontrado: "+root, "informe um workspace existente")
 		return rep, fmt.Errorf("workspace não encontrado: %s", root)
 	}
@@ -95,6 +118,14 @@ func Run(dir string, opt Options) (*Report, error) {
 	cfgPath := filepath.Join(root, "golmet.yaml")
 	cfgData, err := os.ReadFile(cfgPath)
 	if err != nil {
+		// M21 — contexto engine-config: o dir dado É o config root do
+		// engine (sem golmet.yaml por natureza) — relatório COMPLETO do
+		// estado do config; os checks de workspace-produto não se aplicam
+		// (o config não é workspace — a falha inválida "0 ok, 1 falha"
+		// some).
+		if opt.EngineConfigRoot != "" && samePath(root, opt.EngineConfigRoot) {
+			return rep.runEngineConfigContext(root, opt)
+		}
 		rep.add("golmet.yaml", Fail, "ausente em "+root, "rode 'golmet init'")
 		return rep, fmt.Errorf("golmet.yaml ausente em %s — workspace não inicializado (rode 'golmet init')", root)
 	}
@@ -123,10 +154,12 @@ func Run(dir string, opt Options) (*Report, error) {
 	isContainer := fields["container"].Str == "true"
 	gitOK := exec.Command("git", "--version").Run() == nil
 	if isContainer {
+		rep.Context = ContextContainer
 		rep.runContainerChecks(root, container.Products(fields))
 		rep.addMachineChecks(opt, gitOK, nil)
 		return rep, nil
 	}
+	rep.Context = ContextWorkspaceProduct
 
 	// 2. índice — presente/parseável/idade vs prosa (§8)
 	idxPath := filepath.Join(root, "golmet.index.json")
@@ -422,19 +455,41 @@ func detectCodeGraph() bool {
 	return tools.DetectCodegraph()
 }
 
+// samePath compara dois caminhos com tolerância do SO (Windows é case-
+// insensitive; o config root resolvido do engine e o arg do usuário podem
+// diferir em case/barras).
+func samePath(a, b string) bool {
+	a, b = filepath.Clean(a), filepath.Clean(b)
+	if runtime.GOOS == "windows" {
+		return strings.EqualFold(a, b)
+	}
+	return a == b
+}
+
 // Human renderiza o checklist ✅/⚠️/❌ (CLI sem --json). A primeira linha
-// carrega a versão do kit — diagnóstico instantâneo de binário velho servindo
-// MCP (o processo do servidor sobrevive a `go install` até reiniciar o cliente).
+// carrega a versão do kit e o CONTEXTO detectado — diagnóstico instantâneo
+// de binário velho servindo MCP (o processo do servidor sobrevive a `go
+// install` até reiniciar o cliente) e de modo errado de uso.
 func (r *Report) Human() string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "workspace: %s — golmet %s\n", r.Workspace, indexstate.KitVersion)
+	ctx := r.Context
+	if ctx == "" {
+		ctx = ContextWorkspaceProduct
+	}
+	fmt.Fprintf(&b, "workspace: %s — golmet %s — contexto: %s\n", r.Workspace, indexstate.KitVersion, ctx)
 	mark := map[Status]string{OK: "✅", Warn: "⚠️ ", Fail: "❌"}
 	for _, c := range r.Checks {
 		fmt.Fprintf(&b, "%s %-14s %s\n", mark[c.Status], c.Item, c.Detail)
 		// findings do engine-config: paths/resumo logo abaixo da linha do
 		// check (o fix comum já vem na linha seguinte, estilo existente).
+		// No contexto engine-config o check É o corpo principal — cabeçalho
+		// do relatório completo + camadas dos geridos (diferença do modo
+		// compacto do workspace-produto).
 		if c.Item == "engine-config" && r.EngineConfig != nil {
-			r.EngineConfig.renderLines(&b)
+			if ctx == ContextEngineConfig {
+				fmt.Fprintln(&b, "     relatório completo do engine-config:")
+			}
+			r.EngineConfig.renderLines(&b, ctx == ContextEngineConfig)
 		}
 		// fix: só faz sentido quando há o que corrigir — status OK não carrega hint.
 		if c.Fix != "" && c.Status != OK {

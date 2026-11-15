@@ -80,6 +80,11 @@ type EngineConfigSection struct {
 	PackVersioned int      `json:"pack_versioned,omitempty"`  // arquivos em working copies de state packs (seguro)
 	PackDirty     int      `json:"pack_dirty,omitempty"`      // mudanças não-commitadas em working copies de state packs
 	PackDirtyDirs []string `json:"pack_dirty_dirs,omitempty"` // quais packs têm WIP (rel "packs/<id>")
+
+	// Geridos conforme ao manifest, por camada (core/local/pack:<nome>) —
+	// corpo do relatório DETALHADO do contexto engine-config (M21); vazio
+	// quando não há gerido conforme.
+	ManagedLayers []DirCount `json:"managed_layers,omitempty"`
 }
 
 // AtRisk devolve o total de estado do usuário que o kit não reconstrói —
@@ -128,6 +133,24 @@ func (r *Report) runEngineConfig(root string) {
 	default:
 		r.add("engine-config", Warn, sec.summaryLine(), sec.fixText())
 	}
+}
+
+// runEngineConfigContext — o dir dado É o config root do engine (M21):
+// o relatório INTEGRAL do estado do config como corpo principal + os
+// checks de MÁQUINA (git/jev/graph). Os checks de workspace-produto
+// (índice, S2, manifest, capacidades) não se aplicam — o config não é
+// workspace (antes, o doctor aqui relatava "0 ok, 0 aviso, 1 falha"
+// inválida: a falha era o golmet.yaml ausente, que não é doença do config).
+// Root vazio nunca chega aqui (Run só chama com root não-vazio).
+func (r *Report) runEngineConfigContext(root string, opt Options) (*Report, error) {
+	r.Context = ContextEngineConfig
+	gitOK := exec.Command("git", "--version").Run() == nil
+	// máquina SEM o check compacto do engine-config — aqui ele é o corpo
+	// principal detalhado (addMachineChecks com EngineConfigRoot vazio o
+	// pula; compatibilidade total com a semântica existente do campo).
+	r.addMachineChecks(Options{Network: opt.Network, NoNetwork: opt.NoNetwork}, gitOK, nil)
+	r.runEngineConfig(root)
+	return r, nil
 }
 
 // summaryLine — uma linha com o estado classificado (estilo dos checks
@@ -292,12 +315,36 @@ func analyzeEngineConfig(root string) (*EngineConfigSection, error) {
 	sec.GitRepo = gitRepo
 	sec.GitDirty = gitDirty
 
-	if werr := classifyDisk(root, managed, personal, gitRepo, gitTracked, sec, &untracked); werr != nil {
+	layers := map[string]int{}
+	if werr := classifyDisk(root, managed, personal, gitRepo, gitTracked, sec, layers, &untracked); werr != nil {
 		return sec, werr
 	}
+	sec.ManagedLayers = layerCounts(layers)
 	sec.RemovedLocal = removedLocalEntries(root, managed)
 	aggregateFindings(sec, untracked)
 	return sec, nil
+}
+
+// layerCounts — geridos conforme, agregados por camada do manifest
+// (core/local/pack:<nome>); vazio = nenhum gerido conforme.
+func layerCounts(layers map[string]int) []DirCount {
+	if len(layers) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(layers))
+	for k := range layers {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	out := make([]DirCount, 0, len(keys))
+	for _, k := range keys {
+		label := k
+		if label == "" {
+			label = "(sem camada)"
+		}
+		out = append(out, DirCount{Dir: label, Count: layers[k]})
+	}
+	return out
 }
 
 // classifyDisk percorre o config root (EXCLUINDO .git/, .golmet/ e o
@@ -308,7 +355,7 @@ func analyzeEngineConfig(root string) (*EngineConfigSection, error) {
 // conteúdo gerido nunca é encoberta), sem proveniência vai para untracked
 // EXCETO quando casa uma designação pessoal (bucket isento), ilegível fica
 // anotado.
-func classifyDisk(root string, managed map[string]content.FileEntry, personal *PersonalDesignations, gitRepo bool, gitTracked map[string]bool, sec *EngineConfigSection, untracked *[]string) error {
+func classifyDisk(root string, managed map[string]content.FileEntry, personal *PersonalDesignations, gitRepo bool, gitTracked map[string]bool, sec *EngineConfigSection, layers map[string]int, untracked *[]string) error {
 	return filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -364,6 +411,7 @@ func classifyDisk(root string, managed map[string]content.FileEntry, personal *P
 		}
 		if managedMatches(data, entry.SHA256) {
 			sec.ManagedOK++
+			layers[entry.Layer]++
 		} else {
 			sec.Customized = append(sec.Customized, rel)
 		}
@@ -566,7 +614,15 @@ func gitState(root string) (repo bool, dirty int, tracked map[string]bool) {
 // renderLines — bloco textual do Human() logo abaixo da linha do check:
 // paths de customização/remoção um por linha, resumo por diretório +
 // primeiras N paths não-reconstrutíveis (cap — o resto no resumo).
-func (s *EngineConfigSection) renderLines(b *strings.Builder) {
+// detailed (contexto engine-config) acrescenta as camadas dos geridos.
+func (s *EngineConfigSection) renderLines(b *strings.Builder, detailed bool) {
+	if detailed && len(s.ManagedLayers) > 0 {
+		var parts []string
+		for _, l := range s.ManagedLayers {
+			parts = append(parts, fmt.Sprintf("%s: %d", l.Dir, l.Count))
+		}
+		fmt.Fprintf(b, "     gerido pelo kit (conforme ao manifest): %s\n", strings.Join(parts, ", "))
+	}
 	for _, p := range s.Customized {
 		fmt.Fprintf(b, "     customização local: %s\n", p)
 	}

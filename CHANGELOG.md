@@ -22,13 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 18 commands shipped on the `golmet` binary:
 
-- `golmet validate` — end-to-end workspace validation against FORMATO v1 (H1–H10 / S1–S5) with parseable evidence, `--json` structured output, and `--tolerant`/`--strict` modes; non-zero exit blocks CI.
+- `golmet validate` — end-to-end workspace validation against FORMATO v1 (H1–H10 / S1–S5) with parseable evidence, `--json` structured output, and `--tolerant`/`--strict` modes; non-zero exit blocks CI. **Context-aware**: an org container (`container: true`) validates the ORG DECLARATION (C1 — declared product without dir = error; exit 0 ⇔ intact) instead of the product grammar, reporting adoption state ("container <nome>: N produtos — Y adotados · Z não-adotados" — product validate becomes available upon adoption with `golmet init <produto> --into <container>`); workspace-produto runs the full grammar; no `golmet.yaml` = clear init guidance (workspace or into-container).
 - `golmet init` — scaffolds a product workspace or organization container (`.golmet/` kit zone, `golmet.yaml`, engine adapters for `.opencode/`, `.mcp.json`, `.cursor/`).
 - `golmet install` — onboarding wizard covering 7 agent engines and a catalog of 12 MCP servers, with already-registered badges and cascaded post-install verification.
 - `golmet update` — refreshes the vendored BASE skill subset via `go:embed` with a SHA-256 manifest; `--full` materializes the FULL workflow into the engine config (embedded or external core).
 - `golmet status` — workspace dashboard summarizing artifacts, states, and staleness.
 - `golmet next` — deterministic recommendation of the next action, prioritized `p1..p9`.
-- `golmet doctor` — environment health checks (9 checks) with remediation hints; runs a Jev smoke test by default (`--no-network` skips it).
+- `golmet doctor` — environment health checks (9 checks) with remediation hints; runs a Jev smoke test by default (`--no-network` skips it). **Context-aware**: workspace-produto as always; org container runs the hierarchy checklist (FORMATO §2.3); when the given dir IS the engine config root, the FULL engine-config state becomes the main body (managed by layer, personal-by-design, non-reconstructible files, state packs) plus machine checks only — the invalid "0 ok, 0 aviso, 1 falha" from treating the config as a workspace is gone.
 - `golmet adopt` — FORMATO adoption handshake for existing workspaces: classified dry-run first, then deterministic apply, preserving legacy layouts.
 - `golmet eval` — deterministic eval checker (15 checks) over a fixture suite, with JSON output for CI; every evaluated fixture also gets a markdown report in `~/.golmet/eval-reports/` (kit machine state, 50-report retention), with the path printed as `relatório: <path>`.
 - `golmet tools` — installs supporting tooling (e.g. `tools install codegraph`) with supply-chain verification (SHA-256 checksums + attestation).

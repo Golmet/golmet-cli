@@ -26,6 +26,14 @@ type Options struct {
 	ForceIndex bool // --fix: recompõe o índice mesmo com erros hard (pós-merge)
 }
 
+// Contextos do validate (§9 — M21): a detecção é pelo golmet.yaml do dir
+// dado. Container valida a DECLARAÇÃO da org (container.go); workspace-
+// produto roda a gramática integral. Sem golmet.yaml = erro claro (exit 2).
+const (
+	ContextContainer = "container"
+	ContextWorkspace = "workspace-produto"
+)
+
 // Inventory é o retrato parseado da prosa — insumo dos comandos de
 // consulta (status) sem reexecutar o parse em paralelo ao motor.
 type Inventory struct {
@@ -41,11 +49,14 @@ type Inventory struct {
 
 // Result agrega os findings do validate.
 type Result struct {
-	Workspace    string
-	Files        int
-	Counts       map[string]int
-	Errors       []core.GolmetError
-	Warnings     []core.GolmetError
+	Workspace string
+	Context   string // "container" | "workspace-produto" (§9)
+	Files     int
+	Counts    map[string]int
+	Errors    []core.GolmetError
+	Warnings  []core.GolmetError
+	// Container só em contexto container — o retrato da declaração da org.
+	Container    *ContainerReport
 	Inventory    *Inventory
 	Index        *indexstate.Index // índice recomputado da prosa (§8)
 	IndexWritten bool              // índice foi (re)escrito nesta execução
@@ -62,11 +73,13 @@ func Run(dir string, opt Options) (*Result, error) {
 		return nil, fmt.Errorf("workspace não encontrado: %s", root)
 	}
 
-	// golmet.yaml (§3) — presente e com format: 1
+	// golmet.yaml (§3) — presente e com format: 1; a ausência NÃO é
+	// "workspace não inicializado" genérico: o dir pode ser um produto
+	// dentro de um container — mensagem com os dois caminhos de init.
 	cfgPath := filepath.Join(root, "golmet.yaml")
 	cfgData, cfgErr := os.ReadFile(cfgPath)
 	if cfgErr != nil {
-		return nil, fmt.Errorf("golmet.yaml ausente em %s — workspace não inicializado (rode 'golmet init')", root)
+		return nil, fmt.Errorf("golmet.yaml ausente em %s — não é workspace nem container (rode 'golmet init' no dir, ou 'golmet init <produto> --into <container>' para criar dentro de um container existente)", root)
 	}
 	var pre []core.GolmetError
 	cfgFields, perr := frontmatter.ParseBlock(string(cfgData))
@@ -85,6 +98,17 @@ func Run(dir string, opt Options) (*Result, error) {
 		} else if fv.Str != "1" {
 			return nil, fmt.Errorf("formato %s não suportado — este kit suporta format: 1 (§12)", fv.Str)
 		}
+	}
+
+	// M21 — contexto container (§2.3): valida a DECLARAÇÃO da org e
+	// encerra — a gramática de workspace-produto não se aplica (o container
+	// não roda o pipeline de RNs; produtos não-adotados são estado legítimo).
+	if perr == nil && cfgFields["container"].Str == "true" {
+		crep, findings := validateContainer(root, cfgFields)
+		return &Result{
+			Workspace: root, Context: ContextContainer,
+			Container: crep, Counts: map[string]int{}, Errors: findings,
+		}, nil
 	}
 
 	files, err := fsutil.Walk(root)
@@ -155,7 +179,7 @@ func Run(dir string, opt Options) (*Result, error) {
 		}
 	}
 
-	res := &Result{Workspace: root, Files: len(files), Counts: map[string]int{}}
+	res := &Result{Workspace: root, Context: ContextWorkspace, Files: len(files), Counts: map[string]int{}}
 	for _, r := range rules.All() {
 		for _, e := range r.Fn(ctx) {
 			if e.Severity == core.SeverityError {

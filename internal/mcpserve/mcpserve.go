@@ -180,6 +180,7 @@ type lintParams struct {
 
 type validateOut struct {
 	OK       bool               `json:"ok"`
+	Context  string             `json:"context,omitempty"` // "container" | "workspace-produto" (§9 — M21)
 	Errors   []core.GolmetError `json:"errors"`
 	Warnings []core.GolmetError `json:"warnings"`
 	Counts   map[string]int     `json:"counts"`
@@ -193,6 +194,7 @@ func gmValidate(ctx context.Context, req *mcp.CallToolRequest, in wsParams) (*mc
 	}
 	out := validateOut{
 		OK:       len(res.Errors) == 0,
+		Context:  res.Context,
 		Errors:   res.Errors,
 		Warnings: res.Warnings,
 		Counts:   res.Counts,
