@@ -5,14 +5,17 @@
 // conceito do operador; "container" permanece o termo interno do
 // golmet.yaml/FORMATO.
 //
-// Escada de degradação (o padrão do install):
-//   - TTY → wizard numerado lendo stdin (o mesmo estilo dos pickers do
-//     install — KISS: init não precisa de raw mode para 3 perguntas);
-//   - sem TTY + --plain → o MESMO wizard numerado (lê stdin; EOF = erro);
+// Escada de degradação (o padrão do install — M22 follow-up):
+//   - TTY + VT → wizard VISUAL com setas (raw mode — o MESMO padrão do
+//     wizard do install: header ◆, ↑/↓ move, enter confirma, esc/q/ctrl-c
+//     cancela); os campos de texto e a confirmação final são linha-a-linha
+//     (o estilo dos campos livres do install);
+//   - sem TTY ou sem VT + --plain → wizard NUMERADO lendo stdin (EOF =
+//     erro claro);
 //   - sem TTY e sem --plain → fail-closed com o comando a rodar — nada é
 //     criado no cwd por acidente.
 //
-// Confirmção antes de criar SEMPRE (nome/destino exibidos); --yes pula a
+// Confirmação antes de criar SEMPRE (nome/destino exibidos); --yes pula a
 // confirmação dentro do wizard. Com flags explícitos (--org | --into) o
 // comportamento scriptável atual é intacto — o wizard só roda no init bare.
 package cli
@@ -28,6 +31,7 @@ import (
 
 	"github.com/Golmet/golmet-cli/internal/core/container"
 	"github.com/Golmet/golmet-cli/internal/core/scaffold"
+	"golang.org/x/term"
 )
 
 // initWizard — prompts numerados lendo stdin (padrão do installWizard,
@@ -36,6 +40,15 @@ type initWizard struct {
 	out io.Writer
 	in  *bufio.Reader
 	cwd string // cwd absoluto — base de todas as sugestões
+}
+
+// initChoiceOptions — as 3 opções do menu (fonte única do wizard visual e
+// do numerado): o que cada modo inicializa.
+var initChoiceOptions = []struct{ label, detail string }{
+	{"Organização — a raiz que agrupa os workspaces da empresa",
+		"cria golmet.yaml com container: true · CONSTITUTION.md · INDEX.md"},
+	{"Workspace-produto dentro de uma Organização existente", ""},
+	{"Workspace-produto raiz livre (sem Organização)", ""},
 }
 
 func (w *initWizard) prompt(question string) (string, error) {
@@ -121,21 +134,139 @@ func suggestedOrg(cwd string) string {
 	return ""
 }
 
-// runInitWizard roda o wizard completo e devolve os parâmetros resolvidos
-// do scaffold. Cancelado → (nil, nil).
-func runInitWizard(w *initWizard, yes bool) (*scaffold.Options, string, string, error) {
-	fmt.Fprintf(w.out, "\n%s◆ O que inicializar?%s %s(ENTER = opção 1)%s\n\n",
-		ttyColorsBoldForWizard(), ttyColorsResetForWizard(), ttyColorsGrayForWizard(), ttyColorsResetForWizard())
-	fmt.Fprintf(w.out, "  1. Organização — a raiz que agrupa os workspaces da empresa\n")
-	fmt.Fprintf(w.out, "     (cria golmet.yaml com container: true · CONSTITUTION.md · INDEX.md)\n")
-	fmt.Fprintf(w.out, "  2. Workspace-produto dentro de uma Organização existente\n")
-	fmt.Fprintf(w.out, "  3. Workspace-produto raiz livre (sem Organização)\n")
+// ---- passo 1: a ESCOLHA do modo (visual TTY / numerado fallback) ----
 
-	choice, err := w.askNumber("número [1-3] (default: 1): ", 1, 3, 1)
-	if err != nil {
-		return nil, "", "", err
+// drawInitChoice desenha o frame VISUAL da escolha — o padrão do render
+// do install (rawWriter + renderListLineColored: seta ">" fixa, nome bold
+// no ativo, detail cinza embaixo).
+func drawInitChoice(w *rawWriter, cursor int, c ttyColors) {
+	fmt.Fprintf(w, "\n%s◆ O que inicializar?%s %s(↑/↓ move · enter confirma · esc cancela)%s\n\n",
+		c.bold, c.reset, c.gray, c.reset)
+	for i, o := range initChoiceOptions {
+		if i > 0 {
+			fmt.Fprint(w, "\n") // respiro entre as opções (padrão do install)
+		}
+		fmt.Fprint(w, renderListLineColored(i == cursor, c, "", o.label, "", 0)+c.reset+"\n")
+		if o.detail != "" {
+			fmt.Fprintf(w, "%s      %s%s\n", c.gray, o.detail, c.reset)
+		}
 	}
+}
 
+// initChoiceApply — mapeamento puro tecla→transição do passo visual (o
+// padrão do applyWizardKey do install — testável sem console real).
+// selection = 1..3 quando enter confirma; 0 = continua; cancelled = esc/q/
+// ctrl-c/backspace (primeiro passo — não há trás).
+func initChoiceApply(cur int, key string) (newCur, selection int, cancelled bool) {
+	switch key {
+	case keyUp:
+		if cur > 0 {
+			return cur - 1, 0, false
+		}
+	case keyDown:
+		if cur < len(initChoiceOptions)-1 {
+			return cur + 1, 0, false
+		}
+	case keyEnter:
+		return cur, cur + 1, false
+	case keyBack, keyCancel, keyCtrlC:
+		return cur, 0, true
+	}
+	return cur, 0, false
+}
+
+// runInitChoiceTTY roda o passo VISUAL da escolha em raw mode — o MESMO
+// padrão do runInteractiveTTY do install (entra e sai SEMPRE com o
+// terminal restaurado; codepage UTF-8 para os glifos). Retorna
+// (1..3, false) selecionado, (0, true) cancelado.
+func runInitChoiceTTY() (int, bool, error) {
+	oldCP := setOutputCodepage()
+	defer restoreCodepage(oldCP)
+	state, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		return 0, false, fmt.Errorf("falha ao entrar em raw mode: %w", err)
+	}
+	defer term.Restore(int(os.Stdin.Fd()), state)
+	w := &rawWriter{out: os.Stdout, c: newTTYColors(true)}
+
+	cur := 0
+	drawInitChoice(w, cur, w.c)
+	single := make([]byte, 1)
+	for {
+		if _, rerr := os.Stdin.Read(single); rerr != nil {
+			return 0, true, nil
+		}
+		key := parseKey(single)
+		// setas chegam como sequência: lê o resto do frame ESC [ X
+		if single[0] == 27 {
+			next := make([]byte, 2)
+			if n2, _ := os.Stdin.Read(next); n2 == 2 && next[0] == '[' {
+				switch next[1] {
+				case 'A', 'H':
+					key = keyUp
+				case 'B', 'F':
+					key = keyDown
+				}
+			}
+		}
+		newCur, selection, cancelled := initChoiceApply(cur, key)
+		cur = newCur
+		if cancelled {
+			w.erase()
+			return 0, true, nil
+		}
+		if selection > 0 {
+			w.erase()
+			return selection, false, nil
+		}
+		w.erase()
+		drawInitChoice(w, cur, w.c)
+	}
+}
+
+// printNumberedMenu — o menu NUMERADO do fallback (--plain/sem VT), texto
+// da M22 preservado (o que os testes de regressão do numerado enxergam).
+func (w *initWizard) printNumberedMenu() {
+	fmt.Fprintf(w.out, "\n%s◆ O que inicializar?%s %s(ENTER = opção 1)%s\n\n",
+		wizardANSI("\x1b[1m"), wizardANSI("\x1b[0m"), wizardANSI("\x1b[90m"), wizardANSI("\x1b[0m"))
+	for i, o := range initChoiceOptions {
+		fmt.Fprintf(w.out, "  %d. %s\n", i+1, o.label)
+		if o.detail != "" {
+			fmt.Fprintf(w.out, "     (%s)\n", o.detail)
+		}
+	}
+}
+
+// ---- fluxo comum: campos + confirmação por opção escolhida ----
+
+// runInitWizard roda o wizard completo: escolha (visual quando visualTTY;
+// numerado no fallback) + campos/destino + confirmação. Cancelado →
+// (nil, nil).
+func runInitWizard(w *initWizard, yes, visualTTY bool) (*scaffold.Options, string, string, error) {
+	choice := 0
+	if visualTTY {
+		sel, cancelled, err := runInitChoiceTTY()
+		if err != nil {
+			return nil, "", "", err
+		}
+		if cancelled {
+			return nil, "", "", nil
+		}
+		choice = sel
+	} else {
+		w.printNumberedMenu()
+		n, err := w.askNumber("número [1-3] (default: 1): ", 1, 3, 1)
+		if err != nil {
+			return nil, "", "", err
+		}
+		choice = n
+	}
+	return initWizardCollect(w, choice, yes)
+}
+
+// initWizardCollect — os campos de texto e a confirmação final (linha-a-
+// linha, o estilo dos campos livres do install) para a opção escolhida.
+func initWizardCollect(w *initWizard, choice int, yes bool) (*scaffold.Options, string, string, error) {
 	suggestion := suggestedOrg(w.cwd)
 	switch choice {
 	case 1: // Organização
@@ -196,11 +327,9 @@ func runInitWizard(w *initWizard, yes bool) (*scaffold.Options, string, string, 
 	}
 }
 
-// cores do wizard init — reuso leve do paletinha (o init wizard roda em
-// modo linha, sem raw mode; cores só quando stdout é TTY e sem NO_COLOR).
-func ttyColorsBoldForWizard() string  { return wizardANSI("\x1b[1m") }
-func ttyColorsResetForWizard() string { return wizardANSI("\x1b[0m") }
-func ttyColorsGrayForWizard() string  { return wizardANSI("\x1b[90m") }
+// cores do wizard init — reuso leve do paletinha (os prompts linha-a-
+// linha só colore quando stdout é TTY e sem NO_COLOR; o frame visual usa
+// o ttyColors do render do install).
 func wizardANSI(seq string) string {
 	if os.Getenv("NO_COLOR") != "" || !isTTY() {
 		return ""

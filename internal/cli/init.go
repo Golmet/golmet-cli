@@ -41,8 +41,15 @@ func newInitCmd() *cobra.Command {
 					fmt.Fprintln(cmd.ErrOrStderr(), "golmet: "+berr.Error())
 					return exitError(2)
 				}
+				// escada do install (ttyWizardMode): TTY+VT → wizard VISUAL
+				// com setas; TTY sem VT (conhost legado) → numerado com
+				// degradação elegante; sem TTY + --plain → numerado.
+				visual := isTTY() && enableVT()
+				if isTTY() && !visual {
+					fmt.Fprintln(out, "ℹ️ terminal sem suporte a VT — modo numerado (use Windows Terminal para o wizard visual)")
+				}
 				w := &initWizard{out: out, in: stdinReader(), cwd: base}
-				opt, baseDir, wname, werr := runInitWizard(w, yes)
+				opt, baseDir, wname, werr := runInitWizard(w, yes, visual)
 				if werr != nil {
 					fmt.Fprintln(cmd.ErrOrStderr(), "golmet: "+werr.Error())
 					return exitError(2)
