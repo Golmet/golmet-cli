@@ -105,8 +105,8 @@ provides:
 | Conteúdo | arquivos declarados em `provides` | o próprio working copy Git (tudo exceto `pack.yaml`) |
 | Cópia local | cache somente-leitura em `~/.golmet/packs/<slug>` | working copy bidirecional em `<config>/packs/<id>` (clone completo) |
 | `provides` | obrigatório, restrito a `agents/` e `skills/` | **proibido** (erro — em state o conteúdo é o clone) |
-| Materialização | overlay 3-way de `provides` no config do engine | overlay 3-way de `skills/` e `agents/` do working copy (posse do pack substitui o render do core para o mesmo caminho) + `rules/packs/<id>.md` copiado gerido (layer `pack:<id>`, alimenta o lazy index) |
-| `knowledge/` e `accumulation/` | — | **não materializadas** — vivem no working copy; os leitores (gm-domain-research, pattern library, lazy index) apontam para `packs/<id>/...` |
+| Materialização | overlay 3-way de `provides` no config do engine | overlay 3-way de `skills/` e `agents/` do working copy (posse do pack substitui o render do core para o mesmo caminho) — nada mais é copiado para o config |
+| `knowledge/`, `accumulation/` e `rules/` | — | **não materializadas — lidas IN-PLACE do working copy**; os leitores (gm-domain-research, pattern library, lazy index) apontam para `packs/<id>/...` (ex.: regra da org em `packs/<id>/rules/packs/<id>.md`) |
 | Sync (`pack update`) | `pull --ff-only` no cache (cache sujo = erro) | commit do WIP local (`"sync: acumulação local <UTC>"` — o dado nunca se perde) + `fetch` + `rebase origin/<branch>`; conflito = FALHA com remediação (`git rebase --continue/--abort` e rode de novo) |
 | Push | — | manual por design: `golmet pack publish <fonte>` (commit do WIP `"publish: <mensagem>"` + `push origin <branch>`) |
 | Working copy pré-existente | n/a | **adotado** (`pack add`/`pack update` com `.git` e `origin` igual à fonte — nunca reclone nem sobrescreve; origem divergente = erro claro) |

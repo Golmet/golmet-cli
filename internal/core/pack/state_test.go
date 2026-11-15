@@ -154,7 +154,7 @@ func TestParseSpecToleratesBOM(t *testing.T) {
 	}
 }
 
-// ---- (a) add clona working copy + materializa skills/agents + rules ----
+// ---- (a) add clona working copy + materializa skills/agents (dados ficam in-place) ----
 
 func TestAddStatePackClonesWorkingCopyAndMaterializes(t *testing.T) {
 	root := t.TempDir()
@@ -184,9 +184,9 @@ func TestAddStatePackClonesWorkingCopyAndMaterializes(t *testing.T) {
 	if got := cfg.read("agents/gm-state-reviewer.md"); got == "" {
 		t.Error("agent do pack não materializado")
 	}
-	// rules/packs/<id>.md copiado gerido
-	if got := cfg.read("rules/packs/state-pack.md"); got != "regra do pack para o lazy index\n" {
-		t.Errorf("rules do pack não materializada: %q", got)
+	// rules/packs/<id>.md NÃO é copiada — lida IN-PLACE do working copy
+	if cfg.exists("rules/packs/state-pack.md") {
+		t.Error("rules foi copiada para o config — deveria ser lida in-place do working copy")
 	}
 	// knowledge/ e accumulation/ ficam NO working copy — nunca no config
 	if cfg.exists("knowledge/banco/indices.md") {
@@ -198,19 +198,18 @@ func TestAddStatePackClonesWorkingCopyAndMaterializes(t *testing.T) {
 	if got := newGitStateTest(t, work).read("knowledge/banco/indices.md"); got == "" {
 		t.Error("knowledge ausente no working copy")
 	}
-	// manifest registra a layer do pack
+	if got := newGitStateTest(t, work).read("rules/packs/state-pack.md"); got != "regra do pack para o lazy index\n" {
+		t.Errorf("rules ausente no working copy: %q", got)
+	}
+	// nenhum arquivo do pack registrado como gerido (só skills/agents do overlay)
 	manifest, err := content.ReadContentManifest(configRoot)
 	if err != nil {
 		t.Fatal(err)
 	}
-	foundRules := false
 	for _, e := range manifest.Files {
-		if e.File == "rules/packs/state-pack.md" {
-			foundRules = e.Layer == "pack:state-pack"
+		if strings.HasPrefix(e.File, "rules/packs/") {
+			t.Errorf("rules do pack registrada como gerida (%s layer %s) — in-place não é gerido", e.File, e.Layer)
 		}
-	}
-	if !foundRules {
-		t.Error("rules do pack não registrada como gerida layer pack:state-pack")
 	}
 	// segundo add no MESMO working copy: adoção idempotente (não reclone)
 	rep2, err := AddWithOptions(home, configRoot, "opencode", remoteURL, false, false)

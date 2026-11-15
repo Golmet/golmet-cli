@@ -3,11 +3,10 @@
 // skills/ e agents/ do working copy são materializadas por overlay 3-way
 // (mesmo ApplyOverlay do overlay pack — posse do pack substitui o render do
 // core para o mesmo caminho; arquivos locais divergentes continuam
-// preservados e o no-override do pack é respeitado). knowledge/,
-// accumulation/ e o resto do clone NÃO são materializados — vivem no
+// preservados e o no-override do pack é respeitado). DADOS — knowledge/,
+// accumulation/ e rules/ — NÃO são materializados: são lidos IN-PLACE do
 // working copy e os leitores (gm-domain-research, pattern library, lazy
-// index) apontam para packs/<id>/...; rules/packs/<id>.md é copiado gerido
-// para o config (alimenta o lazy index do AGENTS.md).
+// index) apontam para packs/<id>/....
 package pack
 
 import (
@@ -107,7 +106,7 @@ func finishState(configRoot, sourceURL string, spec Spec, target, matRoot string
 			spec = fresh
 		}
 	}
-	files, err := stateOverlayFiles(matRoot, spec.ID)
+	files, err := stateOverlayFiles(matRoot)
 	if err != nil {
 		return nil, fmt.Errorf("pack state %s: %w", spec.ID, err)
 	}
@@ -153,9 +152,10 @@ func ensureStateWorkingCopy(target, sourceURL string) error {
 }
 
 // stateOverlayFiles coleta o conteúdo materializável do working copy:
-// skills/** e agents/** (overlay 3-way) + rules/packs/<id>.md (gerido).
-// knowledge/, accumulation/ e demais arquivos ficam NO working copy.
-func stateOverlayFiles(root, packID string) ([]content.OverlayFile, error) {
+// APENAS skills/** e agents/** (overlay 3-way — mecânica do engine). Dados
+// — knowledge/, accumulation/ e rules/ — ficam NO working copy e são lidos
+// IN-PLACE pelos consumers (lazy index aponta packs/<id>/rules/packs/<id>.md).
+func stateOverlayFiles(root string) ([]content.OverlayFile, error) {
 	var files []content.OverlayFile
 	for _, top := range []string{"skills", "agents"} {
 		dir := filepath.Join(root, top)
@@ -190,14 +190,6 @@ func stateOverlayFiles(root, packID string) ([]content.OverlayFile, error) {
 		if werr != nil {
 			return nil, werr
 		}
-	}
-	rulesRel := "rules/packs/" + packID + ".md"
-	if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(rulesRel))); err == nil {
-		data, rerr := readProvidedFile(root, rulesRel)
-		if rerr != nil {
-			return nil, rerr
-		}
-		files = append(files, content.OverlayFile{Rel: rulesRel, Data: data})
 	}
 	return files, nil
 }
