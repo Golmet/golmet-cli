@@ -153,7 +153,7 @@ Ao promover uma PEND-NNN a RN:
 6. **A RN promovida é uma RN comum** — qualquer alteração posterior passa
    por CR (`gm-change-request`); nunca edite a RN promovida diretamente.
 
-A RN criada é a âncora legítima da feature: `gm-task-spec` gera a análise
+A RN criada é a âncora legítima da feature: `gm-taskspec` gera a análise
 e o Feature.md com a RN como âncora.
 
 ## Template — REQUIREMENTS.md (11 seções)

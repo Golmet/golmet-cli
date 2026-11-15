@@ -197,19 +197,38 @@ func (s *EngineConfigSection) fixText() string {
 	return ""
 }
 
-// personalDesignations — designações pessoais-por-design carregadas do
-// personal.json: match EXATO de arquivo OU PREFIXO de diretório (path
-// terminado em "/", subárvore inteira). Comparação em slash-path.
-type personalDesignations struct {
+// PersonalDesignations — designações pessoal-por-design (carregadas do
+// personal.json): match EXATO de arquivo OU PREFIXO de diretório (path
+// terminado em "/", subárvore inteira). Comparação em slash-path. Exportada
+// para consumidores irmãos (ex.: lint L3) reutilizarem a MESMA semântica —
+// nunca parser duplicado.
+type PersonalDesignations struct {
 	exact    map[string]bool
 	prefixes []string
 }
 
-// readPersonalPaths carrega as designações de <root>/.golmet/personal.json.
+// Match — o path (slash, relativo ao root) casa uma designação exata ou um
+// prefixo de diretório? Nil-safe: sem designações → false.
+func (pd *PersonalDesignations) Match(rel string) bool {
+	if pd == nil {
+		return false
+	}
+	if pd.exact[rel] {
+		return true
+	}
+	for _, prefix := range pd.prefixes {
+		if strings.HasPrefix(rel, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// ReadPersonalPaths carrega as designações de <root>/.golmet/personal.json.
 // Ausente → (nil, nil): sem designações = comportamento de classificação
 // atual preservado. Ilegível/corrompido → erro (o caller registra a
 // anomalia em Unreadable e segue SEM designações — nunca bloqueia).
-func readPersonalPaths(root string) (*personalDesignations, error) {
+func ReadPersonalPaths(root string) (*PersonalDesignations, error) {
 	data, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(personalManifestRel)))
 	if os.IsNotExist(err) {
 		return nil, nil
@@ -224,7 +243,7 @@ func readPersonalPaths(root string) (*personalDesignations, error) {
 	if err := json.Unmarshal(data, &pf); err != nil {
 		return nil, err
 	}
-	pd := &personalDesignations{exact: map[string]bool{}}
+	pd := &PersonalDesignations{exact: map[string]bool{}}
 	for _, p := range pf.Paths {
 		p = strings.TrimSpace(filepath.ToSlash(p))
 		if p == "" {
@@ -237,23 +256,6 @@ func readPersonalPaths(root string) (*personalDesignations, error) {
 		}
 	}
 	return pd, nil
-}
-
-// personalMatch — o path (slash, relativo ao root) casa uma designação
-// exata ou um prefixo de diretório? Nil-safe: sem designações → false.
-func (pd *personalDesignations) match(rel string) bool {
-	if pd == nil {
-		return false
-	}
-	if pd.exact[rel] {
-		return true
-	}
-	for _, prefix := range pd.prefixes {
-		if strings.HasPrefix(rel, prefix) {
-			return true
-		}
-	}
-	return false
 }
 
 // analyzeEngineConfig orquestra a classificação (SRP por função): walk do
@@ -280,7 +282,7 @@ func analyzeEngineConfig(root string) (*EngineConfigSection, error) {
 	// designações pessoal-por-design: personal.json ausente = sem isenção
 	// (comportamento atual); corrompido = anomalia registrada, segue sem
 	// designações — nunca bloqueia a classificação.
-	personal, perr := readPersonalPaths(root)
+	personal, perr := ReadPersonalPaths(root)
 	if perr != nil {
 		sec.Unreadable = append(sec.Unreadable, personalManifestRel)
 	}
@@ -306,7 +308,7 @@ func analyzeEngineConfig(root string) (*EngineConfigSection, error) {
 // conteúdo gerido nunca é encoberta), sem proveniência vai para untracked
 // EXCETO quando casa uma designação pessoal (bucket isento), ilegível fica
 // anotado.
-func classifyDisk(root string, managed map[string]content.FileEntry, personal *personalDesignations, gitRepo bool, gitTracked map[string]bool, sec *EngineConfigSection, untracked *[]string) error {
+func classifyDisk(root string, managed map[string]content.FileEntry, personal *PersonalDesignations, gitRepo bool, gitTracked map[string]bool, sec *EngineConfigSection, untracked *[]string) error {
 	return filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -346,7 +348,7 @@ func classifyDisk(root string, managed map[string]content.FileEntry, personal *p
 		}
 		entry, isManaged := managed[rel]
 		if !isManaged {
-			if personal.match(rel) {
+			if personal.Match(rel) {
 				sec.Personal = append(sec.Personal, rel)
 			} else if gitRepo && gitTracked[rel] {
 				sec.GitVersioned++ // versionado pelo git do config — reconstrutível, seguro

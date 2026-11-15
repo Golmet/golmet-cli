@@ -44,7 +44,7 @@ continuam legíveis durante a transição.
 ## Gera (downstream)
 
 - `<modulo>/<projeto>/support/CHANGE_REQUESTS.md`
-- Após aprovação: opcionalmente executa `gm-data-model`, `gm-api-contracts`, `gm-ui-spec` com escopo restrito ao delta
+- Após aprovação: opcionalmente executa `gm-datamodel`, `gm-apicontracts`, `gm-uispec` com escopo restrito ao delta
 
 ## Nunca edita
 
@@ -132,7 +132,7 @@ docs: add CR-XXX for <título>
         `Design Figma` do CR.
      2. Após o operador **validar o design no Figma**, capture a nova versão
         com `gm-figma-tasks` (delta de UI_SPEC + handoff de features).
-     3. Só então a feature/código é especificada (`gm-task-spec`) e
+     3. Só então a feature/código é especificada (`gm-taskspec`) e
         implementada (`gm-dev`) a partir do design capturado — NUNCA
         implemente mudança visual direto no código a partir do texto do CR.
      - **Modo não-Figma (condicional):** módulo sem workflow Figma (sem

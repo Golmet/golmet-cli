@@ -54,7 +54,7 @@ para protótipo (saída pipeline → Figma Make) e pedidos de tasks a partir de 
 |-------|--------|-------------|
 | `gm-figma-prompt` | Gerar prompt textual para protótipo Figma Make (telas, componentes, campos, estados) a partir de REQUIREMENTS.md, UI_SPEC.md, DATA_MODEL.md e API_CONTRACTS.md | Pedido de prompt Figma; UI_SPEC.md ou REQUIREMENTS.md existem |
 | `gm-design-brief` | Gerar DESIGN_BRIEF.md — contexto de produto (identidade, estilo, estado atual da UI) para o Figma Make | Pedido de design brief / contexto de produto |
-| `gm-figma-tasks` | Ler design real do Figma via MCP e gerar delta de UI_SPEC.md + propostas de RN/CR + handoff de features candidatas (RN-âncora + RNs do escopo) para o `gm-task-spec` | Pedido de tasks a partir de design Figma; server `figma` habilitado ou notas de design disponíveis |
+| `gm-figma-tasks` | Ler design real do Figma via MCP e gerar delta de UI_SPEC.md + propostas de RN/CR + handoff de features candidatas (RN-âncora + RNs do escopo) para o `gm-taskspec` | Pedido de tasks a partir de design Figma; server `figma` habilitado ou notas de design disponíveis |
 
 ## Convenções do Projeto
 

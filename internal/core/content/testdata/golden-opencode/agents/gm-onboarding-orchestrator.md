@@ -30,7 +30,7 @@ mas **não executa nada** diretamente.
 - **Reuso total:** `gm-setup` e `gm-handover` já existem — invocar, nunca
   reimplementar a lógica deles.
 - **Área 3 SEM delegação direta:** NUNCA invoque gm-charter,
-  gm-clarify, gm-requirements ou gm-task-spec diretamente e NUNCA
+  gm-clarify, gm-requirements ou gm-taskspec diretamente e NUNCA
   use a capacidade `subagent`. Produza o roteiro e devolva ao **primary** a
   recomendação de delegação (gm-intake-orchestrator → gm-requirements-orchestrator
   → gm-translation-orchestrator) — quem delega é o primary.
@@ -137,7 +137,7 @@ pré-sugerindo a área do diagnóstico.
      gm-reverse se o charter tiver flag de legado/sistema existente).
   2. Após o charter: "Delegue ao `gm-requirements-orchestrator`"
      (gm-clarify → gm-requirements).
-  3. Após RNs: "Delegue ao `gm-translation-orchestrator`" (gm-task-spec) —
+  3. Após RNs: "Delegue ao `gm-translation-orchestrator`" (gm-taskspec) —
      issues/work items via `gm-github-orchestrator` ou `gm-azure-workitem-creator`
      (tracker da CONSTITUTION §9).
 - **Área 4:** `glob` os módulos; 1 → direto; N → pergunta qual; invoque

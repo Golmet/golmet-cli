@@ -283,7 +283,7 @@ func TestRunFullMaterializesAgentsSkillsAndLayerManifest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run FULL: %v", err)
 	}
-	if res.Report.FullTotal != 125 || len(res.Report.FullWritten) != 125 {
+	if res.Report.FullTotal != 126 || len(res.Report.FullWritten) != 126 {
 		t.Fatalf("FULL: total=%d written=%d conflicts=%d", res.Report.FullTotal, len(res.Report.FullWritten), len(res.Report.FullConflicts))
 	}
 	for _, rel := range []string{

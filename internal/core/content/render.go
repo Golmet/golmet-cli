@@ -5,6 +5,7 @@
 package content
 
 import (
+	"errors"
 	"io/fs"
 	"strings"
 )
@@ -46,6 +47,7 @@ func Render(fsys fs.FS, reg *Registry, engine string) ([]Rendered, []ErrMissingB
 		out = append(out, Rendered{Rel: rel, Content: doc})
 	}
 	renderRules(fsys, &out, &missing)
+	renderTemplates(fsys, &out, &missing)
 	return out, missing
 }
 
@@ -73,6 +75,24 @@ func renderRules(fsys fs.FS, out *[]Rendered, missing *[]ErrMissingBody) {
 		doc := rightTrimWS(string(Normalize(data)))
 		*out = append(*out, Rendered{Rel: rel, Content: doc + "\n"})
 	}
+}
+
+// renderTemplates anexa assets-raiz não-item do registry (hoje: o
+// AGENTS.template.md — template versionado e neutro do config do engine,
+// IMP-105) à saída do render, byte-fiéis após a normalização de resquícios
+// de editor (BOM/EOL → canônico LF). Diretório/arquivo ausente = skip
+// (cores externos antigos seguem renderizando); leitura com outro erro
+// vira item "sem corpo" (mesma reportagem dos bodies).
+func renderTemplates(fsys fs.FS, out *[]Rendered, missing *[]ErrMissingBody) {
+	data, err := fs.ReadFile(fsys, "templates/AGENTS.template.md")
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			*missing = append(*missing, ErrMissingBody{ID: "AGENTS.template.md", Path: "templates/AGENTS.template.md"})
+		}
+		return
+	}
+	doc := rightTrimWS(string(Normalize(data)))
+	*out = append(*out, Rendered{Rel: "AGENTS.template.md", Content: doc + "\n"})
 }
 
 // FileSet devolve o conjunto de caminhos relativos renderizados (ordenado

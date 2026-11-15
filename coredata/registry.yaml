@@ -20,7 +20,7 @@ items:
     mode: primary
     temperature: 0.3
     delegates: [gm-next, gm-progress, gm-cr-propagation-guard, gm-tasks-pending, gm-intake-orchestrator, gm-requirements-orchestrator, gm-governance-orchestrator, gm-github-orchestrator, gm-azure-orchestrator, gm-figma-orchestrator, gm-workflow-builder, gm-workflow-improver, gm-onboarding-orchestrator, gm-compliance-orchestrator]
-    invokes: [gm-handover, gm-setup, gm-agent-health-monitor, gm-drift-detector, gm-mcp-playwright-setup, gm-prompt-gate, gm-azure-workitem-creator, gm-detect-onboarding, gm-task-spec]
+    invokes: [gm-handover, gm-setup, gm-agent-health-monitor, gm-drift-detector, gm-mcp-playwright-setup, gm-prompt-gate, gm-azure-workitem-creator, gm-detect-onboarding, gm-taskspec]
     requires: [file, edit, glob, grep, shell, ask, subagent, skill, tracker, websearch]
     degrades: [webfetch, lsp, graph]
     tracker: true   # conteúdo de tracker github/azure mantido com nota de capacidade
@@ -35,7 +35,7 @@ items:
       cliente e relatórios. Documento de referência — roteia, não executa.
     mode: subagent
     temperature: 0.1
-    invokes: [gm-clarify, gm-requirements, gm-change-request, gm-scope-agreement, gm-client-requirements, gm-client-report, gm-decision-log, gm-decision-audit]
+    invokes: [gm-clarify, gm-requirements, gm-change-request, gm-scope, gm-clientreq, gm-client-report, gm-decision-log, gm-decision-audit]
     requires: [file, glob, grep, ask, skill]
     degrades: [edit]
     body: sources/gm-requirements-orchestrator.md
@@ -137,7 +137,7 @@ items:
       auditoria de performance. Documento de referência — não executa nada.
     mode: subagent
     temperature: 0.1
-    invokes: [gm-test-strategy, gm-traceability, gm-validate, gm-wiki-lint]
+    invokes: [gm-teststrategy, gm-traceability, gm-validate, gm-wiki-lint]
     requires: [file, glob, grep, skill, ask]
     degrades: [edit, write]
     body: sources/gm-quality-orchestrator.md
@@ -557,7 +557,7 @@ items:
       kit golmet validate. Roteia, não executa. Não assessora juridicamente.
     mode: subagent
     temperature: 0.1
-    invokes: [gm-compliance-check]
+    invokes: [gm-compliance]
     requires: [file, glob, grep, ask, skill]
     degrades: [edit, write]
     body: sources/gm-compliance-orchestrator.md
@@ -587,7 +587,7 @@ items:
       qualidade VALIDATION_REPORT e bypass consciente.
     mode: subagent
     temperature: 0.1
-    invokes: [gm-figma-prompt, gm-design-brief, gm-figma-tasks, gm-mcp-figma-setup, gm-task-spec]
+    invokes: [gm-figma-prompt, gm-design-brief, gm-figma-tasks, gm-mcp-figma-setup, gm-taskspec]
     requires: [file, glob, grep, ask]
     degrades: [edit, write, shell]
     body: sources/gm-figma-orchestrator.md
@@ -659,7 +659,7 @@ items:
       estáveis (RN-XXX nunca renumera). Roteia, não executa.
     mode: subagent
     temperature: 0.1
-    invokes: [gm-data-model, gm-api-contracts, gm-ui-spec, gm-architecture, gm-glossary, gm-acceptance-criteria, gm-task-spec]
+    invokes: [gm-datamodel, gm-apicontracts, gm-uispec, gm-arch, gm-glossary, gm-criteria, gm-taskspec]
     requires: [file, glob, grep, ask, skill]
     degrades: [edit, write]
     body: sources/gm-translation-orchestrator.md
@@ -984,10 +984,10 @@ items:
       Extrai o design real de um frame Figma via MCP (figma-developer-mcp),
       cruza com os docs do módulo e gera o delta de specs/UI_SPEC.md +
       propostas de RNs/CRs de UI + handoff de features candidatas
-      (RN-âncora + RNs do escopo) para o gm-task-spec. Direção Figma →
+      (RN-âncora + RNs do escopo) para o gm-taskspec. Direção Figma →
       módulo — inversa da gm-figma-prompt. Fallback: notas do operador.
     domain: figma
-    invokes: [gm-task-spec]
+    invokes: [gm-taskspec]
     requires: [file, edit, write, glob, grep, ask]
     degrades: [shell, webfetch]
     body: sources/gm-figma-tasks.md
@@ -1044,7 +1044,7 @@ items:
       Bloco 0 de validação de abordagem obrigatório; campo Origem (IMP-099);
       loop design-first para CR com impacto visual (IMP-128).
     domain: requisitos
-    invokes: [gm-figma-prompt, gm-figma-tasks, gm-data-model, gm-api-contracts, gm-ui-spec]
+    invokes: [gm-figma-prompt, gm-figma-tasks, gm-datamodel, gm-apicontracts, gm-uispec]
     requires: [file, write, ask]
     degrades: [edit, shell, webfetch]
     body: sources/gm-change-request.md
@@ -1088,7 +1088,7 @@ items:
       MIGRATION_REPORT. Âncora PEND legada mantida — nunca promovida sozinha
       (IMP-094).
     domain: meta
-    invokes: [gm-task-spec]
+    invokes: [gm-taskspec]
     requires: [file, write, edit, glob, grep, ask]
     degrades: [shell, webfetch]
     body: sources/gm-restructure.md

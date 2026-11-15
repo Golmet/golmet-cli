@@ -90,7 +90,7 @@ func TestInstallCmdPartialExit1(t *testing.T) {
 	}
 }
 
-// --profile full é alias válido de completo (a camada de 125 componentes
+// --profile full é alias válido de completo (a camada de 126 componentes
 // materializa); valores desconhecidos são rejeitados com exit 2 pelo
 // install.Run, listando os perfis válidos.
 func TestInstallCmdProfileUnknownExit2(t *testing.T) {

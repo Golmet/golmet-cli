@@ -342,7 +342,9 @@ legado (L2 fora do escopo por decisão do operador).
   {process, architecture, code, ui, test, data}.
 - **Config engine** (1º nível): dirs {agents, skills, rules, packs,
   plugins, knowledge (legado), .golmet} + files {AGENTS.md,
-  AGENTS.template.md, opencode.jsonc} — dir desconhecido = warning.
+  AGENTS.template.md (materializado pelo install FULL como GERIDO — layer
+  core; o template versionado e neutro vive no kit em
+  `coredata/templates/`), opencode.jsonc} — dir desconhecido = warning.
 - **Kit repo**: `coredata/{sources/, rules/, registry.yaml}` com sources
   FLAT (`*.md` + `*.agent.md`); `skills/` raiz = exatamente 16 skills
   (`skills/<gm-x>/SKILL.md`); golden `testdata/golden-opencode/` espelha o

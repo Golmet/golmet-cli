@@ -35,7 +35,7 @@ Não emite veredito approve/request-changes (papel do
 | `gm-security-audit` (esta) | Especialista de segurança — findings com severidade | review pós-implementação (dif) e auditoria (baseline) | profunda — 10 princípios + 18 checks + 8 anti-patterns |
 | `gm-quality-gates` (§D) | Checklist largo de qualidade (KISS/SOLID/perf) + segurança rasa | implementação (executor) | superficial — tabela Top 10:2025 de referência |
 | `gm-dev-reviewer` | **Dono do veredito** approve/request-changes (5 eixos) | pré-PR | consumidor dos findings desta skill |
-| `gm-architecture` (SECURITY.md) | Artefato de design-time do módulo | tradução técnica | complementar — esta skill verifica o código contra ele + a base |
+| `gm-arch` (SECURITY.md) | Artefato de design-time do módulo | tradução técnica | complementar — esta skill verifica o código contra ele + a base |
 
 ## Lê (upstream)
 

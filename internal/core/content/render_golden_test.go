@@ -39,8 +39,8 @@ func TestRenderGoldenOpencodeByteEquality(t *testing.T) {
 	if len(missing) != 0 {
 		t.Fatalf("itens sem corpo: %v", missing)
 	}
-	if len(rendered) != 125 {
-		t.Fatalf("renderizados: esperados 125 (124 itens + rules), got %d", len(rendered))
+	if len(rendered) != 126 {
+		t.Fatalf("renderizados: esperados 126 (124 itens + rules + template), got %d", len(rendered))
 	}
 
 	goldenRoot := filepath.Join("testdata", "golden-opencode")
@@ -102,8 +102,8 @@ func TestRenderClaudeCodeShape(t *testing.T) {
 	regData, _ := fs.ReadFile(coreFS(t), "registry.yaml")
 	reg := ParseRegistry(string(regData))
 	rendered, missing := Render(coreFS(t), reg, "claude-code")
-	if len(missing) != 0 || len(rendered) != 125 {
-		t.Fatalf("claude-code: 125 esperados (124 itens + rules), got %d (missing %v)", len(rendered), missing)
+	if len(missing) != 0 || len(rendered) != 126 {
+		t.Fatalf("claude-code: 126 esperados (124 itens + rules + template), got %d (missing %v)", len(rendered), missing)
 	}
 	// fm = bloco entre o primeiro --- e o segundo; corpo pode mencionar "mode:" legitimately
 	for _, r := range rendered {

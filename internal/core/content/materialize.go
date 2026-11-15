@@ -391,8 +391,9 @@ func (s safeDirFS) Open(name string) (fs.File, error) {
 }
 
 // validateContentPath constrains renderer output to the three content roots
-// (agents/, skills/, rules/). The check is deliberately independent of the
-// host path separator so a malicious registry cannot exploit a different
+// (agents/, skills/, rules/) plus the root-level template asset
+// (AGENTS.template.md). The check is deliberately independent of the host
+// path separator so a malicious registry cannot exploit a different
 // platform's syntax.
 func validateContentPath(rel string) (string, error) {
 	normalized := strings.ReplaceAll(filepath.ToSlash(rel), "\\", "/")
@@ -405,6 +406,9 @@ func validateContentPath(rel string) (string, error) {
 		if part == ".." || part == "" {
 			return "", fmt.Errorf("caminho de conteúdo fora do escopo: %q", rel)
 		}
+	}
+	if normalized == "AGENTS.template.md" {
+		return normalized, nil
 	}
 	if !strings.HasPrefix(normalized, "agents/") && !strings.HasPrefix(normalized, "skills/") &&
 		!strings.HasPrefix(normalized, "rules/") {

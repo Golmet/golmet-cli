@@ -66,7 +66,7 @@ var configRootDirs = []string{"agents", "skills", "rules", "packs", "plugins", "
 // do engine (órfãos-legítimos: artefatos de runtime, plugins de terceiros,
 // settings raiz já cobertos pelo design). Declarativa e versionada aqui —
 // ampliar com julgamento, nunca silenciosamente.
-var orphanAllowlist = []string{"plugins/", "quality/health", ".github/", "cli.json", "service.json", "opencode.jsonc", "AGENTS.md", "AGENTS.template.md", ".gitignore"}
+var orphanAllowlist = []string{"plugins/", "quality/health", ".github/", "cli.json", "service.json", "opencode.jsonc", "AGENTS.md", ".gitignore"}
 
 // ghostAllowlist — nomes gm-* legados/removidos/exemplificativos que ainda
 // constam em prosa, com o motivo. Declarativa e versionada aqui — ampliar
@@ -289,6 +289,9 @@ func lintL1Runtime(rep *Report, configRoot string) {
 	var rels []string
 	if fileExists(filepath.Join(configRoot, "AGENTS.md")) {
 		rels = append(rels, "AGENTS.md")
+	}
+	if fileExists(filepath.Join(configRoot, "AGENTS.template.md")) {
+		rels = append(rels, "AGENTS.template.md")
 	}
 	rels = append(rels, mdFilesUnder(configRoot, "rules")...)
 	for _, rel := range rels {
@@ -694,10 +697,13 @@ func lintL6(rep *Report, ws string, kitMode bool, configRoot string, kitMDs []st
 			scan(rel, filepath.Join(ws, filepath.FromSlash(rel)), sev)
 		}
 	}
-	// config: AGENTS.md + rules/*.md = warning (runtime do operador)
+	// config: AGENTS.md + AGENTS.template.md + rules/*.md = warning (runtime do operador)
 	if configRoot != "" {
 		if fileExists(filepath.Join(configRoot, "AGENTS.md")) {
 			scan("AGENTS.md", filepath.Join(configRoot, "AGENTS.md"), "warning")
+		}
+		if fileExists(filepath.Join(configRoot, "AGENTS.template.md")) {
+			scan("AGENTS.template.md", filepath.Join(configRoot, "AGENTS.template.md"), "warning")
 		}
 		for _, rel := range mdFilesUnder(configRoot, "rules") {
 			scan(rel, filepath.Join(configRoot, filepath.FromSlash(rel)), "warning")

@@ -47,13 +47,13 @@ e orienta quais skills compõem o fluxo.
 
 | Skill | Função | Quando usar |
 |-------|--------|-------------|
-| `gm-test-strategy` | Gerar TEST_STRATEGY.md + DEFINITION_OF_DONE.md | T1/T2/T3/T7 existem |
+| `gm-teststrategy` | Gerar TEST_STRATEGY.md + DEFINITION_OF_DONE.md | T1/T2/T3/T7 existem |
 | `gm-traceability` | Gerar TRACEABILITY.md (matriz RN → artefatos) | Múltiplos artefatos de tradução existem |
 | `gm-validate` | Validar integridade da DAG, gerar VALIDATION_REPORT.md | Vários artefatos prontos |
 | `gm-wiki-lint` | Lint documental (contradições, órfãos, links, placeholders) | Antes de entrega; após refactors de artefatos |
 
 > **Skills movidas de domínio:** especificação de features/tasks
-> (`gm-task-spec`) → `gm-translation-orchestrator`; documentação de uso
+> (`gm-taskspec`) → `gm-translation-orchestrator`; documentação de uso
 > (`gm-howto`) → domínio Documentação (`gm-doc` invoca diretamente);
 > auditoria de performance do runtime (`gm-perf-auditor`) e evolução de
 > skills (`gm-skill-evolution`) → domínio Meta (`gm-workflow-builder`).
@@ -80,14 +80,14 @@ e orienta quais skills compõem o fluxo.
 
 | Se o pedido for... | Rota |
 |--------------------|------|
-| "gerar test strategy" | `gm-test-strategy` |
+| "gerar test strategy" | `gm-teststrategy` |
 | "gerar matriz de rastreabilidade" | `gm-traceability` |
 | "validar documentos", "integridade" | `gm-validate` |
 | "corrigir validação", "reparar achado" | Leia `VALIDATION_REPORT.md §5 (Findings por Documento)` — reinvoque a skill corretiva |
 
 ### Passo 2 — Validar pré-condições
 
-- **gm-test-strategy**: DATA_MODEL.md, API_CONTRACTS.md, UI_SPEC.md,
+- **gm-teststrategy**: DATA_MODEL.md, API_CONTRACTS.md, UI_SPEC.md,
   ACCEPTANCE_CRITERIA.md, SECURITY.md e ERROR_CATALOG.md existem
 - **gm-traceability**: pelo menos 2 artefatos de tradução existem.
 - **gm-validate**: vários artefatos prontos (REQUIREMENTS + algum T1-T7)

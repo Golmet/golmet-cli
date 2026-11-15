@@ -64,7 +64,7 @@ func TestPickProfileShowsContractCopy(t *testing.T) {
 		"16 skills gm-* na zona .golmet/",
 		"versionadas com o repo",
 		"sem agents nativos",
-		"125 componentes",
+		"126 componentes",
 		"config global",
 		"compatível apenas com opencode e claude-code",
 		"use o perfil essencial",
@@ -123,7 +123,7 @@ func TestUpdateFullWeakEngineErrors(t *testing.T) {
 }
 
 // --profile full é alias interno de completo: relatório cita o perfil
-// canônico e a camada de 125 componentes materializa. claude-code não tem
+// canônico e a camada de 126 componentes materializa. claude-code não tem
 // CLI no PATH do teste → patch JSON direto na home virtual.
 func TestInstallProfileFullAliasMaterializesCompleto(t *testing.T) {
 	virtualHome(t)
@@ -142,7 +142,7 @@ func TestInstallProfileFullAliasMaterializesCompleto(t *testing.T) {
 		t.Errorf("alias --profile full deveria reportar o perfil completo, veio %v", rep["profile"])
 	}
 	if n := jsonCount(rep["full_written"]); n == 0 {
-		t.Errorf("alias --profile full não materializou os 125 componentes:\n%s", out)
+		t.Errorf("alias --profile full não materializou os 126 componentes:\n%s", out)
 	}
 }
 
@@ -163,7 +163,7 @@ func TestInstallFullFlagSameShapeAsProfileCompleto(t *testing.T) {
 		t.Errorf("--full deveria reportar o perfil completo, veio %v", rep["profile"])
 	}
 	if jsonCount(rep["full_written"]) == 0 {
-		t.Errorf("--full não materializou os 125 componentes:\n%s", out)
+		t.Errorf("--full não materializou os 126 componentes:\n%s", out)
 	}
 }
 
@@ -224,7 +224,7 @@ func TestInstallPlainWizardNumbersProfileFirstAndCompletoFlows(t *testing.T) {
 		t.Errorf("escolha completo do wizard deveria reportar o perfil completo, veio %v", rep["profile"])
 	}
 	if jsonCount(rep["full_written"]) == 0 {
-		t.Errorf("escolha completo do wizard não materializou os 125 componentes:\n%s", out)
+		t.Errorf("escolha completo do wizard não materializou os 126 componentes:\n%s", out)
 	}
 }
 
