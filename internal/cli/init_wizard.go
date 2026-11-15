@@ -114,22 +114,6 @@ func (w *initWizard) askRequired(question string) (string, error) {
 	}
 }
 
-// askWithDefault pergunta com sugestão: ENTER vazio aceita a sugestão;
-// sugestão vazia → recai em askRequired (o operador aponta o caminho).
-func (w *initWizard) askWithDefault(question, suggestion string) (string, error) {
-	if suggestion == "" {
-		return w.askRequired(question)
-	}
-	answer, err := w.prompt(question + " [sugestão: " + suggestion + "]: ")
-	if err != nil {
-		return "", err
-	}
-	if answer == "" {
-		return suggestion, nil
-	}
-	return answer, nil
-}
-
 // confirm exibe o resumo e pergunta s/n. yes=true pula (o mesmo contrato
 // do --yes dos wizards existentes). false = cancelado.
 func (w *initWizard) confirm(summary string, yes bool) (bool, error) {
@@ -360,6 +344,88 @@ func initWizardCollect(w *initWizard, choice int, yes, visualTTY bool) (*scaffol
 	}
 }
 
+// askOrgPathManual — o input MANUAL do caminho da Organização (opção 2 —
+// "Outra" ou catálogo vazio): instrução clara + exemplo REAL do catálogo
+// (a primeira organização registrada VIVA; sem ela, exemplo genérico) e
+// validação com loop de re-pergunta — mensagens em linguagem de usuário,
+// nada de jargão. `esc` cancela o wizard inteiro; ENTER aceita a sugestão
+// (quando há — e ela também é validada). Devolve o caminho ABSOLUTO
+// resolvido (o que aparece na confirmação).
+func (w *initWizard) askOrgPathManual(suggestion string) (string, bool, error) {
+	example := "C:\\Projetos\\MinhaOrganizacao"
+	if home, herr := userHomeFn(); herr == nil {
+		if c, lerr := orgs.Load(home); lerr == nil {
+			for _, e := range c.Organizations {
+				if e.Alive() {
+					example = e.Path
+					break
+				}
+			}
+		}
+	}
+	fmt.Fprintf(w.out, "\nCaminho completo da pasta que contém o golmet.yaml da Organização\n")
+	fmt.Fprintf(w.out, "(ex.: %s · esc cancela)\n", example)
+	for {
+		raw, err := w.prompt("Caminho da Organização: ")
+		if err != nil {
+			return "", false, err
+		}
+		if strings.EqualFold(strings.TrimSpace(raw), "esc") {
+			return "", true, nil
+		}
+		if raw == "" && suggestion != "" {
+			raw = suggestion // ENTER = sugestão do pai (também validada)
+		}
+		p := normalizeOrgPathInput(w.cwd, raw)
+		if p == "" {
+			fmt.Fprintln(w.out, "obrigatório — informe o caminho da pasta da Organização")
+			continue
+		}
+		if valid, msg := validateOrgPath(p); !valid {
+			fmt.Fprintln(w.out, msg)
+			continue
+		}
+		return p, false, nil
+	}
+}
+
+// validateOrgPath — a pasta existe, tem golmet.yaml e declara a
+// Organização (container: true — a fonte da verdade). Mensagens literais
+// do formato (§2 — re-pergunta em cada erro).
+func validateOrgPath(p string) (bool, string) {
+	st, serr := os.Stat(p)
+	if serr != nil || !st.IsDir() {
+		return false, "a pasta não existe — verifique o caminho"
+	}
+	if _, ferr := os.Stat(filepath.Join(p, "golmet.yaml")); ferr != nil {
+		return false, "a pasta não é uma Organização declarada — rode golmet init --org nela, ou informe outra"
+	}
+	if _, isContainer, cerr := container.Config(p); cerr != nil || !isContainer {
+		return false, "essa pasta é um workspace-produto, não uma Organização"
+	}
+	return true, ""
+}
+
+// normalizeOrgPathInput — aspas simples/duplas removidas (colar do
+// explorer às vezes traz aspas), trailing slashes trim (exceto raiz de
+// drive) e caminho relativo resolvido contra o cwd — o ABSOLUTO resolvido
+// é o que segue para o fluxo e aparece na confirmação.
+func normalizeOrgPathInput(cwd, raw string) string {
+	p := strings.TrimSpace(raw)
+	p = strings.Trim(p, `"'`)
+	p = strings.TrimSpace(p)
+	for len(p) > 3 && (strings.HasSuffix(p, "/") || strings.HasSuffix(p, "\\")) {
+		p = p[:len(p)-1]
+	}
+	if p == "" {
+		return ""
+	}
+	if !filepath.IsAbs(p) {
+		p = filepath.Join(cwd, p)
+	}
+	return filepath.Clean(p)
+}
+
 // pickOrg — o passo de Organização da opção 2: seleção das organizações
 // do catálogo global (path vivo; morta = pulada com aviso discreto) +
 // "Outra — caminho manual" por último. 0 registradas → direto no caminho
@@ -394,19 +460,15 @@ func (w *initWizard) pickOrg(suggestion string, visualTTY bool) (org string, can
 		} else {
 			fmt.Fprintf(w.out, "nenhuma Organização no catálogo — crie com 'golmet init --org'\n")
 		}
-		org, err := w.askWithDefault("Caminho da Organização existente", suggestion)
-		if err != nil {
-			return "", false, err
-		}
-		return filepath.Clean(org), false, nil
+		return w.askOrgPathManual(suggestion)
 	}
 	items := make([]pickItem, 0, len(alive)+1)
 	for _, e := range alive {
 		items = append(items, pickItem{label: e.Name, detail: e.Path, description: e.Path})
 	}
 	items = append(items, pickItem{label: "Outra — caminho manual",
-		detail:      "organização fora do catálogo",
-		description: "indique o caminho da Organização manualmente (ex.: a raiz adotada fora do kit)"})
+		detail:      "a Organização não está no catálogo",
+		description: "o próximo passo pede o caminho da pasta da Organização"})
 	var idx int
 	if visualTTY {
 		sel, canc, perr := runPickTTY("Escolha a Organização",
@@ -426,11 +488,7 @@ func (w *initWizard) pickOrg(suggestion string, visualTTY bool) (org string, can
 		idx = n
 	}
 	if idx == len(items) { // "Outra — caminho manual"
-		org, err := w.askWithDefault("Caminho da Organização existente", suggestion)
-		if err != nil {
-			return "", false, err
-		}
-		return filepath.Clean(org), false, nil
+		return w.askOrgPathManual(suggestion)
 	}
 	return alive[idx-1].Path, false, nil
 }

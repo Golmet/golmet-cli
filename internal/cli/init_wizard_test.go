@@ -176,14 +176,12 @@ func TestInitWizardIntoFlowWithParentContainerSuggestion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("wizard into: %v\n%s", err, out)
 	}
+	// ENTER aceita a sugestão (pai container) — validada e usada como org
 	if opt == nil || opt.Into != base {
-		t.Errorf("opções = %+v, want Into=%s", opt, base)
+		t.Errorf("opções = %+v, want Into=%s (sugestão do pai aceita no ENTER)", opt, base)
 	}
 	if baseDir != cwd || name != "ProdutoX" {
 		t.Errorf("base/name = %s/%s", baseDir, name)
-	}
-	if !strings.Contains(out.String(), "[sugestão: "+base+"]") {
-		t.Errorf("sugestão do pai container não exibida:\n%s", out)
 	}
 }
 

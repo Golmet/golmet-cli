@@ -69,21 +69,27 @@ func TestPickOrgListsRegisteredAliveSkipsDead(t *testing.T) {
 }
 
 // 0 organizações registradas → direto no caminho manual (o fluxo anterior),
-// com o aviso de catálogo vazio.
+// com o aviso de catálogo vazio, exemplo GENÉRICO e validação com
+// re-pergunta (caminho ruim → mensagem → o próximo input segue).
 func TestPickOrgEmptyCatalogManualPath(t *testing.T) {
 	home := t.TempDir()
 	oldHome := userHomeFn
 	userHomeFn = func() (string, error) { return home, nil }
 	t.Cleanup(func() { userHomeFn = oldHome })
 
+	// a org válida é APONTADA no manual (fora do catálogo)
+	valid := filepath.Join(t.TempDir(), "OrgApontada")
+	makeOrgContainer(t, valid)
+
 	cwd := t.TempDir()
-	w, out := newTestWizard(cwd, "manual\nNovoApp\ns\n")
+	// 1ª tentativa: caminho inexistente → re-pergunta; 2ª: válido
+	w, out := newTestWizard(cwd, "C:\\Projetos\\Sumiu\n"+valid+"\nNovoApp\ns\n")
 	org, cancelled, err := w.pickOrg("", false)
 	if err != nil || cancelled {
 		t.Fatalf("pickOrg = %s/%v/%v\n%s", org, cancelled, err, out)
 	}
-	if org != "manual" {
-		t.Errorf("org = %s, want caminho manual", org)
+	if org != valid {
+		t.Errorf("org = %s, want %s", org, valid)
 	}
 	s := out.String()
 	if !strings.Contains(s, "nenhuma Organização no catálogo — crie com 'golmet init --org'") {
@@ -92,9 +98,17 @@ func TestPickOrgEmptyCatalogManualPath(t *testing.T) {
 	if strings.Contains(s, "Outra — caminho manual") {
 		t.Errorf("com catálogo vazio não há lista de seleção:\n%s", s)
 	}
+	if !strings.Contains(s, "a pasta não existe — verifique o caminho") {
+		t.Errorf("validação de caminho inexistente ausente:\n%s", s)
+	}
+	// exemplo GENÉRICO (nenhuma registrada no catálogo)
+	if !strings.Contains(s, "(ex.: C:\\Projetos\\MinhaOrganizacao") {
+		t.Errorf("exemplo genérico esperado sem catálogo:\n%s", s)
+	}
 }
 
-// "Outra — caminho manual" (última opção) cai no fluxo manual.
+// "Outra — caminho manual" (última opção) cai no fluxo manual com
+// validação — o caminho precisa ser pasta de Organização real.
 func TestPickOrgOtherManualFallback(t *testing.T) {
 	home := t.TempDir()
 	viva := filepath.Join(home, "OrgViva")
@@ -107,15 +121,27 @@ func TestPickOrgOtherManualFallback(t *testing.T) {
 	userHomeFn = func() (string, error) { return home, nil }
 	t.Cleanup(func() { userHomeFn = oldHome })
 
+	// org MANUAL (fora do catálogo) — fixture própria, não a registrada
+	manual := filepath.Join(home, "OrgManual")
+	makeOrgContainer(t, manual)
+
 	cwd := t.TempDir()
 	// 2 itens: 1 = OrgViva, 2 = Outra → escolhe 2, digita o caminho manual
-	w, _ := newTestWizard(cwd, "2\nmanual\nNovoApp\ns\n")
+	w, out := newTestWizard(cwd, "2\n"+manual+"\nNovoApp\ns\n")
 	org, cancelled, err := w.pickOrg("", false)
 	if err != nil || cancelled {
-		t.Fatalf("pickOrg = %s/%v/%v", org, cancelled, err)
+		t.Fatalf("pickOrg = %s/%v/%v\n%s", org, cancelled, err, out)
 	}
-	if org != "manual" {
-		t.Errorf("org = %s, want caminho manual", org)
+	if org != manual {
+		t.Errorf("org = %s, want %s (absoluto resolvido)", org, manual)
+	}
+	// o prompt manual novo: instrução + exemplo REAL do catálogo
+	s := out.String()
+	if !strings.Contains(s, "Caminho completo da pasta que contém o golmet.yaml da Organização") {
+		t.Errorf("instrução do caminho manual ausente:\n%s", s)
+	}
+	if !strings.Contains(s, "(ex.: "+viva) {
+		t.Errorf("exemplo real (org registrada) ausente do prompt:\n%s", s)
 	}
 }
 
@@ -214,13 +240,146 @@ func TestInitOrgDuplicateNameFailClosed(t *testing.T) {
 	}
 }
 
+// ---- input manual do caminho: normalização, validação com re-pergunta ----
+
+// Pasta inexistente → mensagem + RE-PERGUNTA (o próximo input segue).
+func TestAskOrgPathNonexistentReasks(t *testing.T) {
+	cwd := t.TempDir()
+	valid := filepath.Join(t.TempDir(), "OrgOK")
+	makeOrgContainer(t, valid)
+	w, out := newTestWizard(cwd, cwd+"\\Sumiu\n"+valid+"\n")
+	org, cancelled, err := w.askOrgPathManual("")
+	if err != nil || cancelled {
+		t.Fatalf("askOrgPathManual = %s/%v/%v\n%s", org, cancelled, err, out)
+	}
+	if org != valid {
+		t.Errorf("org = %s, want %s", org, valid)
+	}
+	if !strings.Contains(out.String(), "a pasta não existe — verifique o caminho") {
+		t.Errorf("mensagem de pasta inexistente ausente:\n%s", out)
+	}
+	if strings.Count(out.String(), "Caminho da Organização:") != 2 {
+		t.Errorf("o input deveria ser re-perguntado (2 prompts):\n%s", out)
+	}
+}
+
+// Pasta sem golmet.yaml → mensagem de "não é Organização declarada" +
+// re-pergunta.
+func TestAskOrgPathWithoutGolmetYamlReasks(t *testing.T) {
+	cwd := t.TempDir()
+	sem := t.TempDir() // pasta existe, sem golmet.yaml
+	valid := filepath.Join(t.TempDir(), "OrgOK")
+	makeOrgContainer(t, valid)
+	w, out := newTestWizard(cwd, sem+"\n"+valid+"\n")
+	org, cancelled, err := w.askOrgPathManual("")
+	if err != nil || cancelled {
+		t.Fatalf("askOrgPathManual = %s/%v/%v\n%s", org, cancelled, err, out)
+	}
+	if !strings.Contains(out.String(), "a pasta não é uma Organização declarada — rode golmet init --org nela, ou informe outra") {
+		t.Errorf("mensagem de pasta sem golmet.yaml ausente:\n%s", out)
+	}
+}
+
+// golmet.yaml sem container: true (workspace-produto) → mensagem própria +
+// re-pergunta.
+func TestAskOrgPathWorkspaceProductReasks(t *testing.T) {
+	cwd := t.TempDir()
+	produto := filepath.Join(t.TempDir(), "MeuApp")
+	os.MkdirAll(produto, 0o755)
+	os.WriteFile(filepath.Join(produto, "golmet.yaml"), []byte("format: 1\n"), 0o644)
+	valid := filepath.Join(t.TempDir(), "OrgOK")
+	makeOrgContainer(t, valid)
+	w, out := newTestWizard(cwd, produto+"\n"+valid+"\n")
+	org, cancelled, err := w.askOrgPathManual("")
+	if err != nil || cancelled {
+		t.Fatalf("askOrgPathManual = %s/%v/%v\n%s", org, cancelled, err, out)
+	}
+	if !strings.Contains(out.String(), "essa pasta é um workspace-produto, não uma Organização") {
+		t.Errorf("mensagem de workspace-produto ausente:\n%s", out)
+	}
+}
+
+// Válido → segue direto (1 prompt), caminho absoluto limpo.
+func TestAskOrgPathValidSinglePrompt(t *testing.T) {
+	cwd := t.TempDir()
+	valid := filepath.Join(cwd, "OrgAqui")
+	makeOrgContainer(t, valid)
+	w, out := newTestWizard(filepath.Join(cwd, "sub", "sub"), "\""+valid+"//\"\n") // aspas + trailing slashes
+	org, cancelled, err := w.askOrgPathManual("")
+	if err != nil || cancelled {
+		t.Fatalf("askOrgPathManual = %s/%v/%v\n%s", org, cancelled, err, out)
+	}
+	if org != valid {
+		t.Errorf("org = %s, want %s (aspas/trailing removidos, clean)", org, valid)
+	}
+	if strings.Count(out.String(), "Caminho da Organização:") != 1 {
+		t.Errorf("caminho válido não deveria re-perguntar:\n%s", out)
+	}
+}
+
+// Relativo ao cwd resolvido para absoluto; ENTER aceita a sugestão
+// (também validada).
+func TestAskOrgPathRelativeAndSuggestion(t *testing.T) {
+	base := t.TempDir()
+	cwd := filepath.Join(base, "sub")
+	os.MkdirAll(cwd, 0o755)
+	valid := filepath.Join(base, "OrgRel")
+	makeOrgContainer(t, valid)
+
+	// relativo: "../OrgRel"
+	w, _ := newTestWizard(cwd, "../OrgRel\n")
+	org, cancelled, err := w.askOrgPathManual("")
+	if err != nil || cancelled || org != valid {
+		t.Fatalf("relativo = %s/%v/%v", org, cancelled, err)
+	}
+	// sugestão (pai container) aceita no ENTER e validada — aqui a
+	// sugestão é inválida → mensagem e o próximo input resolve
+	w2, out := newTestWizard(cwd, "\n"+valid+"\n")
+	org2, cancelled2, err2 := w2.askOrgPathManual(filepath.Join(base, "NaoExiste"))
+	if err2 != nil || cancelled2 || org2 != valid {
+		t.Fatalf("sugestão = %s/%v/%v\n%s", org2, cancelled2, err2, out)
+	}
+	if !strings.Contains(out.String(), "a pasta não existe — verifique o caminho") {
+		t.Errorf("sugestão inválida deveria ser validada:\n%s", out)
+	}
+}
+
+// `esc` cancela o wizard inteiro (nada criado).
+func TestAskOrgPathEscCancels(t *testing.T) {
+	w, out := newTestWizard(t.TempDir(), "esc\n")
+	org, cancelled, err := w.askOrgPathManual("")
+	if err != nil {
+		t.Fatalf("esc = %v\n%s", err, out)
+	}
+	if !cancelled || org != "" {
+		t.Errorf("esc deveria cancelar: org %s, cancelled %v", org, cancelled)
+	}
+}
+
+// O exemplo REAL do catálogo aparece no prompt (a primeira org viva
+// registrada).
+func TestAskOrgPathExampleFromCatalog(t *testing.T) {
+	home := isolatedHome(t)
+	real := filepath.Join(home, "OrgReal")
+	makeOrgContainer(t, real)
+	if err := orgs.Register(home, "OrgReal", real); err != nil {
+		t.Fatal(err)
+	}
+	valid := filepath.Join(t.TempDir(), "OrgOK")
+	makeOrgContainer(t, valid)
+	w, out := newTestWizard(t.TempDir(), valid+"\n")
+	if _, cancelled, err := w.askOrgPathManual(""); err != nil || cancelled {
+		t.Fatalf("askOrgPathManual: %v", err)
+	}
+	if !strings.Contains(out.String(), "(ex.: "+real) {
+		t.Errorf("exemplo real do catálogo ausente:\n%s", out)
+	}
+}
+
 // O wizard opção 1 também pré-checa (nome duplicado = erro antes do
 // confirm — nada criado).
 func TestWizardOrgDuplicateNameBeforeConfirm(t *testing.T) {
-	home := t.TempDir()
-	oldHome := userHomeFn
-	userHomeFn = func() (string, error) { return home, nil }
-	t.Cleanup(func() { userHomeFn = oldHome })
+	home := isolatedHome(t)
 	base := t.TempDir()
 	if err := orgs.Register(home, "Tomada", filepath.Join(home, "original")); err != nil {
 		t.Fatal(err)
