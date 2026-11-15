@@ -135,13 +135,19 @@ func TestPickOrgOtherManualFallback(t *testing.T) {
 	if org != manual {
 		t.Errorf("org = %s, want %s (absoluto resolvido)", org, manual)
 	}
-	// o prompt manual novo: instrução + exemplo REAL do catálogo
+	// o prompt manual novo: instrução + exemplo PLACEHOLDER genérico
+	// (o path do catálogo NUNCA entra no prompt — privacidade M24; ele é
+	// funcional apenas na lista de seleção acima)
 	s := out.String()
 	if !strings.Contains(s, "Caminho completo da pasta que contém o golmet.yaml da Organização") {
 		t.Errorf("instrução do caminho manual ausente:\n%s", s)
 	}
-	if !strings.Contains(s, "(ex.: "+viva) {
-		t.Errorf("exemplo real (org registrada) ausente do prompt:\n%s", s)
+	if !strings.Contains(s, "(ex.: C:\\Projetos\\MinhaOrganizacao") {
+		t.Errorf("placeholder genérico esperado no prompt:\n%s", s)
+	}
+	// a lista de seleção (acima) segue com o path funcional da registrada
+	if !strings.Contains(s, "OrgViva — "+viva) {
+		t.Errorf("path funcional da org na lista de seleção ausente:\n%s", s)
 	}
 }
 
@@ -356,27 +362,36 @@ func TestAskOrgPathEscCancels(t *testing.T) {
 	}
 }
 
-// O exemplo REAL do catálogo aparece no prompt (a primeira org viva
-// registrada).
-func TestAskOrgPathExampleFromCatalog(t *testing.T) {
+// GUARDIÃO DO FIX (M24 — privacidade): o exemplo do prompt do caminho
+// manual é SEMPRE o placeholder genérico — NUNCA um path do catálogo. O
+// fixture usa um path pessoal plausível (username + pasta pessoal); se
+// alguém reintroduzir o exemplo do catálogo no prompt, este teste quebra.
+// O catálogo alimenta APENAS a lista de seleção (onde o path é funcional).
+func TestAskOrgPathPromptNeverLeaksCatalogPaths(t *testing.T) {
 	home := isolatedHome(t)
-	real := filepath.Join(home, "OrgReal")
-	makeOrgContainer(t, real)
-	if err := orgs.Register(home, "OrgReal", real); err != nil {
+	// path pessoal plausível no catálogo — fragmentos que NUNCA podem
+	// aparecer no prompt
+	personal := filepath.Join(home, "Users", "alguem", "Pessoal", "MinhaOrg")
+	makeOrgContainer(t, personal)
+	if err := orgs.Register(home, "OrgPessoal", personal); err != nil {
 		t.Fatal(err)
 	}
 	valid := filepath.Join(t.TempDir(), "OrgOK")
 	makeOrgContainer(t, valid)
 	w, out := newTestWizard(t.TempDir(), valid+"\n")
 	if _, cancelled, err := w.askOrgPathManual(""); err != nil || cancelled {
-		t.Fatalf("askOrgPathManual: %v", err)
+		t.Fatalf("askOrgPathManual: %v\n%s", err, out)
 	}
-	if !strings.Contains(out.String(), "(ex.: "+real) {
-		t.Errorf("exemplo real do catálogo ausente:\n%s", out)
+	s := out.String()
+	for _, fragment := range []string{personal, "alguem", "Pessoal", "OrgPessoal", home} {
+		if strings.Contains(s, fragment) {
+			t.Errorf("PRIVACIDADE: o prompt do caminho manual contém fragmento do catálogo %q:\n%s", fragment, s)
+		}
 	}
-}
-
-// O wizard opção 1 também pré-checa (nome duplicado = erro antes do
+	if !strings.Contains(s, "(ex.: C:\\Projetos\\MinhaOrganizacao") {
+		t.Errorf("exemplo deveria ser o placeholder genérico:\n%s", s)
+	}
+} // O wizard opção 1 também pré-checa (nome duplicado = erro antes do
 // confirm — nada criado).
 func TestWizardOrgDuplicateNameBeforeConfirm(t *testing.T) {
 	home := isolatedHome(t)

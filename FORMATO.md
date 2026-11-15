@@ -79,8 +79,11 @@ Organização existente" lista as organizações registradas com o path VIVO
 (path morto = pulada com aviso discreto), "Outra — caminho manual" por
 último; catálogo vazio → direto no caminho manual com o aviso de criação.
 O caminho manual pede **"Caminho completo da pasta que contém o
-golmet.yaml da Organização"** com **exemplo REAL** (a primeira organização
-viva do catálogo; sem ela, exemplo genérico), aceita absoluto ou relativo
+golmet.yaml da Organização"** com **exemplo PLACEHOLDER genérico**
+(`C:\Projetos\MinhaOrganizacao`) — **NUNCA um path do catálogo** (M24 —
+privacidade: o exemplo do prompt não expõe username/estrutura de pastas
+do usuário; o catálogo alimenta APENAS a lista de seleção e o aviso de
+paths mortos, onde o path é funcional), aceita absoluto ou relativo
 ao cwd (aspas e trailing slashes normalizados — o absoluto resolvido
 aparece na confirmação) e **valida com re-pergunta**: pasta inexistente →
 "a pasta não existe — verifique o caminho"; sem golmet.yaml → "a pasta

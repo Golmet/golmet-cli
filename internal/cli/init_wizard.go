@@ -345,24 +345,16 @@ func initWizardCollect(w *initWizard, choice int, yes, visualTTY bool) (*scaffol
 }
 
 // askOrgPathManual — o input MANUAL do caminho da Organização (opção 2 —
-// "Outra" ou catálogo vazio): instrução clara + exemplo REAL do catálogo
-// (a primeira organização registrada VIVA; sem ela, exemplo genérico) e
-// validação com loop de re-pergunta — mensagens em linguagem de usuário,
-// nada de jargão. `esc` cancela o wizard inteiro; ENTER aceita a sugestão
-// (quando há — e ela também é validada). Devolve o caminho ABSOLUTO
-// resolvido (o que aparece na confirmação).
+// "Outra" ou catálogo vazio): instrução clara + exemplo PLACEHOLDER
+// GENÉRICO — NUNCA um path do catálogo (M24: privacidade — o exemplo do
+// prompt não expõe username/estrutura de pastas do usuário; o catálogo
+// alimenta APENAS a lista de seleção, onde o path é funcional). Validação
+// com loop de re-pergunta — mensagens em linguagem de usuário, nada de
+// jargão. `esc` cancela o wizard inteiro; ENTER aceita a sugestão (quando
+// há — e ela também é validada). Devolve o caminho ABSOLUTO resolvido
+// (o que aparece na confirmação).
 func (w *initWizard) askOrgPathManual(suggestion string) (string, bool, error) {
-	example := "C:\\Projetos\\MinhaOrganizacao"
-	if home, herr := userHomeFn(); herr == nil {
-		if c, lerr := orgs.Load(home); lerr == nil {
-			for _, e := range c.Organizations {
-				if e.Alive() {
-					example = e.Path
-					break
-				}
-			}
-		}
-	}
+	const example = `C:\Projetos\MinhaOrganizacao` // placeholder genérico — nunca path de catálogo
 	fmt.Fprintf(w.out, "\nCaminho completo da pasta que contém o golmet.yaml da Organização\n")
 	fmt.Fprintf(w.out, "(ex.: %s · esc cancela)\n", example)
 	for {
