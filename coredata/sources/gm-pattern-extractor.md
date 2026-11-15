@@ -67,6 +67,9 @@ Para cada retrospectiva, extraia a seção "Padrões extraídos".
 
 Para cada padrão extraído:
 1. Classifique o **Tipo**: `process | architecture | code | ui | test | data`
+   (taxonomia EN canônica — a constante `patternTypes` do lint cita a MESMA
+   lista e o check **L10** vige a regressão PT no pack: `processo`,
+   `arquitetura`, `codigo`, `teste`, `dados` não são tipos válidos)
 2. Normalizar o nome (slug: `kebab-case`)
 3. Verificar se `accumulation/patterns/<tipo>/<slug>/PATTERN.md` do pack ativo já existe
 4. **Detecção de conflito (P-05/MP-13 — invalidação por contradição):** se o

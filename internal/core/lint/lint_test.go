@@ -195,13 +195,14 @@ func TestL5NamesPTAndNonKebab(t *testing.T) {
 	for _, f := range l5 {
 		files = append(files, f.File)
 	}
-	if len(l5) != 5 {
-		t.Fatalf("L5 = %v (%d), want 5 (Assets, Norma Deploy, processo, Padrão X, Reengenharia)", files, len(l5))
+	// 4 findings: Assets, Norma Deploy.md (kebab), Padrão X (slug kebab),
+	// Reengenharia (tema kebab) — a taxonomia PT (processo) cedeu ao L10 (M20)
+	if len(l5) != 4 {
+		t.Fatalf("L5 = %v (%d), want 4 (Assets, Norma Deploy, Padrão X, Reengenharia — tipo processo agora é L10)", files, len(l5))
 	}
 	for _, want := range []string{
 		"Assets",
 		"packs/org-pack/rules/Norma Deploy.md",
-		"packs/org-pack/accumulation/patterns/processo",
 		"packs/org-pack/accumulation/patterns/processo/Padrão X",
 		"packs/org-pack/accumulation/nuances/Reengenharia-nuances.md",
 	} {
@@ -209,6 +210,7 @@ func TestL5NamesPTAndNonKebab(t *testing.T) {
 			t.Errorf("L5 sem %s: %v", want, files)
 		}
 	}
+	// sem duplicação: o tipo PT é do L10 (teste completo em TestL10PackState)
 }
 
 // ---- L6 ----

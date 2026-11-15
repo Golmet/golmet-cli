@@ -29,7 +29,7 @@ import (
 // Finding é um apontamento do lint: severidade, arquivo (+linha quando
 // aplicável), descrição e remediação sugerida (PT-BR).
 type Finding struct {
-	Check       string `json:"check"`          // L1 | L3 | L4 | L5 | L6 | L7 | L7-size | L8 | L9
+	Check       string `json:"check"`          // L1 | L3 | L4 | L5 | L6 | L7 | L7-size | L10 | L8 | L9
 	Severity    string `json:"severity"`       // error | warning
 	File        string `json:"file,omitempty"` // rel ao alvo do check (slash)
 	Line        int    `json:"line,omitempty"` // 0 = arquivo inteiro
@@ -59,8 +59,11 @@ var packStateRootDirs = []string{"skills", "agents", "rules", "domains", "accumu
 // accumulationOnly — único conteúdo canônico de accumulation/.
 var accumulationOnly = []string{"patterns", "metrics", "nuances"}
 
-// patternTypes — tipos canônicos de PATTERN.md (tabela do INDEX da pattern
-// library). Tipo fora do conjunto = estrutura não canônica.
+// patternTypes — taxonomia EN canônica dos tipos de pattern (constante
+// COMPARTILHADA: a mesma lista é citada pelo source do gm-pattern-extractor —
+// manter coerente). Era PT (processo|arquitetura|codigo|ui|teste|dados) até
+// a uniformização; regressão PT = finding L10-B. Tipo fora do conjunto =
+// estrutura não canônica.
 var patternTypes = []string{"process", "architecture", "code", "ui", "test", "data"}
 
 // specAggregates — agregados técnicos do workspace de produto que aceitam
@@ -380,6 +383,11 @@ func Run(opt Options) (*Report, error) {
 	// ---- L9 — schema do registry de stack-templates no config (error) ----
 	if configRoot != "" {
 		lintL9(rep, configRoot)
+	}
+
+	// ---- L10 — estado interno dos state packs (M20) ----
+	if configRoot != "" {
+		lintL10PackState(rep, configRoot)
 	}
 
 	// ---- resumo ----
@@ -738,13 +746,8 @@ func lintPackNames(rep *Report, configRoot string) {
 				if !t.IsDir() {
 					continue
 				}
-				if !containsStr(patternTypes, t.Name()) {
-					rep.Findings = append(rep.Findings, Finding{
-						Check: "L5", Severity: "warning", File: "packs/" + packID + "/accumulation/patterns/" + t.Name(),
-						Description: "tipo de pattern fora do conjunto canônico (process|architecture|code|ui|test|data): " + t.Name(),
-						Fix:         "renomeie o dir do tipo para um dos canônicos, mova os padrões e atualize o INDEX.md",
-					})
-				}
+				// a taxonomia do 1º nível (tipo EN) é vigiada pelo L10 (M20) —
+				// aqui fica só o naming do slug
 				if slugs, err := os.ReadDir(filepath.Join(patDir, t.Name())); err == nil {
 					for _, s := range slugs {
 						if s.IsDir() && !kebabOK(s.Name()) {
