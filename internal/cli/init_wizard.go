@@ -28,6 +28,7 @@ package cli
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -42,12 +43,15 @@ import (
 	"golang.org/x/term"
 )
 
-// initWizard — prompts numerados lendo stdin (padrão do installWizard,
-// sem os.Exit: erros voltam ao caller para o CLI decidir o exit).
+// initWizard — prompts de linha lendo stdin (padrão do installWizard,
+// sem os.Exit: erros voltam ao caller para o CLI decidir o exit). tty é o
+// contexto do wizard (isTTY na entrada) — define o comportamento do
+// cancelamento (o padrão único de wizard_read.go).
 type initWizard struct {
 	out io.Writer
 	in  *bufio.Reader
 	cwd string // cwd absoluto — base de todas as sugestões
+	tty bool
 }
 
 // userHomeFn injetável (testes) — o catálogo global de organizações vive
@@ -75,11 +79,15 @@ var initChoiceOptions = []pickItem{
 
 func (w *initWizard) prompt(question string) (string, error) {
 	fmt.Fprint(w.out, question)
-	line, err := w.in.ReadString('\n')
-	if err != nil && line == "" {
-		return "", fmt.Errorf("stdin fechado (EOF) — o wizard precisa de entrada; em script/CI rode com --org ou --into <container> e --yes")
+	line, cancelled, serr := readWizardLine(w.in, w.tty,
+		"rode com --org ou --into <container> e --yes")
+	switch {
+	case cancelled:
+		return "", errWizardCancelled
+	case serr != nil:
+		return "", serr
 	}
-	return strings.TrimSpace(line), nil
+	return line, nil
 }
 
 // askNumber pergunta um número com default (ENTER vazio = default).
@@ -360,6 +368,9 @@ func (w *initWizard) askOrgPathManual(suggestion string) (string, bool, error) {
 	for {
 		raw, err := w.prompt("Caminho da Organização: ")
 		if err != nil {
+			if errors.Is(err, errWizardCancelled) {
+				return "", true, nil // ESC/CTRL+C — o wizard inteiro cancela
+			}
 			return "", false, err
 		}
 		if strings.EqualFold(strings.TrimSpace(raw), "esc") {

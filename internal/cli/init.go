@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -51,14 +52,18 @@ func newInitCmd() *cobra.Command {
 				if isTTY() && !visual {
 					fmt.Fprintln(out, "ℹ️ terminal sem suporte a VT — modo numerado (use Windows Terminal para o wizard visual)")
 				}
-				w := &initWizard{out: out, in: stdinReader(), cwd: base}
+				w := &initWizard{out: out, in: stdinReader(), cwd: base, tty: isTTY()}
 				opt, baseDir, wname, werr := runInitWizard(w, yes, visual)
 				if werr != nil {
+					if errors.Is(werr, errWizardCancelled) {
+						fmt.Fprintln(out, "cancelado — nada foi criado")
+						return nil
+					}
 					fmt.Fprintln(cmd.ErrOrStderr(), "golmet: "+werr.Error())
 					return exitError(2)
 				}
 				if opt == nil {
-					fmt.Fprintln(out, "init cancelado — nada foi criado")
+					fmt.Fprintln(out, "cancelado — nada foi criado")
 					return nil
 				}
 				rep, err := scaffold.Run(baseDir, wname, *opt)

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"slices"
@@ -61,12 +62,17 @@ func newUninstallCmd() *cobra.Command {
 			} else {
 				sel, err := uninstallWizardSelect(out, plan)
 				if err != nil {
-					return err
+					if errors.Is(err, errWizardCancelled) {
+						fmt.Fprintln(out, "cancelado — nada foi removido")
+						return nil
+					}
+					fmt.Fprintln(cmd.ErrOrStderr(), "golmet: "+err.Error())
+					return exitError(2)
 				}
 				selected = sel
 				// confirmação final (com aviso do pack, se presente)
 				if !confirmUninstall(out, plan, selected) {
-					fmt.Fprintln(out, "uninstall cancelado — nada foi apagado")
+					fmt.Fprintln(out, "cancelado — nada foi removido")
 					return nil
 				}
 			}
@@ -118,12 +124,14 @@ func uninstallWizardSelect(out interface{ Write([]byte) (int, error) }, plan *un
 	fmt.Fprintf(out, "\nNúmeros das camadas a remover [default: %s]: ", strings.Join(defaultList, ", "))
 
 	reader := bufio.NewReader(os.Stdin)
-	answer, rerr := reader.ReadString('\n')
-	if rerr != nil && answer == "" {
-		fmt.Fprintf(out, "\nstdin fechado (EOF) — use --only <camadas> --yes para modo não-interativo\n")
-		return nil, exitError(2)
+	answer, cancelled, serr := readWizardLine(reader, isTTY(),
+		"use --only <camadas> --yes para modo não-interativo")
+	if cancelled {
+		return nil, errWizardCancelled
 	}
-	answer = strings.TrimSpace(answer)
+	if serr != nil {
+		return nil, serr
+	}
 	var selected []string
 	if answer == "" {
 		selected = defaultList
@@ -170,8 +178,12 @@ func confirmUninstall(out interface{ Write([]byte) (int, error) }, plan *uninsta
 		}
 	}
 	fmt.Fprintf(out, "\nTotal: %d alvo(s). Confirma a remoção? (s/N): ", total)
-	reader := bufio.NewReader(os.Stdin)
-	answer, _ := reader.ReadString('\n')
-	answer = strings.ToLower(strings.TrimSpace(answer))
+	answer, cancelled, serr := readWizardLine(bufio.NewReader(os.Stdin), isTTY(),
+		"use --only <camadas> --yes para modo não-interativo")
+	if cancelled || serr != nil {
+		// cancelado (ESC/CTRL+C) ou stdin fechado — nada é removido
+		return false
+	}
+	answer = strings.ToLower(answer)
 	return answer == "s" || answer == "sim" || answer == "y" || answer == "yes"
 }

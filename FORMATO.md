@@ -91,6 +91,18 @@ não é uma Organização declarada — rode golmet init --org nela, ou informe
 outra"; golmet.yaml sem `container: true` → "essa pasta é um workspace-
 produto, não uma Organização"; `esc` cancela o wizard inteiro.
 
+**Padrão único de cancelamento dos wizards do CLI (M24/25 — init,
+install, uninstall; FORMATO §2/§9):** ESC de teclado (a linha `\x1b` que
+vaza como byte em alguns terminais e a linha literal "esc") cancela em
+QUALQUER passo — o ESC nunca vaza como caractere no input; CTRL+C no TTY
+(chega como EOF na leitura) = cancelamento limpo — *"cancelado — nada foi
+criado | aplicado | removido"*, exit 0, NUNCA a mensagem de script/CI no
+meio de uma sessão interativa; EOF verdadeiro FORA de TTY (script/CI) =
+a mensagem de script com o comando a rodar. Cancelamento em qualquer
+passo = nada modificado (os wizards só criam após a confirmação final).
+O padrão vive em um helper único (`readWizardLine` — fonte única dos 3
+wizards de linha).
+
 ### 2.1 Camadas de conteúdo do GOLMET (DR-021)
 
 O conteúdo instalado pelo kit segue quatro camadas, da mais fraca para a mais

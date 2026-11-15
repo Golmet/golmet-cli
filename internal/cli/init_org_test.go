@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -354,7 +355,7 @@ func TestAskOrgPathRelativeAndSuggestion(t *testing.T) {
 func TestAskOrgPathEscCancels(t *testing.T) {
 	w, out := newTestWizard(t.TempDir(), "esc\n")
 	org, cancelled, err := w.askOrgPathManual("")
-	if err != nil {
+	if err != nil && !errors.Is(err, errWizardCancelled) {
 		t.Fatalf("esc = %v\n%s", err, out)
 	}
 	if !cancelled || org != "" {
