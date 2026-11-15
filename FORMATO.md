@@ -73,7 +73,7 @@ operador). A precedência é `local > pack > full > base`.
 - **Grupo de delivery** = subpasta livre (`2026-10`, `core`, …) — o kit não interpreta o nome.
 - **Zona do kit (`.golmet/`)**: skills BASE vendored + manifest (DR-008) — os adapters do engine escritos pelo `init` (`.opencode/`, `.mcp.json`, `.cursor/`) apontam para cá; é o que torna o workspace multi-engine sem config global.
 - **Variante legada tolerada no `golmet adopt`:** `delivery/<grupo>/<RN-NNN — <título>>/RN-NNN — <título> — Feature.md` (Feature dentro de pasta própria). O `adopt` não move arquivos; o `validate` aceita ambos e recomenda a normalização.
-- **Container de organização** (opcional): raiz com `golmet.yaml` (`container: true`), `CONSTITUTION.md`, `INDEX.md` (gerado pelo kit) e workspaces como subpastas.
+- **Container de organização** (opcional): raiz com `golmet.yaml` (`container: true`), `CONSTITUTION.md`, `INDEX.md` (gerado pelo kit) e workspaces como subpastas — estrutura canônica no §2.3.
 
 ### 2.2 Registry de stack-templates (kit-canônico — o kit sabe COMO, a org define O QUÊ)
 
@@ -129,6 +129,37 @@ legítimo).
 boilerplate (ex.: `v0.1.1` no repo `Boilerplate.*`) → (2) atualize o `ref` no
 `rules/stack-templates.yaml` do pack → (3) commit + `golmet pack publish` →
 (4) equipe: `golmet pack update`.
+
+### 2.3 Container de organização — estrutura canônica e regra de scoping
+
+A raiz de um container (`golmet.yaml` com `container: true`) NÃO é um
+workspace-produto: não roda o pipeline de RNs (sem índice/charter/scan de
+entidades — o doctor roda o checklist de hierarquia; o lint valida L7/L1
+do container). Estrutura canônica da raiz:
+
+```
+<Container>/
+├── golmet.yaml            # format: 1 · container: true · products: [<Produto>, …]
+├── CONSTITUTION.md        # princípios da organização
+├── INDEX.md               # navegação do container (IMP-012) — índice de produtos e docs
+├── docs/                  # hub de docs da org (destino de artefatos org-level)
+├── meetings/              # checkpoints transversais da org
+├── migrations/            # migrações de dados da org
+├── <Produto>/…            # workspaces filhos — cada um com o layout §2
+└── .git/                  # meta (ocultos/ferramentais ficam fora do contrato)
+```
+
+- **`products:`** lista os workspaces filhos declarados — declarado sem
+  dir no disco = error (stale); dir de produto na raiz fora da lista =
+  warning (`golmet init <produto> --into <container>` declara e scaffalda).
+- **Regra de scoping:** *o artefato grava no workspace do assunto;
+  assuntos transversais (sem workspace) gravam nas pastas canônicas do
+  container* (`docs/`, `meetings/`, `migrations/`) — nunca na raiz.
+- **Artefato org-level solto na raiz** (`*.md` fora do canônico, ex.:
+  auditorias/relatórios avulsos) = warning — mova para `docs/` (hub) ou
+  declare allowlist. `CONSTITUTION.md`/`INDEX.md` ausentes = warning (o
+  stub vem do `golmet init --org` — idempotente).
+- **Dir desconhecido na raiz** = warning (mesma política do config §9.1).
 
 ## 3. `golmet.yaml`
 
@@ -449,6 +480,15 @@ obriga); só a PERDA/ausência do mínimo declarado flaga.
   quebrado sem INDEX = L7 error; unitário acima do limiar de quebra
   (`DataModelSplitLines` = 800 linhas, constante declarada no lint e
   compartilhada com o gm-datamodel) = **L7-size** warning.
+- **Container de organização (§2.3):** o doctor roda o checklist de
+  hierarquia (products ↔ disco, base canônica, artefatos org-level soltos)
+  no lugar dos checks de workspace-produto; o lint valida a mesma estrutura
+  (L7) e varre a camada de navegação do container com o L1
+  (CONSTITUTION.md/INDEX.md/README.md da raiz + `docs/` + `meetings/` —
+  os `*.md` org-level soltos na raiz ficam fora do L1: o L7 já aponta a
+  movimentação). Refs ancoradas no container (`docs/`, `meetings/`,
+  `migrations/`, canônicos) são verificáveis; as demais stores de
+  workspace de produto permanecem isentas (mesma política do kit).
 - **Aviso precoce dos candidatos à quebra (L7-size):** `DECISIONS.md` (800
   linhas — ADRs auto-contidos; quebrado `decisions/` será planejado),
   `specs/ERROR_CATALOG.md` (600, fallback raiz), `support/KNOWN_ERRORS.md`

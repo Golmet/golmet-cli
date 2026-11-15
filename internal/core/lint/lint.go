@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	golmet "github.com/Golmet/golmet-cli"
+	"github.com/Golmet/golmet-cli/internal/core/container"
 	"github.com/Golmet/golmet-cli/internal/core/content"
 	"github.com/Golmet/golmet-cli/internal/core/doctor"
 	"github.com/Golmet/golmet-cli/internal/core/pack"
@@ -41,6 +42,7 @@ type Report struct {
 	Workspace  string         `json:"workspace"`
 	ConfigRoot string         `json:"config_root,omitempty"`
 	KitMode    bool           `json:"kit_mode"`
+	Container  bool           `json:"container,omitempty"` // golmet.yaml com container: true (FORMATO §2)
 	Findings   []Finding      `json:"findings"`
 	Errors     int            `json:"errors"`
 	Warnings   int            `json:"warnings"`
@@ -259,6 +261,16 @@ func Run(opt Options) (*Report, error) {
 	kitMode := fileExists(filepath.Join(ws, "coredata", "registry.yaml"))
 	rep.KitMode = kitMode
 
+	// container de organização (FORMATO §2): golmet.yaml com container: true
+	// — a raiz é um CONTAINER, não um workspace-produto: os checks ganham a
+	// visão de hierarquia (produtos declarados, docs/, meetings/, migrations/)
+	// e o L1 varre os *.md do container.
+	var contProducts []string
+	if fields, isCont, cerr := container.Config(ws); cerr == nil && isCont {
+		rep.Container = true
+		contProducts = container.Products(fields)
+	}
+
 	// config root do engine (quando existir na máquina)
 	configRoot := ""
 	if home != "" {
@@ -324,7 +336,7 @@ func Run(opt Options) (*Report, error) {
 					return containsStr(ids, id), false
 				}
 				return false, false
-			})
+			}, nil)
 		}
 	}
 	// L1 runtime view: AGENTS.md + rules/*.md do config + *.md de packs
@@ -353,6 +365,12 @@ func Run(opt Options) (*Report, error) {
 
 	// ---- L7 — agregados de spec do workspace (unitário | quebrado, §7.7.1) ----
 	lintL7SpecAggregates(rep, ws)
+
+	// ---- L7/L1 — container de organização (FORMATO §2) ----
+	if rep.Container {
+		lintL7Container(rep, ws, container.Inspect(ws, contProducts))
+		lintL1Container(rep, ws)
+	}
 
 	// ---- L8 — conformidade estrutural definitivo ↔ template (warning) ----
 	if configRoot != "" {
@@ -395,7 +413,7 @@ func lintL1Runtime(rep *Report, configRoot string) {
 	rels = append(rels, mdFilesUnder(configRoot, "profile")...)
 	for _, rel := range rels {
 		fpath := filepath.Join(configRoot, filepath.FromSlash(rel))
-		checkMDRefs(rep, rel, fpath, []string{filepath.Dir(fpath), configRoot}, nil)
+		checkMDRefs(rep, rel, fpath, []string{filepath.Dir(fpath), configRoot}, nil, nil)
 	}
 }
 
@@ -403,7 +421,12 @@ func lintL1Runtime(rep *Report, configRoot string) {
 // (respeitando fences marcados como exemplo) e verifica existência.
 // extra = resoluções adicionais do contexto (ex.: mapping canônico do kit);
 // segundo retorno true = SKIP (runtime que o contexto não pode verificar).
-func checkMDRefs(rep *Report, rel, fpath string, roots []string, extra func(string) (bool, bool)) {
+// storeExempt = decisão por candidato sobre a isenção de store de
+// workspace de produto (docs/, delivery/, specs/…): nil = TODOS isentos
+// (kit/runtime — stores citados por design); container decide (refs
+// ancoradas no container — docs/, meetings/, migrations/, canônicos — são
+// arquivos PRÓPRIOS e verificáveis; as demais stores permanecem isentas).
+func checkMDRefs(rep *Report, rel, fpath string, roots []string, extra func(string) (bool, bool), storeExempt func(string) bool) {
 	data, err := os.ReadFile(fpath)
 	if err != nil {
 		return
@@ -440,7 +463,7 @@ func checkMDRefs(rep *Report, rel, fpath string, roots []string, extra func(stri
 					continue
 				}
 			}
-			if isModuleStoreRef(cand) {
+			if isModuleStoreRef(cand) && (storeExempt == nil || storeExempt(cand)) {
 				continue // runtime de workspace de produto / pendência declarada
 			}
 			if reason, ok := refAllowlist[cand]; ok {

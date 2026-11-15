@@ -5,7 +5,6 @@
 package doctor
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -16,9 +15,9 @@ import (
 	"time"
 
 	"github.com/Golmet/golmet-cli/internal/adapters/fsutil"
+	"github.com/Golmet/golmet-cli/internal/core/container"
 	"github.com/Golmet/golmet-cli/internal/core/frontmatter"
 	"github.com/Golmet/golmet-cli/internal/core/indexstate"
-	"github.com/Golmet/golmet-cli/internal/core/jev"
 	"github.com/Golmet/golmet-cli/internal/core/rules"
 	"github.com/Golmet/golmet-cli/internal/core/scan"
 	"github.com/Golmet/golmet-cli/internal/core/tools"
@@ -115,6 +114,20 @@ func Run(dir string, opt Options) (*Report, error) {
 	}
 	rep.add("golmet.yaml", OK, "format: 1", "")
 
+	// 1b. container de organização (FORMATO §2): o golmet.yaml declara
+	// container: true — a raiz é um CONTAINER, não um workspace-produto.
+	// Roda o checklist de hierarquia próprio + ambiente de máquina e
+	// ENCERRA: os checks de workspace-produto (índice, scan de entidades,
+	// zona .golmet, capacidades vendored) não se aplicam ao container —
+	// ele não roda o pipeline de RNs.
+	isContainer := fields["container"].Str == "true"
+	gitOK := exec.Command("git", "--version").Run() == nil
+	if isContainer {
+		rep.runContainerChecks(root, container.Products(fields))
+		rep.addMachineChecks(opt, gitOK, nil)
+		return rep, nil
+	}
+
 	// 2. índice — presente/parseável/idade vs prosa (§8)
 	idxPath := filepath.Join(root, "golmet.index.json")
 	idxOK := false
@@ -147,7 +160,6 @@ func Run(dir string, opt Options) (*Report, error) {
 	res, rerr := scan.Run(dir, scan.Options{Tolerant: true})
 
 	// 3. worklist S2 — hash de evidência ≠ HEAD (requer git + repos)
-	gitOK := exec.Command("git", "--version").Run() == nil
 	repos := 0
 	if res != nil && res.Inventory != nil && res.Inventory.Charter != nil {
 		repos = len(res.Inventory.Charter.Repos)
@@ -347,68 +359,9 @@ func Run(dir string, opt Options) (*Report, error) {
 		rep.add("capacidades", OK, detail, "")
 	}
 
-	// 6. kit.jev — TYPESAFE_API_KEY: key presente → smoke POR DEFAULT (1
-	// POST pequeno — o aprendizado REAL da sessão: "key presente" enganou
-	// o operador por semanas com o endpoint errado; o doctor checa se o Jev
-	// FUNCIONA, não só se a key existe). Resultado é ⚠️ NUNCA ❌ (health é
-	// soft). --no-network pula o smoke (CI/offline); --network é alias de
-	// compatibilidade (o smoke já é default — sem efeito extra).
-	jevRequired := false
-	for _, sk := range skills {
-		if sk.RequiresKit("jev") {
-			jevRequired = true
-		}
-	}
-	key := os.Getenv("TYPESAFE_API_KEY")
-	switch {
-	case key == "" && jevRequired:
-		rep.add("kit.jev", Warn, "TYPESAFE_API_KEY ausente — skill requer kit.jev", "configure o runtime Typesafe/Jev (DR-015)")
-	case key == "":
-		rep.add("kit.jev", OK, "offline (não requerido por nenhuma skill)", "")
-	case opt.NoNetwork:
-		rep.add("kit.jev", OK, "TYPESAFE_API_KEY presente (smoke não executado — --no-network)", "verifique a key em console.typesafe.ai/keys")
-	default:
-		switch s, smoke := jev.SmokeHealth(context.Background()); s {
-		case jev.SmokeOK:
-			rep.add("kit.jev", OK, smoke+" — key presente e runtime operacional", "")
-		case jev.SmokeRejected:
-			rep.add("kit.jev", Warn, "key presente mas REJEITADA pelo runtime — "+smoke, "verifique a key em console.typesafe.ai/keys e o endpoint")
-		default:
-			rep.add("kit.jev", Warn, "key presente mas o runtime não respondeu — verifique o endpoint ("+smoke+")", "verifique a key em console.typesafe.ai/keys")
-		}
-	}
-
-	// 7. kit.graph — binário DeusData em ~/.golmet/tools/codegraph/ (bloco 3 instala)
-	graphRequired := false
-	for _, sk := range skills {
-		if sk.RequiresKit("graph") {
-			graphRequired = true
-		}
-	}
-	graphInstalled := detectCodeGraph()
-	switch {
-	case !graphInstalled && graphRequired:
-		rep.add("kit.graph", Warn, "binário DeusData ausente em ~/.golmet/tools/codegraph/ — skill requer kit.graph", "instale o grafo de código do kit (DR-016)")
-	case !graphInstalled:
-		rep.add("kit.graph", OK, "não instalado (não requerido por nenhuma skill)", "")
-	default:
-		rep.add("kit.graph", OK, "binário detectado em ~/.golmet/tools/codegraph/", "")
-	}
-
-	// 8. git disponível
-	if gitOK {
-		rep.add("git", OK, "git disponível", "")
-	} else {
-		rep.add("git", Warn, "git indisponível — H7/S2 degradam", "instale o git no PATH")
-	}
-
-	// 9. estado do engine-config — cache reconstrutível vs dado do usuário
-	// (customização em gerido, sem proveniência, layer local removida).
-	// Roda contra o CONFIG ROOT do engine, não contra o workspace; vazio =
-	// check não roda (compatibilidade total com chamadas workspace-only).
-	if opt.EngineConfigRoot != "" {
-		rep.runEngineConfig(opt.EngineConfigRoot)
-	}
+	// 6-9. ambiente de máquina (kit.jev, kit.graph, git, engine-config) —
+	// comum a workspace-produto e container.
+	rep.addMachineChecks(opt, gitOK, skills)
 
 	return rep, nil
 }

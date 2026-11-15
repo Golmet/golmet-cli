@@ -266,11 +266,32 @@ itens foi >= 70.
 10. Registre as respostas e **recalcule** os scores dos itens afetados
     pelas respostas.
 11. Gere o checkpoint:
+    - **Detecte o contexto:** se o cwd é a raiz de um container de
+      organização (golmet.yaml com `container: true`), resolva o destino
+      pela seção **Contexto de container** abaixo — nunca grave na raiz
+      sem saber o contexto
     - Liste checkpoints existentes em `<Produto>/meetings/`.
     - Encontre o maior número sequencial (NN).
     - Escreva `<Produto>/meetings/YYYY-MM-DD-NN.md` com o template
       abaixo, incluindo scores, critérios, perguntas de follow-up para
       cada PEND, e indicando quais itens são RN candidatos.
+
+## Contexto de container (org)
+
+O checkpoint grava no workspace DO ASSUNTO — nunca na raiz de um container
+sem contexto (FORMATO §2, regra de scoping). Se o cwd é a raiz de um
+container de organização (golmet.yaml com `container: true`):
+
+- **(a) Assunto TRANSVERSAL da org** (não pertence a um produto) → grave no
+  lugar canônico do container: `<container>/meetings/YYYY-MM-DD-NN.md`
+- **(b) Assunto pertence a um workspace filho** → pergunte qual via `ask`
+  com a lista de `products:` do container e grave lá
+  (`<container>/<produto>/meetings/YYYY-MM-DD-NN.md`)
+- **(c) Produto não declarado no `products:`** → pergunte via `ask`:
+  "declare o produto no container (`golmet init <produto> --into <container>`)
+  ou grave como transversal no container?" — nunca decida por omissão
+- Sem container (cwd é um workspace-produto), o comportamento atual —
+  `<Produto>/meetings/` — fica inalterado
 
 ## Categorias de Questionamento
 

@@ -385,8 +385,25 @@ ask:
 | Diretório é pasta-mãe de produtos | `<pasta-de-produtos>/<Produto>/` |
 | Diretório é repo de código (ex: `MeuApp-API/`) | `<pasta-de-produtos>/<Produto>/` (unificar com outros repos do mesmo produto) |
 | Diretório já é workspace de produto (tem `golmet.yaml`) | `<Produto>/` (raiz — charter na raiz do workspace, FORMATO §2) |
+| Diretório é container de organização (`golmet.yaml` com `container: true`) | `<container>/<Produto>/` — pergunte qual produto via `ask` (seção abaixo); assunto transversal NÃO é charter |
 
 > **Lembrete:** A unidade é o **produto**, não a camada. Se o diretório é `MeuApp-API/` mas existe `MeuApp-FE`, crie o workspace `MeuApp/`.
+
+### Contexto de container (org)
+
+Se o cwd é a raiz de um container de organização (golmet.yaml com
+`container: true` — FORMATO §2), detecte o contexto ANTES de gravar:
+
+- **(a) Assunto TRANSVERSAL da org** (não é um produto) → NÃO é charter —
+  é a base canônica do container (CONSTITUTION.md/INDEX.md, território do
+  gm-governance/gm-init); registre o checkpoint transversal em
+  `<container>/meetings/`
+- **(b) Assunto pertence a um workspace filho** → pergunte qual via `ask`
+  com a lista de `products:` do container e crie/edite o charter lá
+  (`<container>/<Produto>/PROJECT_CHARTER.md`)
+- **(c) Produto não declarado no `products:`** → pergunte via `ask`:
+  "declare o produto no container (`golmet init <produto> --into <container>`)
+  ou trate como transversal?" — nunca crie charter na raiz do container
 
 ### Nunca faça
 

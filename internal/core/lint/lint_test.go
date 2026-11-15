@@ -519,6 +519,70 @@ func TestL7SizeWarningsEarlyCandidates(t *testing.T) {
 	}
 }
 
+// ---- container de organização: L7 (hierarquia) + L1 (refs do container) ----
+
+func TestL7L1Container(t *testing.T) {
+	ws := t.TempDir()
+	os.WriteFile(filepath.Join(ws, "golmet.yaml"), []byte("format: 1\ncontainer: true\nproducts: [ProdutoA]\n"), 0o644)
+	os.WriteFile(filepath.Join(ws, "CONSTITUTION.md"), []byte("- `docs/guia.md` ok e `docs/morta.md` morta → L1\n"), 0o644)
+	os.MkdirAll(filepath.Join(ws, "docs"), 0o755)
+	os.MkdirAll(filepath.Join(ws, "meetings"), 0o755)
+	os.WriteFile(filepath.Join(ws, "docs", "guia.md"), []byte("guia\n"), 0o644)
+	os.MkdirAll(filepath.Join(ws, "ProdutoA"), 0o755)
+	os.WriteFile(filepath.Join(ws, "AUDIT.md"), []byte("solto\n"), 0o644)
+
+	rep := runLint(t, ws, t.TempDir())
+	if !rep.Container {
+		t.Errorf("Report.Container deveria ser true para golmet.yaml de container")
+	}
+	var missingProd, undeclared, loose, deadRef int
+	for _, f := range rep.Findings {
+		switch {
+		case f.Check == "L7" && f.Severity == "error" && f.File == "ProdutoFantasma":
+			missingProd++
+		case f.Check == "L7" && f.Severity == "warning" && f.File == "ProdutoSolto":
+			undeclared++
+		case f.Check == "L7" && f.Severity == "warning" && f.File == "AUDIT.md":
+			loose++
+		case f.Check == "L1" && strings.Contains(f.Description, "docs/morta.md"):
+			deadRef++
+		}
+	}
+	if missingProd != 0 || undeclared != 0 || loose != 1 || deadRef != 1 {
+		t.Fatalf("findings inesperados: missingProd=%d undeclared=%d loose=%d deadRef=%d — %+v", missingProd, undeclared, loose, deadRef, rep.Findings)
+	}
+
+	// declarado ausente + produto não declarado
+	os.Remove(filepath.Join(ws, "golmet.yaml"))
+	os.WriteFile(filepath.Join(ws, "golmet.yaml"), []byte("format: 1\ncontainer: true\nproducts: [ProdutoA, ProdutoFantasma]\n"), 0o644)
+	os.MkdirAll(filepath.Join(ws, "ProdutoSolto"), 0o755)
+	rep2 := runLint(t, ws, t.TempDir())
+	l7 := findingsOf(rep2, "L7")
+	var errs, warns int
+	for _, f := range l7 {
+		if f.Severity == "error" && f.File == "ProdutoFantasma" {
+			errs++
+		}
+		if f.Severity == "warning" && f.File == "ProdutoSolto" {
+			warns++
+		}
+	}
+	if errs != 1 || warns != 1 {
+		t.Fatalf("L7 = %+v, want 1 error (ProdutoFantasma) + 1 warning (ProdutoSolto)", l7)
+	}
+
+	// workspace-produto (golmet.yaml sem container) NÃO ganha checks de container
+	wsProd := t.TempDir()
+	os.WriteFile(filepath.Join(wsProd, "golmet.yaml"), []byte("format: 1\n"), 0o644)
+	rep3 := runLint(t, wsProd, t.TempDir())
+	if rep3.Container {
+		t.Errorf("workspace-produto detectado como container")
+	}
+	if len(findingsOf(rep3, "L7")) != 0 || len(findingsOf(rep3, "L1")) != 0 {
+		t.Fatalf("workspace-produto vazio deveria zerar L7/L1: %+v", rep3.Findings)
+	}
+}
+
 // ---- L9 — schema do registry de stack-templates (M14) ----
 
 // l9Valid é um registry CONFORMANTE: boilerplate_org placeholder (aceito —

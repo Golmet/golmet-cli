@@ -63,7 +63,7 @@ registers the MCP server and runs the doctor in a single pass.
 | `update`   | Installs the BASE skill subset into `.golmet/` via `go:embed` (SHA-256 manifest); `--full` materializes the FULL workflow into your engine                                     |
 | `status`   | Read-only dashboard of entity states (RN, PEND, CR, ADR, Feature, Task)                                                                                                        |
 | `next`     | Recommends the next action on the workspace (priorities p1..p9)                                                                                                                |
-| `doctor`   | Soft checks (S1–S5) plus environment health, with remediation hints                                                                                                            |
+| `doctor`   | Soft checks (S1–S5) plus environment health, with remediation hints; on an org container (`container: true`) runs the hierarchy checklist instead (products ↔ disk, canonical base, loose org-level artifacts — FORMATO §2.3) |
 | `adopt`    | Adopts FORMATO v1 in an existing workspace (classified dry-run → deterministic apply)                                                                                          |
 | `eval`     | Deterministic eval checker: scores `criteria.yaml` fixtures against the workspace; writes a markdown report per fixture to `~/.golmet/eval-reports` (50-report retention)      |
 | `tools`    | Installs kit-native tools (code graph) with supply-chain verification (SHA-256 + attestation)                                                                                  |
@@ -74,7 +74,7 @@ registers the MCP server and runs the doctor in a single pass.
 | `template` | Emits a kit template (AGENTS.md skeleton, client/operator profile) straight from the embed — templates are construction artifacts: they live in the kit, never installed into the config |
 | `uninstall` | Removes the global Golmet structure layer by layer (ferramental, kit state, packs, personal, unmanaged, engine registry) — everything selected by default EXCEPT packs; pack removal deletes ONLY the local working copy, the remote repo is manual |
 | `upgrade`  | Self-update of the binary from the latest GitHub release (SHA-256 verified; `--check` read-only; rollback via `<bin>.old`)                                                      |
-| `lint`     | Deterministic structural sweep (dead refs, orphans, stale manifest entries, naming, ghost `gm-*` components, canonical structure, definitivo↔template conformance, stack-templates schema — kit materializado + registries de pack + workspace spec aggregates: unitário OR broken-with-INDEX per FORMATO §7.7.1 + early size warnings for aggregate candidates) — findings with severity + remediation; exit 0 clean, 2 with findings |
+| `lint`     | Deterministic structural sweep (dead refs, orphans, stale manifest entries, naming, ghost `gm-*` components, canonical structure, definitivo↔template conformance, stack-templates schema — kit materializado + registries de pack + workspace spec aggregates: unitário OR broken-with-INDEX per FORMATO §7.7.1 + early size warnings for aggregate candidates + org container hierarchy and navigation-layer refs per §2.3) — findings with severity + remediation; exit 0 clean, 2 with findings |
 
 The normative contract behind all of this is [FORMATO.md](FORMATO.md) v1.
 

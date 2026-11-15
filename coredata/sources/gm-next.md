@@ -31,6 +31,10 @@ legado na raiz do módulo (ex: `DATA_MODEL.md`). Ao **ESCREVER/GERAR**, use
 sempre o caminho novo. Módulos ainda não migrados via `gm-restructure`
 continuam legíveis durante a transição.
 
+**Container de organização (FORMATO §2):** o container não roda o pipeline
+de RNs — sua navegação é o `INDEX.md` da raiz (IMP-012); recomende ações
+por workspace filho (`products:` do golmet.yaml do container).
+
 ## Lê (upstream)
 
 - `<module-root>/PROJECT_CHARTER.md` (tipo de projeto, legado, escopo)

@@ -292,6 +292,11 @@ opinião do modelo; remediação via gm-jev-setup — runtime provisto pelo
 ambiente de sessão, verificar com o provedor do ambiente/harness da
 organização") e siga; as skills afetadas já possuem fallback sem Jev.
 
+**Container de organização:** se o cwd é a raiz de um container
+(golmet.yaml com `container: true` — FORMATO §2), a validação de ambiente
+inclui a hierarquia — rode `golmet doctor` (checklist de container:
+products declarados vs disco, base canônica, artefatos org-level soltos).
+
 ### Passo 6b — Packs (opcional)
 
 Se `profile/client-profile.md` declarar `packs:` (lista `<id>@<faixa>`),
