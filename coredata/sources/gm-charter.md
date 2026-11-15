@@ -394,10 +394,11 @@ ask:
 Se o cwd é a raiz de um container de organização (golmet.yaml com
 `container: true` — FORMATO §2), detecte o contexto ANTES de gravar:
 
-- **(a) Assunto TRANSVERSAL da org** (não é um produto) → NÃO é charter —
-  é a base canônica do container (CONSTITUTION.md/INDEX.md, território do
-  gm-governance/gm-init); registre o checkpoint transversal em
-  `<container>/meetings/`
+- **(a) Assunto TRANSVERSAL da org** (não é um charter) →
+  NÃO é charter — registre o checkpoint transversal na zona de trabalho
+  do kit do container (FORMATO §2.3, M19):
+  `<container>/.golmet/meetings/` (território da base canônica
+  CONSTITUTION.md/INDEX.md é gm-governance/gm-init)
 - **(b) Assunto pertence a um workspace filho** → pergunte qual via `ask`
   com a lista de `products:` do container e crie/edite o charter lá
   (`<container>/<Produto>/PROJECT_CHARTER.md`)

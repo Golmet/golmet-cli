@@ -28,7 +28,7 @@ Os artefatos do módulo seguem a estrutura com subpastas (IMP-011):
 - **`support/`:** LEGACY_CONTEXT.md, KNOWN_ERRORS.md, MIGRATION.md, CHANGE_REQUESTS.md
 - **`glossaries/`:** os 3 glossários e variações
 - **`docs/`:** howto/*.md e documentos auxiliares
-- **`meetings/`, `contracts/`:** checkpoints (inalterados)
+- **`meetings/`, `contracts/`:** checkpoints (workspace-produto mantém `meetings/`; container de organização grava na zona de trabalho do kit — `.golmet/meetings/`, FORMATO §2.3/M19)
 
 **Regra de fallback (transição):** ao **LER** um artefato, verifique primeiro
 o caminho novo (ex: `specs/DATA_MODEL.md`); se não existir, use o caminho

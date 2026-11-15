@@ -88,6 +88,16 @@ func (r *Report) addMachineChecks(opt Options, gitOK bool, skills []rules.SkillI
 func (r *Report) runContainerChecks(root string, products []string) {
 	st := container.Inspect(root, products)
 
+	// zona de trabalho do kit (M19): `.golmet/` na raiz do container —
+	// presente ou ausente, é ok (criada on demand pelo kit)
+	if st.HasWorkZone {
+		r.add("container-workzone", OK,
+			"zona de trabalho .golmet/ reconhecida (meetings/, migrations/ — gitignored na org)", "")
+	} else {
+		r.add("container-workzone", OK,
+			"zona de trabalho .golmet/ ainda não criada — criada on demand (checkpoints → .golmet/meetings/, históricos → .golmet/migrations/)", "")
+	}
+
 	// products declarados vs disco — declarado ausente = fail (stale)
 	switch {
 	case len(st.MissingProducts) > 0:
@@ -103,23 +113,28 @@ func (r *Report) runContainerChecks(root string, products []string) {
 			fmt.Sprintf("%d produto(s) declarado(s) e presentes no disco", len(st.DeclaredPresent)), "")
 	}
 
-	// dirs de produto na raiz fora do products: (workspace órfão ou pasta
-	// perdida — só o container sabe qual); docs/ ganha mensagem própria
-	// (não é estrutura canônica do container — M18)
+	// dirs legados na raiz (docs/, meetings/, migrations/ — não-canônicos
+	// desde M18/M19) ganham mensagens próprias de migração; os demais são
+	// tratados como produto não declarado
 	var otherDirs []string
 	for _, d := range st.UndeclaredDirs {
-		if d == "docs" {
+		switch d {
+		case "docs":
 			r.add("container-estrutura", Warn,
 				"docs/ não é estrutura canônica do container",
-				"docs de produto vão no produto; docs do kit vão no repo do kit; históricos em migrations/")
-			continue
+				"docs de produto vão no produto; docs do kit vão no repo do kit; históricos em .golmet/migrations/")
+		case "meetings", "migrations":
+			r.add("container-workzone", Warn,
+				d+"/ na raiz do container — migrou para a zona de trabalho do kit (M19)",
+				"mova para .golmet/"+d+"/ (a zona é gitignored — trabalho do kit, não conteúdo da org)")
+		default:
+			otherDirs = append(otherDirs, d)
 		}
-		otherDirs = append(otherDirs, d)
 	}
 	if len(otherDirs) > 0 {
 		r.add("container-products", Warn,
 			"dir(s) de produto na raiz fora do products: declarado — "+strings.Join(otherDirs, ", "),
-			"declare no golmet.yaml do container ('golmet init <produto> --into <container>') ou mova para migrations/ (histórico) se não for produto")
+			"declare no golmet.yaml do container ('golmet init <produto> --into <container>') ou mova para .golmet/ (trabalho/histórico) se não for produto")
 	}
 
 	// base canônica ausente (INDEX.md é a navegação do container — IMP-012)
@@ -133,6 +148,6 @@ func (r *Report) runContainerChecks(root string, products []string) {
 	if len(st.LooseMDs) > 0 {
 		r.add("container-raiz", Warn,
 			"artefato(s) org-level na raiz do container — "+strings.Join(st.LooseMDs, ", "),
-			"mova para migrations/ (histórico da org) ou declare allowlist")
+			"mova para .golmet/ (zona de trabalho do kit — gitignored na org) ou declare allowlist")
 	}
 }

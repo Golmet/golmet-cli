@@ -277,8 +277,9 @@ O checkpoint grava no workspace DO ASSUNTO — nunca na raiz de um container
 sem contexto (FORMATO §2, regra de scoping). Se o cwd é a raiz de um
 container de organização (golmet.yaml com `container: true`):
 
-- **(a) Assunto TRANSVERSAL da org** (não pertence a um produto) → grave no
-  lugar canônico do container: `<container>/meetings/YYYY-MM-DD-NN.md`
+- **(a) Assunto TRANSVERSAL da org** (não pertence a um produto) → grave na
+  zona de trabalho do kit no container (FORMATO §2.3, M19):
+  `<container>/.golmet/meetings/YYYY-MM-DD-NN.md`
 - **(b) Assunto pertence a um workspace filho** → pergunte qual via `ask`
   com a lista de `products:` do container e grave lá
   (`<container>/<produto>/meetings/YYYY-MM-DD-NN.md`)

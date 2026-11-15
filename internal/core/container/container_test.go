@@ -15,8 +15,9 @@ func mkContainer(t *testing.T) string {
 	os.WriteFile(filepath.Join(ws, "golmet.yaml"), []byte("format: 1\ncontainer: true\nproducts: []\n"), 0o644)
 	os.WriteFile(filepath.Join(ws, "CONSTITUTION.md"), []byte("# Constituição\n"), 0o644)
 	os.WriteFile(filepath.Join(ws, "INDEX.md"), []byte("# Índice\n"), 0o644)
-	os.MkdirAll(filepath.Join(ws, "meetings"), 0o755)
-	os.MkdirAll(filepath.Join(ws, "migrations"), 0o755)
+	// zona de trabalho do kit (M19): meetings/ + migrations/ DENTRO de .golmet/
+	os.MkdirAll(filepath.Join(ws, ".golmet", "meetings"), 0o755)
+	os.MkdirAll(filepath.Join(ws, ".golmet", "migrations"), 0o755)
 	return ws
 }
 
@@ -60,6 +61,22 @@ func TestInspectDocsIsNotCanonical(t *testing.T) {
 	st := Inspect(ws, nil)
 	if len(st.UndeclaredDirs) != 1 || st.UndeclaredDirs[0] != "docs" {
 		t.Fatalf("UndeclaredDirs = %v, want [docs] (não-canônico desde M18)", st.UndeclaredDirs)
+	}
+}
+
+func TestInspectWorkZoneAndLegacyDirs(t *testing.T) {
+	// M19: a zona .golmet/ é detectada (HasWorkZone); meetings/migrations
+	// na RAIZ são legados → UndeclaredDirs (mensagens próprias downstream);
+	// dentro da zona continuam legítimos (fixture já cria .golmet/{meetings,migrations})
+	ws := mkContainer(t)
+	os.MkdirAll(filepath.Join(ws, "meetings"), 0o755)
+	os.MkdirAll(filepath.Join(ws, "migrations"), 0o755)
+	st := Inspect(ws, nil)
+	if !st.HasWorkZone {
+		t.Fatalf("HasWorkZone = false, want true (.golmet/ no fixture)")
+	}
+	if len(st.UndeclaredDirs) != 2 || st.UndeclaredDirs[0] != "meetings" || st.UndeclaredDirs[1] != "migrations" {
+		t.Fatalf("UndeclaredDirs = %v, want [meetings migrations] (legados na raiz, M19)", st.UndeclaredDirs)
 	}
 }
 

@@ -13,11 +13,22 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core/frontmatter"
 )
 
-// CanonicalDirs — pastas canônicas da raiz do container (meetings são
-// checkpoints transversais; migrations é a camada de migração/histórico
-// da org). docs/ NÃO é canônico (M18): docs de produto vão no produto,
-// docs do kit vão no repo do kit, históricos em migrations/.
-var CanonicalDirs = []string{"meetings", "migrations"}
+// CanonicalDirs — pastas canônicas de CONTEÚDO na raiz do container.
+// VAZIA desde M19: o container não tem pastas de conteúdo canônicas na
+// raiz — o trabalho do kit (checkpoints em meetings/, histórico em
+// migrations/) vive na zona `.golmet/` (gitignored); dirs conhecidos que
+// ainda aparecem na raiz (docs/, meetings/, migrations/) caem em
+// UndeclaredDirs e ganham mensagem própria de migração no doctor/lint.
+var CanonicalDirs = []string{}
+
+// WorkZoneDir — a zona de trabalho do kit na raiz do container (M19):
+// mesma pasta do kit em qualquer contexto, semântica CONTEXTUAL (FORMATO
+// §2.3) — no workspace-produto é VERSIONADA (DR-008, kit do repositório);
+// no CONFIG do engine é estado do kit (manifest/personal.json); no
+// CONTAINER da organização é a zona de TRABALHO não-versionada
+// (gitignored): checkpoints (meetings/) e histórico de processo
+// (migrations/) são trabalho do kit, não conteúdo da organização.
+var WorkZoneDir = ".golmet"
 
 // CanonicalFiles — arquivos canônicos da raiz (INDEX.md é a navegação do
 // container — IMP-012; CONSTITUTION.md são os princípios da org).
@@ -55,16 +66,18 @@ func Products(fields map[string]frontmatter.Value) []string {
 // versus o declarado — consumido pelo doctor (checklist) e pelo lint (L7).
 type Structure struct {
 	MissingProducts  []string // declarados no products: que NÃO existem no disco (stale)
-	UndeclaredDirs   []string // dirs de produto na raiz FORA do products: (workspace órfão ou pasta perdida)
-	LooseMDs         []string // *.md org-level soltos na raiz (lugar canônico: docs/)
+	UndeclaredDirs   []string // dirs na raiz FORA do products: (workspace órfão, pasta perdida ou dir legado pós-M19)
+	LooseMDs         []string // *.md org-level soltos na raiz (destino: zona de trabalho .golmet/)
 	MissingCanonical []string // arquivos canônicos ausentes (CONSTITUTION.md / INDEX.md)
 	DeclaredPresent  []string // declarados e presentes (para a mensagem OK)
+	HasWorkZone      bool     // zona de trabalho .golmet/ presente na raiz (M19)
 }
 
 // Inspect varre a raiz do container e devolve o retrato. products é a
 // lista declarada (o chamador já parseou o golmet.yaml). Dir oculto
-// (prefixo ".") é meta de ferramenta — sem opinião. Arquivo não-md
-// fora do canônico é ferramental — sem opinião (mesma política do
+// (prefixo ".") é meta de ferramenta — sem opinião, EXCETO a zona de
+// trabalho do kit (`.golmet/`, M19), detectada em HasWorkZone. Arquivo
+// não-md fora do canônico é ferramental — sem opinião (mesma política do
 // L3/config: só docs org-level apinam).
 func Inspect(root string, products []string) *Structure {
 	st := &Structure{}
@@ -93,6 +106,10 @@ func Inspect(root string, products []string) *Structure {
 	for _, e := range entries {
 		n := e.Name()
 		if e.IsDir() {
+			if n == WorkZoneDir {
+				st.HasWorkZone = true // zona de trabalho do kit (gitignored na org)
+				continue
+			}
 			if strings.HasPrefix(n, ".") || canonicalDir[n] || declared[n] {
 				continue
 			}

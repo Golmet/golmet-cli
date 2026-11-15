@@ -17,8 +17,8 @@ func containerFixture(t *testing.T) string {
 	os.WriteFile(filepath.Join(ws, "golmet.yaml"), []byte("format: 1\ncontainer: true\nproducts: [ProdutoA]\n"), 0o644)
 	os.WriteFile(filepath.Join(ws, "CONSTITUTION.md"), []byte("# Constituição\n"), 0o644)
 	os.WriteFile(filepath.Join(ws, "INDEX.md"), []byte("# Índice\n"), 0o644)
-	os.MkdirAll(filepath.Join(ws, "meetings"), 0o755)
-	os.MkdirAll(filepath.Join(ws, "migrations"), 0o755)
+	os.MkdirAll(filepath.Join(ws, ".golmet", "meetings"), 0o755)
+	os.MkdirAll(filepath.Join(ws, ".golmet", "migrations"), 0o755)
 	os.MkdirAll(filepath.Join(ws, "ProdutoA"), 0o755)
 	return ws
 }
@@ -43,9 +43,17 @@ func TestDoctorContainerConformant(t *testing.T) {
 	if len(prod) != 1 || prod[0].Status != OK {
 		t.Fatalf("container-products = %+v, want 1 OK (1 produto declarado e presente)", prod)
 	}
+	// zona de trabalho reconhecida (M19)
+	wz := checksOf(rep, "container-workzone")
+	if len(wz) != 1 || wz[0].Status != OK || !strings.Contains(wz[0].Detail, "reconhecida") {
+		t.Fatalf("container-workzone = %+v, want 1 OK (zona .golmet/ reconhecida)", wz)
+	}
 	for _, c := range rep.Checks {
 		if c.Status == Fail {
 			t.Errorf("container conforme não deveria ter fail: %+v", c)
+		}
+		if c.Status == Warn {
+			t.Errorf("container conforme não deveria ter warn: %+v", c)
 		}
 		// checks de workspace-produto não rodam na raiz do container
 		switch c.Item {
@@ -59,9 +67,9 @@ func TestDoctorContainerHierarchyFindings(t *testing.T) {
 	ws := containerFixture(t)
 	// declarado ausente no disco
 	os.WriteFile(filepath.Join(ws, "golmet.yaml"), []byte("format: 1\ncontainer: true\nproducts: [ProdutoA, ProdutoFantasma]\n"), 0o644)
-	// produto não declarado + artefato org-level solto + docs/ (não-canônico)
+	// produto não declarado + artefato org-level solto + legados na raiz
 	os.MkdirAll(filepath.Join(ws, "ProdutoSolto"), 0o755)
-	os.MkdirAll(filepath.Join(ws, "docs"), 0o755)
+	os.MkdirAll(filepath.Join(ws, "meetings"), 0o755)
 	os.WriteFile(filepath.Join(ws, "AUDIT_2026-01-01.md"), []byte("relatório\n"), 0o644)
 
 	rep, err := Run(ws, Options{NoNetwork: true})
@@ -82,18 +90,18 @@ func TestDoctorContainerHierarchyFindings(t *testing.T) {
 		t.Fatalf("container-products = %+v, want fail (ProdutoFantasma) + warn (ProdutoSolto)", prod)
 	}
 	raiz := checksOf(rep, "container-raiz")
-	if len(raiz) != 1 || raiz[0].Status != Warn || !strings.Contains(raiz[0].Fix, "migrations/") {
-		t.Fatalf("container-raiz = %+v, want 1 warn apontando migrations/", raiz)
+	if len(raiz) != 1 || raiz[0].Status != Warn || !strings.Contains(raiz[0].Fix, ".golmet/") {
+		t.Fatalf("container-raiz = %+v, want 1 warn apontando .golmet/", raiz)
 	}
-	// docs/ não-canônico ganha a mensagem própria de extinção (M18)
-	var docsWarn bool
-	for _, c := range checksOf(rep, "container-estrutura") {
-		if c.Status == Warn && strings.Contains(c.Detail, "docs/ não é estrutura canônica do container") {
-			docsWarn = true
+	// meetings/ na raiz ganha a mensagem própria de migração para a zona (M19)
+	var meetingsWarn bool
+	for _, c := range checksOf(rep, "container-workzone") {
+		if c.Status == Warn && strings.Contains(c.Detail, "meetings/ na raiz do container") && strings.Contains(c.Fix, ".golmet/meetings/") {
+			meetingsWarn = true
 		}
 	}
-	if !docsWarn {
-		t.Fatalf("container-estrutura deveria flagar docs/ com a mensagem própria: %+v", checksOf(rep, "container-estrutura"))
+	if !meetingsWarn {
+		t.Fatalf("container-workzone deveria flagar meetings/ na raiz com remediação .golmet/meetings/: %+v", checksOf(rep, "container-workzone"))
 	}
 }
 

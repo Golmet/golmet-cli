@@ -30,13 +30,17 @@ func lintL7Container(rep *Report, ws string, st *container.Structure) {
 			"remova do products: do golmet.yaml (o produto não existe mais) ou restaure o diretório")
 	}
 	for _, d := range st.UndeclaredDirs {
-		if d == "docs" {
+		switch d {
+		case "docs":
 			structWarn(d, "docs/ não é estrutura canônica do container",
-				"docs de produto vão no produto; docs do kit vão no repo do kit; históricos em migrations/")
-			continue
+				"docs de produto vão no produto; docs do kit vão no repo do kit; históricos em .golmet/migrations/")
+		case "meetings", "migrations":
+			structWarn(d, d+"/ na raiz do container — migrou para a zona de trabalho do kit (M19)",
+				"mova para .golmet/"+d+"/ (a zona é gitignored — trabalho do kit, não conteúdo da org)")
+		default:
+			structWarn(d, "dir de produto na raiz fora do products: declarado",
+				"declare no golmet.yaml do container ('golmet init <produto> --into <container>') ou mova para .golmet/ (trabalho/histórico) se não for produto")
 		}
-		structWarn(d, "dir de produto na raiz fora do products: declarado",
-			"declare no golmet.yaml do container ('golmet init <produto> --into <container>') ou mova para migrations/ (histórico) se não for produto")
 	}
 	for _, f := range st.MissingCanonical {
 		structWarn(f, "arquivo canônico do container ausente (INDEX.md é a navegação — IMP-012)",
@@ -44,23 +48,24 @@ func lintL7Container(rep *Report, ws string, st *container.Structure) {
 	}
 	for _, f := range st.LooseMDs {
 		structWarn(f, "artefato org-level na raiz do container",
-			"mova para migrations/ (histórico da org) ou declare allowlist")
+			"mova para .golmet/ (zona de trabalho do kit — gitignored na org) ou declare allowlist")
 	}
 }
 
 // lintL1Container — referências mortas na CAMADA DE NAVEGAÇÃO do
 // container: canônicos da raiz (CONSTITUTION.md, INDEX.md, README.md) +
-// docs/ + meetings/ (recursivo). Os *.md org-level SOLTOS na raiz ficam
-// FORA do L1 — são registros históricos e o L7 já aponta a movimentação
-// para docs/ (varrê-los produz ruído de refs que descrevem o passado).
-// Candidatos resolvem contra [dir do arquivo, raiz do container, CONFIG
-// ROOT do engine] — o config entra como raiz quando conhecido
-// (--engine/--home): docs do container citam o runtime do agente (ex.:
-// `profile/client-profile.md` existe em ~/.config/opencode/profile/) e
-// não são refs mortas. A isenção de store é POR CANDIDATO: refs
-// ancoradas no container (docs/, meetings/, migrations/, canônicos) são
-// arquivos próprios e verificáveis — as demais stores de workspace de
-// produto permanecem isentas (mesma política do kit: citadas por design).
+// `docs/` legado (transição M18). A zona de trabalho `.golmet/` (M19)
+// NÃO é varrida — skip declarado: trabalho temporário do kit
+// (meetings/, migrations/), não camada de navegação; os `*.md`
+// org-level SOLTOS na raiz também ficam fora (o L7 já aponta a
+// movimentação para `.golmet/`). Candidatos resolvem contra [dir do
+// arquivo, raiz do container, CONFIG ROOT do engine] — o config entra
+// quando conhecido (--engine/--home): docs do container citam o runtime
+// do agente (ex.: `profile/client-profile.md` existe em
+// `~/.config/opencode/profile/`) e não são refs mortas. A isenção de
+// store é POR CANDIDATO: refs ancoradas no container legado (`docs/`)
+// são verificáveis; as demais stores de workspace de produto (incl.
+// `meetings/`, `migrations/` — agora dentro da zona) permanecem isentas.
 func lintL1Container(rep *Report, ws, configRoot string) {
 	var rels []string
 	for _, f := range []string{"CONSTITUTION.md", "INDEX.md", "README.md"} {
@@ -69,7 +74,6 @@ func lintL1Container(rep *Report, ws, configRoot string) {
 		}
 	}
 	rels = append(rels, mdFilesRecursive(ws, "docs")...)
-	rels = append(rels, mdFilesRecursive(ws, "meetings")...)
 	for _, rel := range rels {
 		fpath := filepath.Join(ws, filepath.FromSlash(rel))
 		roots := []string{filepath.Dir(fpath), ws}
@@ -81,19 +85,18 @@ func lintL1Container(rep *Report, ws, configRoot string) {
 }
 
 // containerAnchoredStoreExempt — no container, uma ref de store é ISENTA
-// quando NÃO é ancorada no container: prefixos canônicos (docs/,
-// meetings/, migrations/ e os canônicos de raiz) apontam para arquivos
-// PRÓPRIOS do container → verificados; as demais stores (delivery/,
-// specs/, quality/…) são stores de workspace de produto citadas por
-// design → isentas (mesma política do kit).
+// quando NÃO é ancorada no container: o prefixo `docs/` (legado M18,
+// transição) aponta para arquivos próprios → verificado; as demais
+// stores de workspace de produto (`meetings/`, `migrations/` — agora
+// dentro da zona `.golmet/` — e as demais) são citadas por design →
+// isentas (mesma política do kit).
 func containerAnchoredStoreExempt(cand string) bool {
 	seg := cand
 	if i := strings.Index(seg, "/"); i >= 0 {
 		seg = seg[:i]
 	}
-	switch seg {
-	case "docs", "meetings", "migrations", "CONSTITUTION.md", "INDEX.md":
-		return false // ancorada no container — verificável
+	if seg == "docs" {
+		return false // ancorada no container legado — verificável
 	}
 	return true
 }
