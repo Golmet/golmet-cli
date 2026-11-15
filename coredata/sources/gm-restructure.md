@@ -87,13 +87,13 @@ DECISIONS.md, CHANGELOG.md, INDEX.md
 > `delivery/<YYYY-MM>/RN-NNN — <título da feature>/` — PASTA da feature na sprint, **uma pasta por
 > FEATURE** nomeada pela RN-âncora + título (IMP-037), contendo SEMPRE `RN-NNN — Analise-Funcional.md`
 > (análise funcional em linguagem de negócio) + `RN-NNN — Analise-Tecnica.md` (issue principal + tasks
-> ID `RN-NNN-M`, geradas pelo `gm-task-spec`). Arquivos flat `RN-NNN — <título>.md` na sprint
+> ID `RN-NNN-M`, geradas pelo `gm-taskspec`). Arquivos flat `RN-NNN — <título>.md` na sprint
 > (pré-IMP-040) são convertidos para o formato pasta (conteúdo → `Analise-Tecnica.md`; funcional
 > autorada das RNs do REQUIREMENTS.md). Arquivos `RN-*.md` na raiz de
 > `delivery/` (formato IMP-034, pré-IMP-035) são movidos para a pasta da
 > sprint `<YYYY-MM>/` na reestruturação. Arquivos `TASKS*.md` (pré-IMP-034)
 > permanecem como legado na raiz de `delivery/`. NÃO dividir uma feature
-> em uma pasta por RN — a regeneração é feita via `gm-task-spec` sob
+> em uma pasta por RN — a regeneração é feita via `gm-taskspec` sob
 > demanda. Consolidações e artefatos vivos (TASKS_AZURE_CONSOLIDADO.md,
 > SCOPE_AGREEMENT.md, CLIENT_REQUIREMENTS.md, CLIENT_REPORT_*.md,
 > HANDOVER_LOG.md) permanecem na raiz de `delivery/`.

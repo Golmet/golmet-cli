@@ -73,7 +73,7 @@ docs: update traceability matrix for <projeto>
 5. Identifique CRs aprovados e verifique se já foram refletidos nos downstreams
 6. Faça merge incremental com TRACEABILITY.md existente (se houver)
 7. Escreva `quality/TRACEABILITY.md`
-8. Aponte o próximo passo natural: fechado o conjunto de specs do módulo, a camada seguinte da DAG é a de features — proponha gerá-la com `gm-task-spec` (análise `analysis/RN-NNN — <título>/` + `delivery/<grupo>/RN-NNN — <título> — Feature.md`) ou confirme a ordem com o kit golmet (`next`).
+8. Aponte o próximo passo natural: fechado o conjunto de specs do módulo, a camada seguinte da DAG é a de features — proponha gerá-la com `gm-taskspec` (análise `analysis/RN-NNN — <título>/` + `delivery/<grupo>/RN-NNN — <título> — Feature.md`) ou confirme a ordem com o kit golmet (`next`).
 
 ## Template — TRACEABILITY.md
 

@@ -53,7 +53,7 @@ registers the MCP server and runs the doctor in a single pass.
 
 ## Commands
 
-14 commands, one binary (`golmet`):
+16 commands, one binary (`golmet`):
 
 | Command    | What it does                                                                                                                                                                   |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -72,6 +72,7 @@ registers the MCP server and runs the doctor in a single pass.
 | `pack`     | Manages L2 packs (`add` / `update` / `publish` / `list`) without destroying local customizations — two archetypes: `overlay` (read-only cache) and `state` (bidirectional Git working copy)          |
 | `db`       | Database services (the `gm-dba` layer): DATA_MODEL ↔ migrations/snapshot drift                                                                                                 |
 | `upgrade`  | Self-update of the binary from the latest GitHub release (SHA-256 verified; `--check` read-only; rollback via `<bin>.old`)                                                      |
+| `lint`     | Deterministic structural sweep (dead refs, orphans, stale manifest entries, naming, ghost `gm-*` components, canonical structure) — findings with severity + remediation; exit 0 clean, 2 with findings |
 
 The normative contract behind all of this is [FORMATO.md](FORMATO.md) v1.
 
@@ -99,7 +100,7 @@ drive the same flow via the MCP `gm_upgrade` tool (`check=true` /
 
 ## MCP server
 
-`golmet mcp` exposes the kit to any agentic engine over stdio, with 12 tools:
+`golmet mcp` exposes the kit to any agentic engine over stdio, with 13 tools:
 
 | Tool              | Purpose                                                               |
 | ----------------- | --------------------------------------------------------------------- |
@@ -115,6 +116,7 @@ drive the same flow via the MCP `gm_upgrade` tool (`check=true` /
 | `gm_pack_update`  | Re-syncs and applies a pack (overlay or state - state preserves local accumulation with auto-commit + rebase) |
 | `gm_pack_list`    | Lists installed packs (with `kind`: overlay or state)                |
 | `gm_upgrade`      | Self-update of the binary (`check=true` read-only; applying requires `confirm=true`) |
+| `gm_lint`         | Deterministic structural sweep (dead refs, orphans, stale manifest, naming, ghost components, canonical structure) - read-only |
 
 Example registration in `opencode.json`:
 
@@ -150,7 +152,7 @@ even it never touches files managed by packs.
 
 ## Security posture
 
-- Rendered paths validated against traversal (allowlist: `agents/`, `skills/`).
+- Rendered paths validated against traversal (allowlist: `agents/`, `skills/`, `rules/`).
 - Symlink/junction escape rejected at both source and destination (real containment via `EvalSymlinks`).
 - A dirty Git cache fails closed before any `pull --ff-only`.
 - Credentials in URLs are redacted from manifests, payloads and errors.

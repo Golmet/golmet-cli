@@ -46,6 +46,12 @@ jobs:
       - name: go build
         run: go build ./...
 
+      # Varredura estrutural do próprio kit (L1/L5/L6/L7 de kit — o config
+      # de máquina não existe no runner). Deve passar LIMPO: findings do
+      # kit são falha de CI (corrija o que o lint aponta).
+      - name: golmet lint (kit repo)
+        run: go run ./cmd/golmet lint --workspace .
+
       # Evolução futura (fora de escopo nesta fase): lint externo
       # - name: golangci-lint
       #   uses: golangci/golangci-lint-action@v6

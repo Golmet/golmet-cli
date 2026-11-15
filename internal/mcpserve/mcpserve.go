@@ -19,6 +19,7 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core/indexstate"
 	coreinstall "github.com/Golmet/golmet-cli/internal/core/install"
 	"github.com/Golmet/golmet-cli/internal/core/jev"
+	"github.com/Golmet/golmet-cli/internal/core/lint"
 	"github.com/Golmet/golmet-cli/internal/core/next"
 	"github.com/Golmet/golmet-cli/internal/core/pack"
 	"github.com/Golmet/golmet-cli/internal/core/scan"
@@ -99,6 +100,11 @@ func NewServer() *mcp.Server {
 		Description: "Self-update do binário golmet a partir da última release do GitHub — check=true read-only ({current, latest, has_update}); aplicar exige confirm=true (SHA-256 obrigatório do checksums.txt; rollback manual via <bin>.old)",
 	}, gmUpgrade)
 
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "gm_lint",
+		Description: "Varredura estrutural determinística (L1 refs mortas, L3 órfãos, L4 manifest stale, L5 nomes fora do padrão, L6 componentes fantasmas, L7 estrutura canônica) sobre o kit/config/packs — read-only, sem confirm; findings com severidade + remediação PT-BR",
+	}, gmLint)
+
 	return server
 }
 
@@ -160,6 +166,14 @@ type upgradeParams struct {
 	Confirm bool   `json:"confirm,omitempty" jsonschema:"deve ser true para autorizar a substituição do binário"`
 	Check   bool   `json:"check,omitempty" jsonschema:"read-only: reporta versão local vs latest sem baixar nada"`
 	Home    string `json:"home,omitempty" jsonschema:"reservado — o upgrade opera sobre o binário corrente do processo"`
+}
+
+// lintParams — gm_lint. Read-only (sem confirm — lint não muta); padrões
+// iguais aos do CLI: workspace "." e engine opencode; home injetável.
+type lintParams struct {
+	Workspace string `json:"workspace,omitempty" jsonschema:"dir alvo da varredura (default: .; kit repo para os checks L1/L5/L6/L7 de kit)"`
+	Engine    string `json:"engine,omitempty" jsonschema:"engine para resolver o config root (default: opencode)"`
+	Home      string `json:"home,omitempty" jsonschema:"home do usuário (default: UserHomeDir)"`
 }
 
 // ---- handlers ----
@@ -494,6 +508,49 @@ func gmUpgrade(ctx context.Context, req *mcp.CallToolRequest, in upgradeParams) 
 		BackupPath: res.BackupPath,
 	}
 	return nil, out, nil
+}
+
+// gmLint — varredura estrutural determinística (read-only, sem confirm).
+// Workspace inválido vira tool-error; findings são payload normal (o CLI
+// interpreta exit 2 — na tool, ok=false com contagens).
+func gmLint(ctx context.Context, req *mcp.CallToolRequest, in lintParams) (*mcp.CallToolResult, lintOut, error) {
+	engine := in.Engine
+	if engine == "" {
+		engine = "opencode"
+	}
+	home := ""
+	if in.Home != "" {
+		home = in.Home
+	} else if h, herr := mcpHome(""); herr == nil {
+		home = h
+	}
+	rep, err := lint.Run(lint.Options{Workspace: in.Workspace, EngineID: engine, Home: home})
+	if err != nil {
+		return nil, lintOut{}, err
+	}
+	out := lintOut{
+		Workspace:  rep.Workspace,
+		ConfigRoot: rep.ConfigRoot,
+		KitMode:    rep.KitMode,
+		OK:         rep.Errors == 0 && rep.Warnings == 0,
+		Errors:     rep.Errors,
+		Warnings:   rep.Warnings,
+		ByCheck:    rep.ByCheck,
+		Findings:   rep.Findings,
+	}
+	return nil, out, nil
+}
+
+// lintOut — payload do gm_lint (contagens + findings).
+type lintOut struct {
+	Workspace  string         `json:"workspace"`
+	ConfigRoot string         `json:"config_root,omitempty"`
+	KitMode    bool           `json:"kit_mode"`
+	OK         bool           `json:"ok"`
+	Errors     int            `json:"errors"`
+	Warnings   int            `json:"warnings"`
+	ByCheck    map[string]int `json:"by_check"`
+	Findings   []lint.Finding `json:"findings"`
 }
 
 func mcpHome(home string) (string, error) {

@@ -6,7 +6,7 @@ capability não executam esta skill; o roteamento fica no
 `gm-github-orchestrator`.
 
 Cria issues no GitHub correspondentes às features especificadas pelo
-`gm-task-spec` (IMP-092): análise em `analysis/RN-NNN — <título>/` (camada
+`gm-taskspec` (IMP-092): análise em `analysis/RN-NNN — <título>/` (camada
 ANÁLISE, 2 arquivos) e tasks no ARQUIVO
 `delivery/<grupo>/RN-NNN — <título> — Feature.md` (IMP-093 — direto na pasta do grupo,
 sem subpasta por feature — IMP-035/037/039/092). Divisão fixa de fonte: a
@@ -92,7 +92,7 @@ arquivo de feature", aborta com mensagem clara.
 Se o `— Feature.md` linkar a análise (linha `> Análise:`) mas o
 `RN-NNN — Analise-Funcional.md` não existir na pasta de análise (migração
 parcial), avise e use a PRÓPRIA Feature.md como fallback do corpo, sinalizando
-para regenerar via `gm-task-spec` ou migrar via `gm-restructure`.
+para regenerar via `gm-taskspec` ou migrar via `gm-restructure`.
 No fallback legado IMP-040 (pasta com 2 arquivos), se o
 `RN-NNN — Analise-Funcional.md` não existir na pasta da feature (feature
 pré-IMP-040 não migrada), avise e use o `RN-NNN — Analise-Tecnica.md` como

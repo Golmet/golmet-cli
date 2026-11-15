@@ -318,6 +318,54 @@ Cache **commitado**, com **único escritor = kit** (padrão registry-render: can
 | S4 | Evidência legado sem hash |
 | S5 | Capacidade de kit (`kit.jev`/`kit.graph`) declarada e ausente no ambiente — `doctor` emite AVISO com remediação (DR-015/016) |
 
+### 9.1 `golmet lint` — varredura estrutural determinística (read-only)
+
+O lint carrega o estado todo e APONTA inconsistências; a correção é do
+agent/operador. Exit 0 limpo, 2 com findings. Sem check de vocabulário
+legado (L2 fora do escopo por decisão do operador).
+
+| Check | Severidade | Enunciado |
+|---|---|---|
+| L1 | error | Referência morta: path citado em `` `backticks` ``/link de `*.md` (kit, config, rules) não existe em raiz conhecida |
+| L3 | warning | Órfão: arquivo do config sem proveniência no manifest, sem designação pessoal, fora de state pack, fora da allowlist e não citado |
+| L4 | error | Entrada stale no manifest de conteúdo (arquivo não existe no disco) |
+| L5 | warning | Nome estrutural fora de kebab-case ASCII (dirs/temas canônicos; nomes com extensão isentos) |
+| L6 | error/warning | Componente fantasma: `gm-*` citado que não existe no registry — **error** em `coredata/sources` (contrato vivo), **warning** em docs/AGENTS.md (histórico) |
+| L7 | error | Estrutura fora do padrão canônico (declarado abaixo) |
+
+**Estrutura canônica declarada (fonte única em código — `internal/core/lint`):**
+
+- **State pack** (`packs/<id>/`): `pack.yaml` + qualquer subconjunto de
+  {`skills/`, `agents/`, `rules/`, `domains/`, `accumulation/`}; dentro de
+  `accumulation/` só {`patterns/`, `metrics/`, `nuances/`};
+  `accumulation/patterns/<tipo>/<slug>/PATTERN.md` com tipo em
+  {process, architecture, code, ui, test, data}.
+- **Config engine** (1º nível): dirs {agents, skills, rules, packs,
+  plugins, knowledge (legado), .golmet} + files {AGENTS.md,
+  AGENTS.template.md, opencode.jsonc} — dir desconhecido = warning.
+- **Kit repo**: `coredata/{sources/, rules/, registry.yaml}` com sources
+  FLAT (`*.md` + `*.agent.md`); `skills/` raiz = exatamente 16 skills
+  (`skills/<gm-x>/SKILL.md`); golden `testdata/golden-opencode/` espelha o
+  render ({agents, skills, rules}).
+
+**Heurísticas anti-falso-positivo (declaradas):** URLs/âncoras/`<placeholders>`/
+wildcards/braces não são candidatos; paths SEM `/` (nome solto) não são
+verificados quando não resolvem (família aberta de marcadores de repo de
+produto: `angular.json`, `Cargo.toml`, `LEGACY_CONTEXT.md`); paths de store
+de workspace de produto (`delivery/`, `specs/`, `accumulation/`, `docs/`,
+`evals/`, `scripts/`, `config/`, `~/`, `$ENV`, `.opencode/`, `guide/`,
+`howto/`, `migration/`, `quality/`, `ci/`, `.vscode/` e os nomes em
+`moduleStoreNames`) são runtime por design — o L1 não opina; blocos de
+código marcados `​```exemplo`/`​```example` não são verificados; `*.md` de
+packs não são varridos pelo L1 v0.1 (docs de negócio citam paths de
+produto por design). Allowlists declarativas e versionadas no lint:
+`orphanAllowlist` (plugins/, quality/health, .github/, settings raiz,
+AGENTS.md, .gitignore), `ghostAllowlist` (nomes legados/exemplos com
+motivo), `refAllowlist` (refs mortas com pendência declarada — ex.:
+`AGENTS.template.md`, wave do template). `packs/` do config é excluído do
+L3 (proveniência própria do pack). Match `gm-x` seguido de `*`/`{`/`-`/`/`
+é prefixo de família em prosa — não é fantasma.
+
 ## 10. Contrato de skill (front matter de capacidades)
 
 ```yaml

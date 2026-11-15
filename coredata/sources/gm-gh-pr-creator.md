@@ -54,7 +54,7 @@ Se branch não tiver push, aborta e orienta `git push`.
 - **`gh` CLI sem auth (`gh auth status` falha) ou não instalado:** aborte e encaminhe ao `gm-gh-setup` antes de reintentar.
 - **PR já existente para a branch:** `gh pr view feature/<slug>` retorna PR aberto → não duplique; reporte a URL existente e encerre.
 - **`branch-base` informada não existe no remote:** não caia para `main` por inferência — confirme com o operador (IMP-088) antes de criar.
-- **Pasta da feature não localizada (glob retorna 0):** aborta com orientação de regenerar via `gm-task-spec` — nunca monte body de PR sem fonte funcional.
+- **Pasta da feature não localizada (glob retorna 0):** aborta com orientação de regenerar via `gm-taskspec` — nunca monte body de PR sem fonte funcional.
 
 ## Workflow
 
