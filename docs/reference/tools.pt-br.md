@@ -28,7 +28,7 @@ o preview lista sem aplicar.
 | --- | --- | --- |
 | `gm_validate` | workspace | O payload do `golmet validate` (erros/avisos §11 + contadores + o contexto: container/workspace-produto). Parâmetros: `workspace`, `home`. Read-only |
 | `gm_doctor` | workspace + engine | O checklist de saúde + a seção `engine_config` (o estado classificado do config). Parâmetros: `workspace`, `engine` (default opencode), `home`. Read-only |
-| `gm_lint` | kit/config/packs/workspace | A varredura L1-L11 - findings com severidade + remediação. Parâmetros: `workspace`, `engine`, `home`. Read-only (nunca confirm) |
+| `gm_lint` | kit/config/packs/workspace | A varredura L1-L12 - findings com severidade + remediação. Parâmetros: `workspace`, `engine`, `home`. Read-only (nunca confirm) |
 | `gm_status` | workspace | O dashboard de estados das entidades. Parâmetro: `workspace`. Read-only |
 | `gm_next` | workspace | A próxima ação recomendada (p1..p9). Parâmetro: `workspace`. Read-only |
 | `gm_index` | workspace | Recompõe o `golmet.index.json`. Parâmetro: `workspace`. ESCRITA (o índice é kit-gerido) |

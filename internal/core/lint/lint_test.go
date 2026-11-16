@@ -903,3 +903,45 @@ func TestL11Mermaid(t *testing.T) {
 		t.Fatalf("Line = %+v, want linha 5 (a seta órfã)", rep.Findings)
 	}
 }
+
+// ---- L12 - encoding ----
+
+// TestL12Encoding cobre as heurísticas do check L12 via l12CheckFile
+// direto: UTF-8 limpo passa; UTF-16/BOM UTF-16, bytes não-UTF-8, U+FFFD e
+// dupla codificação (Ã©) flagam error; BOM UTF-8 flaga warning.
+func TestL12Encoding(t *testing.T) {
+	findings := func(data []byte) []Finding {
+		t.Helper()
+		rep := &Report{Findings: []Finding{}, ByCheck: map[string]int{}}
+		l12CheckFile(rep, "doc.md", data)
+		return rep.Findings
+	}
+	clean := []byte("# Título em UTF-8\n\n- linha com acento: ação, referência, ∑\n")
+	if got := findings(clean); len(got) != 0 {
+		t.Fatalf("UTF-8 limpo flagado: %+v", got)
+	}
+	// UTF-16 BOM
+	u16 := append([]byte{0xFF, 0xFE}, []byte("x\x00")...)
+	if got := findings(u16); len(got) != 1 || got[0].Severity != "error" {
+		t.Fatalf("UTF-16: want 1 error, got %+v", got)
+	}
+	// BOM UTF-8 (warning) — corpo válido limpo
+	bom := append([]byte{0xEF, 0xBB, 0xBF}, []byte("# ok\n")...)
+	if got := findings(bom); len(got) != 1 || got[0].Severity != "warning" {
+		t.Fatalf("BOM UTF-8: want 1 warning, got %+v", got)
+	}
+	// bytes não-UTF-8 (Latin-1 cru: "ação" em CP1252)
+	raw1252 := []byte{0x61, 0xE7, 0xE3, 0x6F} // "açao" em latin-1
+	if got := findings(raw1252); len(got) != 1 || got[0].Severity != "error" {
+		t.Fatalf("latin-1 cru: want 1 error, got %+v", got)
+	}
+	// replacement character
+	if got := findings([]byte("# t\uFFFDtulo\n")); len(got) != 1 || got[0].Severity != "error" {
+		t.Fatalf("U+FFFD: want 1 error, got %+v", got)
+	}
+	// dupla codificação ("ação" → UTF-8 lido como latin-1 → "Ã§Ã£o")
+	double := []byte("# Ã§Ã£o\n")
+	if got := findings(double); len(got) != 1 || got[0].Severity != "error" {
+		t.Fatalf("dupla codificação: want 1 error, got %+v", got)
+	}
+}

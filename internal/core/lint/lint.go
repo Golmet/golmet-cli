@@ -17,6 +17,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	golmet "github.com/Golmet/golmet-cli"
 	"github.com/Golmet/golmet-cli/internal/core/container"
@@ -392,6 +393,9 @@ func Run(opt Options) (*Report, error) {
 
 	// ---- L11 - diagramas Mermaid (warning) ----
 	lintL11Mermaid(rep, ws, kitMDs, kitMode, configRoot)
+
+	// ---- L12 - encoding e texto quebrado (error; BOM = warning) ----
+	lintL12Encoding(rep, ws, kitMode, configRoot)
 
 	// ---- resumo ----
 	for _, f := range rep.Findings {
@@ -1467,6 +1471,130 @@ func lintMermaidBlock(rep *Report, rel string, startLine int, body []string) {
 	if openers != ends {
 		find(startLine+len(body), "aberturas/end desbalanceados no diagrama ("+
 			fmt.Sprint(openers)+" opener / "+fmt.Sprint(ends)+" end)")
+	}
+}
+
+// ---- L12 - encoding e texto quebrado (error; BOM = warning) ----
+
+// mojibakeRe - bigramas de DUPLA CODIFICAÇÃO: o UTF-8 foi lido como
+// Latin-1/Windows-1252 e regravado — os acentos PT viram "Ã©", "Ã£",
+// "Ã§"... (o texto é UTF-8 válido, mas ilegível).
+var mojibakeRe = regexp.MustCompile(`Ã[\x{0080}-\x{00FF}]`)
+
+// lintL12Encoding valida o ENCODING dos arquivos de conteúdo — texto
+// quebrado é invisível na estrutura e só quebra no render:
+// (1) UTF-8 inválido (bytes Latin-1/Windows-1252 salvos crus) = error;
+// (2) replacement character U+FFFD = error (o conteúdo JÁ está corrompido
+// no arquivo); (3) dupla codificação (bigramas "Ã©/Ã£/Ã§...") = error;
+// (4) BOM UTF-16 em .md/.yaml = error; (5) BOM UTF-8 = warning (IMP-096:
+// sem BOM). Alvos: os arquivos de texto de conteúdo (*.md + *.yaml) —
+// evals ficam fora (fixtures podem conter conteúdo proposital).
+func lintL12Encoding(rep *Report, ws string, kitMode bool, configRoot string) {
+	type lintFile struct{ rel, abs string }
+	var targets []lintFile
+	add := func(rel, abs string) { targets = append(targets, lintFile{rel, abs}) }
+	skipDir := func(name string) bool {
+		return name == ".git" || name == "node_modules" || name == ".golmet"
+	}
+	if kitMode {
+		// docs vivos do kit — evals fora (fixtures com conteúdo proposital)
+		for _, sub := range []string{"coredata/sources", "coredata/rules", "coredata/templates", "docs"} {
+			for _, p := range mdFilesUnder(ws, sub) {
+				add(p, filepath.Join(ws, filepath.FromSlash(p)))
+			}
+		}
+		if out, err := filepath.Glob(filepath.Join(ws, "*.md")); err == nil {
+			for _, p := range out {
+				rel, _ := filepath.Rel(ws, p)
+				add(filepath.ToSlash(rel), p)
+			}
+		}
+	}
+	if configRoot != "" {
+		add("AGENTS.md", filepath.Join(configRoot, "AGENTS.md"))
+		if packsRoot := filepath.Join(configRoot, "packs"); dirExists(packsRoot) {
+			if entries, err := os.ReadDir(packsRoot); err == nil {
+				for _, e := range entries {
+					if !e.IsDir() {
+						continue
+					}
+					for _, p := range mdFilesUnder(packsRoot, e.Name()) {
+						add(p, filepath.Join(packsRoot, filepath.FromSlash(p)))
+					}
+				}
+			}
+		}
+	}
+	if !kitMode {
+		_ = filepath.WalkDir(ws, func(p string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return nil
+			}
+			if d.IsDir() {
+				if skipDir(d.Name()) {
+					return fs.SkipDir
+				}
+				return nil
+			}
+			if strings.HasSuffix(p, ".md") || strings.HasSuffix(p, ".yaml") {
+				rel, _ := filepath.Rel(ws, p)
+				add(filepath.ToSlash(rel), p)
+			}
+			return nil
+		})
+	}
+	// profile/ do config + rules/ de packs também carregam .yaml/.md (o walk
+	// por pack acima cobre os packs; o profile do config abaixo)
+	if configRoot != "" {
+		for _, p := range mdFilesUnder(configRoot, "profile") {
+			add(p, filepath.Join(configRoot, filepath.FromSlash(p)))
+		}
+	}
+
+	for _, t := range targets {
+		data, rerr := os.ReadFile(t.abs)
+		if rerr != nil {
+			continue
+		}
+		l12CheckFile(rep, t.rel, data)
+	}
+}
+
+// l12CheckFile aplica as heurísticas de encoding a um arquivo (dados crus).
+func l12CheckFile(rep *Report, rel string, data []byte) {
+	l12Find := func(sev, desc, fix string) {
+		rep.Findings = append(rep.Findings, Finding{
+			Check: "L12", Severity: sev, File: rel, Line: 0,
+			Description: desc, Fix: fix,
+		})
+	}
+	utf16Fix := "regravar o arquivo como UTF-8 (sem BOM) — o conteúdo UTF-16 não renderiza nos mostradores"
+	if len(data) >= 2 && ((data[0] == 0xFF && data[1] == 0xFE) || (data[0] == 0xFE && data[1] == 0xFF)) {
+		l12Find("error", "arquivo em UTF-16 (BOM UTF-16 detectado) — o conteúdo não é UTF-8", utf16Fix)
+		return
+	}
+	bom := len(data) >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF
+	body := data
+	if bom {
+		body = data[3:]
+	}
+	if !utf8.Valid(body) {
+		l12Find("error", "arquivo NÃO é UTF-8 válido — bytes de Latin-1/Windows-1252 salvos crus (o render decodifica errado)",
+			"regravar como UTF-8 (sem BOM) — converter o encoding de origem para UTF-8 antes de gravar")
+		return // sem UTF-8 válido, as heurísticas de texto são ruído
+	}
+	if bom {
+		l12Find("warning", "BOM UTF-8 presente (o padrão do kit é UTF-8 SEM BOM — IMP-096)",
+			"regravar o arquivo sem BOM")
+	}
+	s := string(body)
+	if strings.Contains(s, "\uFFFD") {
+		l12Find("error", "replacement character (U+FFFD) presente — o conteúdo JÁ está corrompido no arquivo (a decodificação de origem perdeu bytes)",
+			"recuperar o texto da fonte original e regravar como UTF-8 — o replacement não é reversível no arquivo atual")
+	}
+	if m := mojibakeRe.FindString(s); m != "" {
+		l12Find("error", "dupla codificação detectada (ex.: \""+m+"\" — UTF-8 lido como Latin-1/Windows-1252 e regravado: o acento virou dois caracteres ilegíveis)",
+			"regravar o arquivo com a decodificação correta (converter de Latin-1 para UTF-8 — o texto original é recuperável")
 	}
 }
 

@@ -61,7 +61,7 @@ O kit serve 13 tools MCP — **prefira-as à exploração de filesystem para est
 
 - **Evals**: `gm_eval` (roda fixture e grava relatório) · `gm_eval_reports` (**resultado do eval mais recente** — use antes de procurar EVAL_REPORT em pastas)
 - **Estado do workspace**: `gm_status` (dashboard RN/PEND/CR) · `gm_next` (próxima ação) · `gm_index` (recompõe índice) · `gm_validate` (FORMAT v1)
-- **Diagnóstico**: `gm_doctor` (saúde + estado não-reconstrutível do config, `--engine`) · `gm_lint` (varredura estrutural determinística: refs mortas, órfãos, manifest stale, nomes, componentes fantasma, estrutura canônica, diagramas Mermaid) · `gm_jev_classify`
+- **Diagnóstico**: `gm_doctor` (saúde + estado não-reconstrutível do config, `--engine`) · `gm_lint` (varredura estrutural determinística: refs mortas, órfãos, manifest stale, nomes, componentes fantasma, estrutura canônica, diagramas Mermaid, encoding e texto quebrado) · `gm_jev_classify`
 - **Instalação**: `gm_update` (BASE/FULL no engine, `confirm`) · `gm_upgrade` (**self-update do binário do kit** — check read-only com `check=true`, aplica com `confirm=true`; rollback: `<bin>.old`) · `gm_pack_update` / `gm_pack_list` (packs)
 
 ## OUTPUT STYLE: concise
