@@ -16,7 +16,7 @@ no engine) só acontecem com confirmação explícita do operador.
 
 ## Lê (upstream)
 
-- `FORMAT.md` §3.1 — contrato mínimo do pack: `id`, `name`, `version`,
+- `docs/FORMAT.md` §3.1 — contrato mínimo do pack: `id`, `name`, `version`,
   `requires-core`, `no-override`, `provides` (somente `agents/` e `skills/`)
 - `golmet.yaml` — packs já registrados (`packs: [{id, repo, pin}]`)
 - Registry local + `BREAKING-CHANGES.md` — versão do core para derivar a
