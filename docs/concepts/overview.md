@@ -44,7 +44,16 @@ shelves with canonical writers: **`rules/`** (norms with reading triggers),
 (skills/agents) is materialized into the engine; data is read in-place.
 See [knowledge.md](knowledge.md).
 
-## 5. Organization — enterprise governance
+## 5. Reverse engineering — the documented truth of what already exists
+
+Not every project starts from zero: the frozen source of systems in
+production is analyzed and turned into documented truth (models, API
+contracts, business rules, the UI golden master) — every claim carrying
+its evidence — and what is discovered enters the new workflow as
+candidates, not assumptions. The guided reading lets a human validate
+what the AI documented. See [reverse.md](reverse.md).
+
+## 6. Organization — enterprise governance
 
 A **container** workspace holds multiple product workspaces, with its own
 golmet.yaml, a global catalog of organizations (`~/.golmet/organizations.json`)
@@ -52,7 +61,7 @@ and two versioning models (org-repo | products-repo). The company governs
 norms once; every product inherits. See
 [organization.md](organization.md).
 
-## 6. Deterministic self-governance
+## 7. Deterministic self-governance
 
 Three validators with declared contracts: **`golmet validate`** (H1-H10 —
 the workspace against the FORMAT), **`golmet doctor`** (S1-S5 + engine-config
@@ -63,7 +72,7 @@ state, Mermaid diagrams, encoding). Runs in CI, CLI and MCP. The lint loads
 the whole state; the agent fixes what it points. See
 [self-governing.md](self-governing.md).
 
-## 7. MCP server — 14 tools in the agent session
+## 8. MCP server — 14 tools in the agent session
 
 The kit serves itself via MCP: `gm_validate`, `gm_doctor`, `gm_next`,
 `gm_status`, `gm_index`, `gm_eval`, `gm_eval_reports`, `gm_jev_classify`,
@@ -72,21 +81,21 @@ The kit serves itself via MCP: `gm_validate`, `gm_doctor`, `gm_next`,
 leaving the chat. Reference: [../reference/tools.pt-br.md](../reference/tools.md)
 (or `tools.pt-br.md`).
 
-## 8. Self-update with verified releases
+## 9. Self-update with verified releases
 
 `golmet upgrade` fetches the latest GitHub release, verifies **SHA-256**
 before touching the binary, swaps Windows-safe (`.old` rollback) and
 re-materializes managed content. Cross-platform binaries + npm launcher.
 See [self-governing.md](self-governing.md).
 
-## 9. Quality gates from day one
+## 10. Quality gates from day one
 
 The kit tests itself: **evals** (61+ fixtures scoring skills deterministically),
 a **neutrality gate** (no organization/client identity in shipped content)
 and **golden byte-equality** (source ↔ materialized). Every release runs the
 lint against the kit itself in CI.
 
-## 10. Clean exit
+## 11. Clean exit
 
 `golmet uninstall` removes the whole structure **layer by layer** with
 real counts — everything selected by default except the packs (your local

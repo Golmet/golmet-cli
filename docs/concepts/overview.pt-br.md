@@ -43,7 +43,16 @@ leitura), **`domains/`** (fundamentos de domínio de fontes primárias) e
 (skills/agents) é materializado no engine; os dados são lidos localmente.
 Veja [knowledge.md](knowledge.pt-br.md).
 
-## 5. Organização — governança empresarial
+## 5. Engenharia reversa — a verdade documentada do que já existe
+
+Nem todo projeto começa do zero: o código-fonte congelado de sistemas em
+produção é analisado e transformado em verdade documentada (modelos,
+contratos, regras de negócio, o golden master de UI) — toda afirmação
+carregando a evidência — e o que é descoberto entra no workflow novo como
+candidatos, não suposições. A leitura guiada permite a um humano validar
+o que a IA documentou. Veja [reverse.md](reverse.pt-br.md).
+
+## 6. Organização — governança empresarial
 
 Um **container** guarda múltiplos workspaces de produto, com o próprio
 golmet.yaml, um catálogo global de organizações
@@ -51,7 +60,7 @@ golmet.yaml, um catálogo global de organizações
 (org-repo | produtos-repo). A empresa governa as normas uma vez; todo
 produto herda. Veja [organization.md](organization.pt-br.md).
 
-## 6. Autogovernança determinística
+## 7. Autogovernança determinística
 
 Três validadores com contratos declarados: **`golmet validate`** (H1-H10 —
 o workspace contra o FORMAT), **`golmet doctor`** (S1-S5 + o estado do
@@ -62,7 +71,7 @@ estado de pack, diagramas Mermaid, encoding). Roda em CI, CLI e MCP. O lint
 carrega o estado todo; o agent corrige o que ele aponta. Veja
 [self-governing.md](self-governing.pt-br.md).
 
-## 7. Servidor MCP — 14 tools na sessão do agent
+## 8. Servidor MCP — 14 tools na sessão do agent
 
 O kit serve a si mesmo via MCP: `gm_validate`, `gm_doctor`, `gm_next`,
 `gm_status`, `gm_index`, `gm_eval`, `gm_eval_reports`, `gm_jev_classify`,
@@ -70,21 +79,21 @@ O kit serve a si mesmo via MCP: `gm_validate`, `gm_doctor`, `gm_next`,
 `gm_pack_publish`. A sessão do agent valida, roteia e corrige sem sair do
 chat. Referência: [../reference/tools.pt-br.md](../reference/tools.pt-br.md).
 
-## 8. Self-update com release verificada
+## 9. Self-update com release verificada
 
 O `golmet upgrade` busca a última release do GitHub, verifica **SHA-256**
 antes de tocar no binário, substitui com segurança no Windows (rollback
 `.old`) e re-materializa o conteúdo gerido. Binários multiplataforma +
 launcher npm. Veja [self-governing.md](self-governing.pt-br.md).
 
-## 9. Gates de qualidade desde o primeiro dia
+## 10. Gates de qualidade desde o primeiro dia
 
 O kit testa a si mesmo: **evals** (61+ fixtures pontuando skills
 deterministicamente), o **gate de neutralidade** (nenhuma identidade de
 org/cliente no conteúdo embarcado) e **golden byte-equality** (fonte ↔
 materialização). Toda release roda o lint contra o próprio kit no CI.
 
-## 10. Saída limpa
+## 11. Saída limpa
 
 O `golmet uninstall` remove toda a estrutura **camada por camada** com
 contagens reais — tudo selecionado por default exceto os packs (o seu
