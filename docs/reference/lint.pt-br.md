@@ -68,7 +68,7 @@ existe mais no disco. O kit removeu ou moveu o arquivo mas o inventário
 manteve a linha — o sinal clássico depois de um refactor ou de uma onda de
 uninstall.
 
-**Exemplo de finding:** `L4 rules/packs/techminds.md — entrada stale` →
+**Exemplo de finding:** `L4 rules/packs/<pack-id>.md — entrada stale` →
 fix: re-materializar (`golmet pack update`) ou remover a entrada stale.
 
 Testes: `TestL4ManifestStale`.

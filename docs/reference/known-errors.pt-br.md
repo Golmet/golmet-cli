@@ -1,4 +1,4 @@
-<p align="center"><a href="known-errors.md">English</a> | <a href="../../README.pt-br.md">Português (Brasil)</a></p>
+<p align="center"><a href="../../README.md">English</a> | <a href="../../README.pt-br.md">Português (Brasil)</a> | <a href="known-errors.md">English (pointer)</a></p>
 
 # KNOWN_ERRORS — erros conhecidos do workflow Golmet
 

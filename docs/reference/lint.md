@@ -69,7 +69,7 @@ A provenance entry in `.golmet/manifest.json` whose file no longer exists
 on disk. The kit removed or moved the file but the inventory kept the row —
 the classic signal after a refactor or an uninstall wave.
 
-**Example finding:** `L4 rules/packs/techminds.md — entrada stale` →
+**Example finding:** `L4 rules/packs/<pack-id>.md — entrada stale` →
 fix: re-materialize (`golmet pack update`) or drop the stale entry.
 
 Tests: `TestL4ManifestStale`.

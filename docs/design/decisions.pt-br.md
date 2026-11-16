@@ -1,4 +1,4 @@
-<p align="center"><a href="decisions.md">English</a> | <a href="../../README.pt-br.md">Português (Brasil)</a></p>
+<p align="center"><a href="../../README.md">English</a> | <a href="../../README.pt-br.md">Português (Brasil)</a> | <a href="decisions.md">English (pointer)</a></p>
 
 # DECISIONS — ADRs do Workflow Golmet
 
@@ -21,9 +21,9 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
   - **Subagent** (`@gm-intake-orchestrator`, `@gm-figma-orchestrator`, etc.): orquestrador de domínio, permissão escopada, invoca skills do seu domínio.
   - **Skill** (`gm-requirements`, `gm-data-model`, etc.): conhecimento de referência, executável isoladamente, sem estado.
 - **Alternativas avaliadas:**
-  - *Skills diretas do primary*: mais simples, mas sem permissões granulares e sem separação de responsabilidades.
-  - *Subagents sem skills*: subagents auto-contidos, mas com conhecimento duplicado e difícil de manter.
-  - *Microserviços*: overkill para o contexto (config local, não deploy).
+  - _Skills diretas do primary_: mais simples, mas sem permissões granulares e sem separação de responsabilidades.
+  - _Subagents sem skills_: subagents auto-contidos, mas com conhecimento duplicado e difícil de manter.
+  - _Microserviços_: overkill para o contexto (config local, não deploy).
 - **Consequências:**
   - ✅ Permissões granulares por subagent (menor privilégio)
   - ✅ Reuso de skills entre subagents (ex: `gm-task-spec` acessada por `@gm-quality-orchestrator` e `@gm-azure-orchestrator`)
@@ -41,9 +41,9 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
 - **Contexto:** O OpenCode permite nomes livres para skills e subagents. Precisávamos de uma convenção de nomenclatura que: (1) identificasse componentes Golmet instantaneamente, (2) evitasse conflitos com skills de outros workflows, (3) facilitasse buscas e referências.
 - **Decisão:** Todo skill e subagent Golmet usa o prefixo `Golmet-` (ex: `gm-requirements`, `@gm-intake-orchestrator`). Primary agents seguem a Tríade Golmet (`gm-req`, `gm-doc`, `gm-dev`). Skills externas podem manter seu prefixo próprio (skills de projeto da organização).
 - **Alternativas avaliadas:**
-  - *Prefixo `opencode-`*: genérico demais, não identifica o domínio.
-  - *Sem prefixo*: conflitos com skills de outros workflows.
-  - *Prefixo por domínio* (`gm-intake-`, `gm-azure-`): muitos prefixos, complexidade desnecessária.
+  - _Prefixo `opencode-`_: genérico demais, não identifica o domínio.
+  - _Sem prefixo_: conflitos com skills de outros workflows.
+  - _Prefixo por domínio_ (`gm-intake-`, `gm-azure-`): muitos prefixos, complexidade desnecessária.
 - **Consequências:**
   - ✅ Identificação instantânea de componentes Golmet
   - ✅ Sem conflitos com outros workflows
@@ -64,9 +64,9 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
   - `PEND-XXX` para pendências de esclarecimento (ex: `PEND-001`)
   - IDs removidos recebem tag `[removido]` mas mantêm o número (IMP-008)
 - **Alternativas avaliadas:**
-  - *IDs baseados em timestamp*: difíceis de lembrar, não human-readable.
-  - *IDs renumeráveis*: quebram referências em documentos downstream.
-  - *UUIDs*: overkill, difíceis de trabalhar manualmente.
+  - _IDs baseados em timestamp_: difíceis de lembrar, não human-readable.
+  - _IDs renumeráveis_: quebram referências em documentos downstream.
+  - _UUIDs_: overkill, difíceis de trabalhar manualmente.
 - **Consequências:**
   - ✅ Referências estáveis entre documentos
   - ✅ Merge incremental funciona sem conflitos de numeração
@@ -88,9 +88,9 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
   ```
   A validação é feita por `gm-validate`; a propagação por `@gm-cr-propagation-guard`.
 - **Alternativas avaliadas:**
-  *Documentos independentes*: sem rastreabilidade, drift inevitável.
-  *Banco de dados relacional*: overkill para markdown, perde versionamento Git.
-  *Wikis com links*: sem validação automática, depende de disciplina humana.
+  _Documentos independentes_: sem rastreabilidade, drift inevitável.
+  _Banco de dados relacional_: overkill para markdown, perde versionamento Git.
+  _Wikis com links_: sem validação automática, depende de disciplina humana.
 - **Consequências:**
   - ✅ Rastreabilidade completa (RN → artefato downstream)
   - ✅ Detecção automática de drift (PROPAGATION_STATUS.md)
@@ -111,9 +111,9 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
   - Usa `git pull --ff-only` (nunca merge automático)
   - Avisa para reiniciar o OpenCode (config não é hot-reloaded)
 - **Alternativas avaliadas e rejeitadas:**
-  - *Hook/plugin de auto-pull em session.created*: pull não vale para a sessão em início (config já carregada), pode mesclar/sobrescrever WIP silenciosamente, plugins não são versionados.
-  - *Cron job*: arriscado sobrescrever trabalho local, complexidade de implementação.
-  - *Watch file*: OpenCode não suporta hot-reload de config.
+  - _Hook/plugin de auto-pull em session.created_: pull não vale para a sessão em início (config já carregada), pode mesclar/sobrescrever WIP silenciosamente, plugins não são versionados.
+  - _Cron job_: arriscado sobrescrever trabalho local, complexidade de implementação.
+  - _Watch file_: OpenCode não suporta hot-reload de config.
 - **Consequências:**
   - ✅ Nunca destrói trabalho local (trava de working tree)
   - ✅ Controle total do operador (decide quando atualizar)
@@ -135,9 +135,9 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
   - Gate de confirmação (nunca commit cego)
   - Escopo de versionamento: `agents/Golmet-*.md`, `skills/Golmet-*/SKILL.md`, `ARCHITECTURE-*.md`, `WORKFLOW_IMPROVEMENTS.md`
 - **Alternativas avaliadas e rejeitadas:**
-  - *CI/CD (Azure Pipelines)*: complexo demais para config local, overhead de manutenção.
-  - *Sync automático*: arriscado (pode publicar trabalho incompleto).
-  - *Manual (git add/commit/push)*: sem gates de segurança, propenso a erros.
+  - _CI/CD (Azure Pipelines)_: complexo demais para config local, overhead de manutenção.
+  - _Sync automático_: arriscado (pode publicar trabalho incompleto).
+  - _Manual (git add/commit/push)_: sem gates de segurança, propenso a erros.
 - **Consequências:**
   - ✅ Publicação segura com gates de confirmação
   - ✅ Histórico limpo (commits atômicos)
@@ -155,9 +155,9 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
 - **Contexto:** O OpenCode não suporta delegação de permissão do primary para subagent no momento da invocação. Primary agents precisam coordenar subagents com permissões diferentes.
 - **Decisão:** Primary agents (Tríade Golmet: `gm-req`, `gm-doc`, `gm-dev`) têm permissão ampla (read/write/edit/bash/webfetch). Subagents têm permissão escopada (menor privilégio). O blast-radius do primary é aceito como risco controlado.
 - **Alternativas avaliadas:**
-  - *Permissão escopada no primary*: OpenCode não suporta delegação no momento da invocação.
-  - *Subagents auto-contidos*: perda de orquestração centralizada.
-  - *Multi-primary*: complexidade desnecessária para o contexto.
+  - _Permissão escopada no primary_: OpenCode não suporta delegação no momento da invocação.
+  - _Subagents auto-contidos_: perda de orquestração centralizada.
+  - _Multi-primary_: complexidade desnecessária para o contexto.
 - **Consequências:**
   - ✅ Orquestração flexível (primary coordena qualquer subagent)
   - ✅ Funciona com a API atual do OpenCode
@@ -176,8 +176,8 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
   - **Auto-contidos** (`@gm-next`, `@gm-progress`, `@gm-cr-propagation-guard`): lêem artefatos diretamente, não invocam skills, são lightweight.
   - **Orquestrados** (`@gm-intake-orchestrator`, `@gm-azure-orchestrator`, etc.): invocam skills do seu domínio, têm lógica de roteamento.
 - **Alternativas avaliadas:**
-  *Todos orquestrados*: overhead desnecessário para subagents simples.
-  *Todos auto-contidos*: perda de reuso de skills.
+  _Todos orquestrados_: overhead desnecessário para subagents simples.
+  _Todos auto-contidos_: perda de reuso de skills.
 - **Consequências:**
   - ✅ Eficiência (auto-contidos são rápidos)
   - ✅ Reuso de skills (orquestrados compartilham conhecimento)
@@ -198,9 +198,9 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
   - Formato padronizado: Data, Alvo, Problema, Causa raiz, Correção, Arquivos, Status
   - Entradas numeradas (IMP-001, IMP-002, ...)
 - **Alternativas avaliadas:**
-  *Changelog tradicional (CHANGELOG.md)*: mistura features com correções, difícil de filtrar.
-  *Git log*: não tem contexto de "por que", apenas "o que".
-  *Wiki*: sem estrutura, difícil de consultar programaticamente.
+  _Changelog tradicional (CHANGELOG.md)_: mistura features com correções, difícil de filtrar.
+  _Git log_: não tem contexto de "por que", apenas "o que".
+  _Wiki_: sem estrutura, difícil de consultar programaticamente.
 - **Consequências:**
   - ✅ Histórico completo e imutável
   - ✅ Formato padronizado (facilita consulta)
@@ -222,9 +222,9 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
   - `{repo}` é obrigatório (ex: `[Rastreabilidade.API]`)
   - Uma task = um repositório/escopo
 - **Alternativas avaliadas:**
-  *Título livre*: inconsistente, difícil de filtrar.
-  *Prefixo por área de negócio*: `[NF]-` é ilegível, não identifica o repo.
-  *Múltiplos repos na mesma task*: viola o princípio de granularidade.
+  _Título livre_: inconsistente, difícil de filtrar.
+  _Prefixo por área de negócio_: `[NF]-` é ilegível, não identifica o repo.
+  _Múltiplos repos na mesma task_: viola o princípio de granularidade.
 - **Consequências:**
   - ✅ Consistência visual e de filtragem
   - ✅ Rastreabilidade (repo identificado no título)
@@ -245,9 +245,9 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
   2. Operador revisa e confirma (via `question`)
   3. `@gm-azure-orchestrator` só então cria work items no AzDO
 - **Alternativas avaliadas:**
-  *Criação direta*: rápido, mas sem revisão (já gerou duplicatas).
-  *Revisão automática*: impossível sem contexto humano.
-  *Dupla confirmação*: overhead desnecessário.
+  _Criação direta_: rápido, mas sem revisão (já gerou duplicatas).
+  _Revisão automática_: impossível sem contexto humano.
+  _Dupla confirmação_: overhead desnecessário.
 - **Consequências:**
   - ✅ Elimina criação acidental de tasks duplicadas
   - ✅ Permite revisão humana antes da escrita
@@ -270,9 +270,9 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
   4. Match aproximado → perguntar ao operador
   5. Fail-open se MCP falhar (não bloqueia por erro de infraestrutura)
 - **Alternativas avaliadas:**
-  *Verificação manual*: propensa a erro, depende de memória.
-  *ID como chave*: títulos mudam, IDs são mais estáveis mas menos legíveis.
-  *Sem verificação*: aceitar duplicatas (inaceitável).
+  _Verificação manual_: propensa a erro, depende de memória.
+  _ID como chave_: títulos mudam, IDs são mais estáveis mas menos legíveis.
+  _Sem verificação_: aceitar duplicatas (inaceitável).
 - **Consequências:**
   - ✅ Elimina 100% das duplicações acidentais
   - ✅ Transparência (operador é informado)
@@ -290,9 +290,9 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
 - **Contexto:** Tabelas novas estavam sendo criadas sem as colunas de auditoria padrão, gerando inconsistência com o legado e dificultando migração.
 - **Decisão:** Toda tabela nova deve incluir as colunas de auditoria definidas na CONSTITUTION.md (ex: 6 colunas com prefixo `CTR_`). Nomes sempre em MAIÚSCULAS.
 - **Alternativas avaliadas:**
-  *Colunas camelCase* (`dataHora`, `createdAt`): inconsistente com o legado, quebra migração.
-  *Sem colunas de auditoria*: perda de rastreabilidade de quem criou/atualizou.
-  *Auditoria via trigger*: complexo, overhead de performance.
+  _Colunas camelCase_ (`dataHora`, `createdAt`): inconsistente com o legado, quebra migração.
+  _Sem colunas de auditoria_: perda de rastreabilidade de quem criou/atualizou.
+  _Auditoria via trigger_: complexo, overhead de performance.
 - **Consequências:**
   - ✅ Rastreabilidade de criação/atualização
   - ✅ Migração simplificada (legado usa o mesmo padrão)
@@ -312,9 +312,9 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
   - Parênteses apenas para siglas/expansões em português (ex: `## GTA (Guia de Trânsito Animal)`)
   - Conceitos só existentes em inglês → traduzir título e explicar na definição
 - **Alternativas avaliadas:**
-  *Bilíngue* (`## Vacinação (Vaccination)`): confuso para não-técnicos, polui o documento.
-  *Inglês puro*: inacessível para stakeholders de negócio.
-  *Português com glossário técnico separado*:冗余, difícil de manter.
+  _Bilíngue_ (`## Vacinação (Vaccination)`): confuso para não-técnicos, polui o documento.
+  _Inglês puro_: inacessível para stakeholders de negócio.
+  _Português com glossário técnico separado_:冗余, difícil de manter.
 - **Consequências:**
   - ✅ Acessível para stakeholders não-técnicos
   - ✅ Consistência com a convenção PT-BR do projeto
@@ -324,17 +324,17 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
 
 ---
 
-## ADR-015 — Page-Breaks em Documentos de Fábrica Externa
+## ADR-015 — Page-Breaks em Documentos
 
 - **Data:** 26/08/2026
 - **Decisor:** Operador
 - **Status:** Aceita
-- **Contexto:** Documentos de fábrica externa convertidos para PDF apareciam em texto corrido sem quebras de página.
+- **Contexto:** Documentos convertidos para PDF apareciam em texto corrido sem quebras de página.
 - **Decisão:** Inserir `<div style="page-break-before: always;"></div>` antes das seções principais nos templates de fábrica externa.
 - **Alternativas avaliadas:**
-  *CSS separado*: depende do conversor PDF, não é portável.
-  *Markdown puro*: não suporta page-breaks nativamente.
-  *Configuração do conversor*: varies por ferramenta, não é robusto.
+  _CSS separado_: depende do conversor PDF, não é portável.
+  _Markdown puro_: não suporta page-breaks nativamente.
+  _Configuração do conversor_: varies por ferramenta, não é robusto.
 - **Consequências:**
   - ✅ PDFs com layout profissional
   - ✅ Compatível com a maioria dos conversores PDF
@@ -355,9 +355,9 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
   - `<nome>.API-HML` (homologação)
   - `<nome>.API-PRO` (produção)
 - **Alternativas avaliadas:**
-  *Nome livre*: inconsistente, difícil de filtrar.
-  *Prefixo por projeto*: redundante (repo já identifica o projeto).
-  *Sem ambiente*: não permite configuração por ambiente.
+  _Nome livre_: inconsistente, difícil de filtrar.
+  _Prefixo por projeto_: redundante (repo já identifica o projeto).
+  _Sem ambiente_: não permite configuração por ambiente.
 - **Consequências:**
   - ✅ Consistência e filtragem fácil
   - ✅ Identificação clara de repo + ambiente
@@ -381,8 +381,8 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
   - `gm-doc`: focado em engenharia reversa de código multi-repo (IMP-013), inspeção técnica isolada via `@gm-reverse-orchestrator` com blindagem DDD e evidências, e materialização de `specs/`.
   - `gm-dev`: focado em implementação de código e testes verdes a partir de tasks aprovadas.
 - **Alternativas avaliadas:**
-  - *Manter gm-build com sub-modos*: sobrecarga cognitiva e mistura de posturas (descoberta vs arqueologia).
-  - *gm-retro em vez de gm-doc*: menos mnemônico, quebra a simetria da sigla Golmet.
+  - _Manter gm-build com sub-modos_: sobrecarga cognitiva e mistura de posturas (descoberta vs arqueologia).
+  - _gm-retro em vez de gm-doc_: menos mnemônico, quebra a simetria da sigla Golmet.
 - **Consequências:**
   - ✅ Clareza cognitiva absoluta para o operador (Tab entre R, D e D)
   - ✅ Isolamento de contexto no `gm-doc` via `@gm-reverse-orchestrator`
@@ -398,8 +398,8 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
 - **Contexto:** O ADR-017 registrou a Tríade (`gm-req`, `gm-doc`, `gm-dev`). O domínio DevOps (setup de VPS, pipeline de deploy, troubleshooting e observabilidade — IMP-101) cresceu sem primary próprio, e o registry/ARCHITECTURE já tratavam o workflow como "Quadri" enquanto README, glossário e footers diziam "Tríade" — documentação divergente do estado real. A mesma revisão (IMP-106) constatou duplicidade de numeração no ADR-014 (Glossário × Tríade); a entrada da Tríade foi renumerada para ADR-017.
 - **Decisão:** Formalizar a **Quadri Golmet**: `gm-req`, `gm-doc`, `gm-dev` e `gm-devops`. O `gm-devops` é primary com permissão ampla no mesmo padrão da Tríade original, delegando ao `@gm-devops-orchestrator`. ADRs anteriores que citam "Tríade" permanecem imutáveis como registro histórico; a partir desta entrada, a convenção é "Quadri Golmet".
 - **Alternativas avaliadas:**
-  - *Manter a Tríade e rotear DevOps pelo `gm-dev`*: mistura implementação com infraestrutura e perpetua a divergência documental.
-  - *Quinto primary para integrações (GitHub/Figma)*: domínios de integração são bem servidos por subagents orquestradores.
+  - _Manter a Tríade e rotear DevOps pelo `gm-dev`_: mistura implementação com infraestrutura e perpetua a divergência documental.
+  - _Quinto primary para integrações (GitHub/Figma)_: domínios de integração são bem servidos por subagents orquestradores.
 - **Consequências:**
   - ✅ Documentação alinhada ao estado real do registry (ACHADO da análise arquitetural IMP-106).
   - ✅ Onboarding e roteamento entre primaries passam a incluir a rota DevOps.
@@ -408,4 +408,4 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
 
 ---
 
-*Este arquivo é mantido pela Quadri Golmet (gm-req, gm-doc, gm-dev, gm-devops) e atualizado quando novas decisões arquiteturais são tomadas. Cada ADR é imutável após registro — decisões revistas recebem nova entrada com referência à anterior.*
+_Este arquivo é mantido pela Quadri Golmet (gm-req, gm-doc, gm-dev, gm-devops) e atualizado quando novas decisões arquiteturais são tomadas. Cada ADR é imutável após registro — decisões revistas recebem nova entrada com referência à anterior._

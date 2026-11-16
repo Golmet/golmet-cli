@@ -1,4 +1,4 @@
-<p align="center"><a href="workflow-improvements.md">English</a> | <a href="../../README.pt-br.md">Português (Brasil)</a></p>
+<p align="center"><a href="../../README.md">English</a> | <a href="../../README.pt-br.md">Português (Brasil)</a> | <a href="workflow-improvements.md">English (pointer)</a></p>
 
 # WORKFLOW_IMPROVEMENTS.md
 
