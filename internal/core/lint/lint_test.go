@@ -823,3 +823,74 @@ func TestL9PackRegistrySchema(t *testing.T) {
 		t.Errorf("files = %v, want [packs/techminds/..., profile/...]", files)
 	}
 }
+
+// ---- L11 - diagramas Mermaid ----
+
+// TestL11Mermaid cobre as heurísticas do check L11 via lintMermaidFile
+// direto (função package-private): válidos passam sem finding; os erros
+// comuns (tipo inválido, delimitadores desbalanceados, aspas ímpar, seta
+// órfã, subgraph/end, fence aberto) flagam; construções exóticas válidas
+// (sequenceDiagram ->>, C4*, comentários) NÃO flagam (anti-falso-positivo).
+func TestL11Mermaid(t *testing.T) {
+	findings := func(content string) []Finding {
+		t.Helper()
+		rep := &Report{Findings: []Finding{}, ByCheck: map[string]int{}}
+		lintMermaidFile(rep, "doc.md", content)
+		return rep.Findings
+	}
+	l11 := func(fs []Finding) []Finding {
+		var out []Finding
+		for _, f := range fs {
+			if f.Check == "L11" {
+				out = append(out, f)
+			}
+		}
+		return out
+	}
+
+	// válido: flowchart com labels fechados, aspas pares, subgraph/end
+	if got := l11(findings("```mermaid\nflowchart TD\n  %% comentario\n  A[Entrada] -->|texto| B(Fim)\n  subgraph s1 [grupo]\n    B --> C{Decisão}\n  end\n```\n")); len(got) != 0 {
+		t.Fatalf("flowchart válido flagado: %+v", got)
+	}
+	// tolerado: sequenceDiagram com ->> (pontas de sequence NÃO validadas) e C4
+	if got := l11(findings("```mermaid\nsequenceDiagram\n  Alice->>Bob: oi\n```\n")); len(got) != 0 {
+		t.Fatalf("sequenceDiagram válido flagado: %+v", got)
+	}
+	if got := l11(findings("```mermaid\nC4Context\n  Person(user, \"Usuário\")\n```\n")); len(got) != 0 {
+		t.Fatalf("C4 válido flagado: %+v", got)
+	}
+	// tipo inválido na 1ª linha
+	if got := l11(findings("```mermaid\nfoobar TD\n  A --> B\n```\n")); len(got) != 1 {
+		t.Fatalf("tipo inválido: want 1 finding, got %d: %+v", len(got), got)
+	}
+	// delimitadores desbalanceados (colchete aberto)
+	if got := l11(findings("```mermaid\nflowchart TD\n  A[Entrada --> B\n```\n")); len(got) != 1 {
+		t.Fatalf("colchete desbalanceado: want 1 finding, got %d: %+v", len(got), got)
+	}
+	// aspas ímpar
+	if got := l11(findings("```mermaid\nflowchart TD\n  A[\"texto --> B\n```\n")); len(got) != 1 {
+		t.Fatalf("aspas ímpar: want 1 finding, got %d: %+v", len(got), got)
+	}
+	// seta sem destino
+	if got := l11(findings("```mermaid\nflowchart TD\n  A -->\n```\n")); len(got) != 1 {
+		t.Fatalf("seta sem destino: want 1 finding, got %d: %+v", len(got), got)
+	}
+	// subgraph sem end
+	if got := l11(findings("```mermaid\nflowchart TD\n  subgraph s1\n    A --> B\n```\n")); len(got) != 1 {
+		t.Fatalf("subgraph sem end: want 1 finding, got %d: %+v", len(got), got)
+	}
+	// fence aberto sem fechamento
+	if got := l11(findings("```mermaid\nflowchart TD\n  A --> B\n")); len(got) != 1 {
+		t.Fatalf("fence aberto: want 1 finding, got %d: %+v", len(got), got)
+	}
+	// bloco vazio
+	if got := l11(findings("```mermaid\n```\n")); len(got) != 1 {
+		t.Fatalf("bloco vazio: want 1 finding, got %d: %+v", len(got), got)
+	}
+	// Line aponta a linha absoluta do problema
+	rep := &Report{Findings: []Finding{}, ByCheck: map[string]int{}}
+	lintMermaidFile(rep, "doc.md", "texto antes\n\n```mermaid\nflowchart TD\n  A -->\n```\n")
+	if len(rep.Findings) != 1 || rep.Findings[0].Line != 5 {
+		t.Fatalf("Line = %+v, want linha 5 (a seta órfã)", rep.Findings)
+	}
+}

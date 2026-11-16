@@ -385,10 +385,13 @@ func Run(opt Options) (*Report, error) {
 		lintL9(rep, configRoot)
 	}
 
-	// ---- L10 — estado interno dos state packs (M20) ----
+	// ---- L10 - estado interno dos state packs (M20) ----
 	if configRoot != "" {
 		lintL10PackState(rep, configRoot)
 	}
+
+	// ---- L11 - diagramas Mermaid (warning) ----
+	lintL11Mermaid(rep, ws, kitMDs, kitMode, configRoot)
 
 	// ---- resumo ----
 	for _, f := range rep.Findings {
@@ -1234,6 +1237,216 @@ func l9CheckRegistry(rep *Report, rel string, data []byte, fixRoot, fixParse str
 
 // registryIDs — ids do registry (workspace em kit mode; senão o embarcado —
 // o lint do config/packs valida fantasmas contra o registry do binário).
+// ---- L11 - diagramas Mermaid (warning) ----
+
+// mermaidTypes - tipos de diagrama conhecidos (primeira linha significativa
+// do bloco ```mermaid``` - lista declarada; fora dela = finding).
+var mermaidTypes = []string{
+	"flowchart", "graph", "sequenceDiagram", "erDiagram", "classDiagram",
+	"stateDiagram", "stateDiagram-v2", "gantt", "pie", "mindmap", "journey",
+	"timeline", "gitGraph", "quadrantChart", "requirementDiagram",
+	"sankey-beta", "xychart-beta",
+	"C4Context", "C4Container", "C4Component", "C4Dynamic", "C4Deployment",
+}
+
+// lintL11Mermaid valida blocos ```mermaid ... ``` dos *.md dos alvos com
+// heurística determinística SEM parser/Node (o kit é standalone): tipo de
+// diagrama válido na 1ª linha, delimitadores [](){} balanceados por linha
+// (fora de aspas), aspas em pares, seta com origem E destino, subgraph/end
+// pareados, fence fechado. Severidade warning: diagrama quebrado não
+// bloqueia fluxo - é qualidade de render (o mostrador exibe o código cru).
+// Anti-falso-positivo (política da casa): a heurística pega os ERROS
+// COMUNS - construção exótica válida passa (ex.: sequenceDiagram ->>
+// não tem pontas validadas); falso-positivo é pior que falso-negativo.
+// Limitação documentada no FORMAT §9.1.
+func lintL11Mermaid(rep *Report, ws string, kitMDs []string, kitMode bool, configRoot string) {
+	type lintMD struct {
+		rel, abs string
+	}
+	var targets []lintMD
+	add := func(rel, abs string) { targets = append(targets, lintMD{rel, abs}) }
+	if kitMode {
+		for _, rel := range kitMDs {
+			add(rel, filepath.Join(ws, filepath.FromSlash(rel)))
+		}
+	}
+	if configRoot != "" {
+		add("AGENTS.md", filepath.Join(configRoot, "AGENTS.md"))
+		for _, p := range mdFilesUnder(configRoot, "profile") {
+			add(p, filepath.Join(configRoot, filepath.FromSlash(p)))
+		}
+		if packsRoot := filepath.Join(configRoot, "packs"); dirExists(packsRoot) {
+			if entries, err := os.ReadDir(packsRoot); err == nil {
+				for _, e := range entries {
+					if !e.IsDir() {
+						continue
+					}
+					for _, p := range mdFilesUnder(packsRoot, e.Name()) {
+						add(p, filepath.Join(packsRoot, filepath.FromSlash(p)))
+					}
+				}
+			}
+		}
+	}
+	if !kitMode {
+		// workspace-produto: artefatos gerados (specs/ etc.) carregam diagramas
+		_ = filepath.WalkDir(ws, func(p string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return nil
+			}
+			if d.IsDir() {
+				switch d.Name() {
+				case ".git", "node_modules", ".golmet":
+					return fs.SkipDir
+				}
+				return nil
+			}
+			if strings.HasSuffix(p, ".md") {
+				rel, _ := filepath.Rel(ws, p)
+				add(filepath.ToSlash(rel), p)
+			}
+			return nil
+		})
+	}
+	for _, t := range targets {
+		data, rerr := os.ReadFile(t.abs)
+		if rerr != nil {
+			continue
+		}
+		lintMermaidFile(rep, t.rel, string(data))
+	}
+}
+
+// lintMermaidFile extrai os blocos ```mermaid ... ``` do conteúdo e valida
+// cada um (Line dos findings = absoluta no arquivo, 1-based).
+func lintMermaidFile(rep *Report, rel string, content string) {
+	lines := strings.Split(content, "\n")
+	for i := 0; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) != "```mermaid" {
+			continue
+		}
+		startLine := i + 1
+		var body []string
+		closed := false
+		for j := i + 1; j < len(lines); j++ {
+			if strings.TrimSpace(lines[j]) == "```" {
+				closed = true
+				i = j
+				break
+			}
+			body = append(body, lines[j])
+		}
+		if !closed {
+			rep.Findings = append(rep.Findings, Finding{
+				Check: "L11", Severity: "warning", File: rel, Line: startLine,
+				Description: "bloco ```mermaid``` aberto sem fechamento (fence de fechamento ausente)",
+				Fix:         "feche o bloco com ``` - o render exibe o código cru quando o Mermaid está quebrado",
+			})
+			return
+		}
+		lintMermaidBlock(rep, rel, startLine, body)
+	}
+}
+
+// lintMermaidBlock aplica as heurísticas a um bloco (linhas do corpo, sem
+// os fences). Findings apontam a linha absoluta do problema.
+func lintMermaidBlock(rep *Report, rel string, startLine int, body []string) {
+	find := func(line int, desc string) {
+		rep.Findings = append(rep.Findings, Finding{
+			Check: "L11", Severity: "warning", File: rel, Line: line,
+			Description: desc,
+			Fix:         "corrija a sintaxe do diagrama - o render exibe o código cru quando o Mermaid está quebrado (tipo válido na 1ª linha, delimitadores balanceados, setas com origem e destino, subgraph/end pareados)",
+		})
+	}
+	if len(body) == 0 {
+		find(startLine, "bloco ```mermaid``` vazio")
+		return
+	}
+	// (1) tipo de diagrama válido na primeira linha significativa
+	first := ""
+	for _, l := range body {
+		t := strings.TrimSpace(l)
+		if t == "" || strings.HasPrefix(t, "%%") {
+			continue
+		}
+		first = t
+		break
+	}
+	firstWord := strings.Fields(first)[0]
+	if !containsStr(mermaidTypes, firstWord) {
+		find(startLine, "primeira linha do bloco mermaid não inicia com um tipo de diagrama conhecido: \""+
+			firstWord+"\" (esperado ex.: flowchart, sequenceDiagram, erDiagram, stateDiagram, gantt, pie, mindmap, C4*)")
+		return // sem tipo válido, as demais heurísticas são ruído
+	}
+	// (2..5) corpo: aspas, delimitadores, setas, subgraph/end
+	labelRe := regexp.MustCompile(`\|[^|\n]*\|`)
+	subgraphs, ends := 0, 0
+	for j, raw := range body {
+		line := startLine + 1 + j
+		t := strings.TrimSpace(raw)
+		if t == "" || strings.HasPrefix(t, "%%") {
+			continue
+		}
+		if strings.HasPrefix(t, "subgraph") {
+			subgraphs++
+		}
+		if t == "end" {
+			ends++
+		}
+		// aspas em pares (número par de " fora de comentário)
+		if n := strings.Count(t, `"`); n%2 == 1 {
+			find(line, "aspas desbalanceadas na linha do diagrama ("+fmt.Sprint(n)+" aspas)")
+			continue
+		}
+		// delimitadores balanceados por linha (conteúdo dentro de aspas
+		// removido - pode conter [ ] ( ) legítimos em texto)
+		noStr := regexp.MustCompile(`"[^"]*"`).ReplaceAllString(t, "")
+		var dangle []string
+		for _, pair := range []struct{ open, close, name string }{
+			{"[", "]", "colchetes"}, {"(", ")", "parênteses"}, {"{", "}", "chaves"},
+		} {
+			if strings.Count(noStr, pair.open) != strings.Count(noStr, pair.close) {
+				dangle = append(dangle, pair.name)
+			}
+		}
+		if len(dangle) > 0 {
+			find(line, "delimitadores desbalanceados na linha do diagrama: "+
+				strings.Join(dangle, ", ")+" abertos sem fechamento (ou vice-versa)")
+			continue
+		}
+		// seta com origem E destino (labels |...| removidos; sequenceDiagram
+		// ->> e construções exóticas NÃO validadas - anti-falso-positivo)
+		for _, arrow := range []string{"-->", "-.->", "==>"} {
+			idx := strings.Index(t, arrow)
+			if idx < 0 {
+				continue
+			}
+			clean := labelRe.ReplaceAllString(t, "")
+			idx2 := strings.Index(clean, arrow)
+			if idx2 < 0 {
+				continue // a seta estava dentro de um label
+			}
+			before := strings.TrimSpace(clean[:idx2])
+			after := ""
+			for _, a := range []string{"-->", "-.->", "==>"} {
+				if li := strings.LastIndex(clean, a); li >= 0 {
+					after = strings.TrimSpace(clean[li+len(a):])
+					break
+				}
+			}
+			if before == "" || after == "" {
+				find(line, "seta sem origem ou sem destino no diagrama (antes: \""+
+					before+"\" / depois: \""+after+"\")")
+			}
+			break // uma validação de seta por linha basta
+		}
+	}
+	if subgraphs != ends {
+		find(startLine+len(body), "subgraph/end desbalanceados no diagrama ("+
+			fmt.Sprint(subgraphs)+" subgraph / "+fmt.Sprint(ends)+" end)")
+	}
+}
+
 func registryIDs(ws string, kitMode bool) []string {
 	var data []byte
 	var err error
