@@ -155,10 +155,10 @@ func itoaTest(n int) string {
 // A versão DELEGA ao binário (o -v/--version passa direto).
 func TestNPMLauncherDelegatesVersion(t *testing.T) {
 	dir := t.TempDir()
-	stub := stubExe(t, dir, "golmet 0.3.0 (stub)", 0)
+	stub := stubExe(t, dir, "golmet 1.0.0 (stub)", 0)
 	launcher := npmSandbox(t, stub)
 	out, code := runLauncher(t, launcher, "--version")
-	if code != 0 || !strings.Contains(out, "golmet 0.3.0 (stub)") {
+	if code != 0 || !strings.Contains(out, "golmet 1.0.0 (stub)") {
 		t.Errorf("versão delegada = exit %d out %q", code, out)
 	}
 }
@@ -241,8 +241,8 @@ func TestNPMLauncherPlatformResolution(t *testing.T) {
 
 // ---- M31 — o shape dos pacotes npm ----
 
-// O principal: version 0.3.0, bin golmet → ./bin/golmet.js, os 5
-// optionalDependencies @ 0.3.0, engines node >=14, files com bin/.
+// O principal: version 1.0.0, bin golmet → ./bin/golmet.js, os 5
+// optionalDependencies @ 1.0.0, engines node >=14, files com bin/.
 func TestNPMPackageShape(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join("..", "..", "package.json"))
 	if err != nil {
@@ -261,7 +261,7 @@ func TestNPMPackageShape(t *testing.T) {
 	if err := json.Unmarshal(data, &pkg); err != nil {
 		t.Fatalf("package.json ilegível: %v", err)
 	}
-	if pkg.Name != "golmet-cli" || pkg.Version != "0.3.0" {
+	if pkg.Name != "golmet-cli" || pkg.Version != "1.0.0" {
 		t.Errorf("name/version = %s/%s", pkg.Name, pkg.Version)
 	}
 	if pkg.Bin["golmet"] != "./bin/golmet.js" {
@@ -280,11 +280,11 @@ func TestNPMPackageShape(t *testing.T) {
 		t.Errorf("files sem bin/: %v", pkg.Files)
 	}
 	want := map[string]string{
-		"@golmet/cli-win32-x64":    "0.3.0",
-		"@golmet/cli-linux-x64":    "0.3.0",
-		"@golmet/cli-linux-arm64":  "0.3.0",
-		"@golmet/cli-darwin-x64":   "0.3.0",
-		"@golmet/cli-darwin-arm64": "0.3.0",
+		"@golmet/cli-win32-x64":    "1.0.0",
+		"@golmet/cli-linux-x64":    "1.0.0",
+		"@golmet/cli-linux-arm64":  "1.0.0",
+		"@golmet/cli-darwin-x64":   "1.0.0",
+		"@golmet/cli-darwin-arm64": "1.0.0",
 	}
 	if len(pkg.OptionalDeps) != len(want) {
 		t.Fatalf("optionalDependencies = %d, want 5", len(pkg.OptionalDeps))
@@ -321,7 +321,7 @@ func TestNPMPlatformPackagesShape(t *testing.T) {
 		if err := json.Unmarshal(data, &pkg); err != nil {
 			t.Fatalf("package.json de %s ilegível: %v", c.dir, err)
 		}
-		if pkg.Name != c.name || pkg.Version != "0.3.0" {
+		if pkg.Name != c.name || pkg.Version != "1.0.0" {
 			t.Errorf("%s: name/version = %s/%s", c.dir, pkg.Name, pkg.Version)
 		}
 		if len(pkg.OS) != 1 || pkg.OS[0] != c.os || len(pkg.CPU) != 1 || pkg.CPU[0] != c.cpu {

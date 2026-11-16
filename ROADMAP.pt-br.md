@@ -7,7 +7,7 @@ onda (`M*`) documenta o que saiu e por quê. A escada de marcos:
 
 | Marco | Escopo | Estado |
 | --- | --- | --- |
-| **F1** | O CLI completo, o servidor MCP, o contrato FORMAT v1 e as camadas de conteúdo L0-L3 | entregue na branch `golmet-kit-v0` (trem de release v0.3.0) |
+| **F1** | O CLI completo, o servidor MCP, o contrato FORMAT v1 e as camadas de conteúdo L0-L3 | entregue na branch `release/v1.0.0` (trem de release v0.3.0) |
 | **F2** | O site de documentação (a árvore `docs/` renderizada — o repo é a fonte) e um case study de dogfooding | planejado |
 | **F3** | O fluxo de contribuição e as ferramentas de migração de workspace | planejado |
 

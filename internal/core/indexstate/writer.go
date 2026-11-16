@@ -17,7 +17,7 @@ import (
 
 // KitVersion é a versão do subset BASE gravada no .golmet/manifest.json
 // pelo update (bloco 3) e usada como versão do servidor MCP.
-const KitVersion = "0.3.0"
+const KitVersion = "1.0.0"
 
 // SectionHash é a normalização canônica de hash de seção (§8): SHA-256
 // hex das linhas ORIGINAIS da seção (RawLines) unidas por "\n" — a MESMA

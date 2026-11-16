@@ -8,10 +8,10 @@ O GOLMET (`golmet-cli`) materializa workflows e specs de fontes externas — cor
 
 | Versão | Suportada |
 | ------- | --------- |
-| 0.3.x   | ✓ Sim    |
-| < 0.3   | ✗ Não     |
+| 1.0.x   | ✓ Sim    |
+| < 1.0   | ✗ Não     |
 
-Apenas a release 0.3.x mais recente recebe correções de segurança. Se você está em uma release antiga, atualize primeiro — não faremos backport de patches para versões não suportadas.
+Apenas a release 1.0.x mais recente recebe correções de segurança. Se você está em uma release antiga, atualize primeiro — não faremos backport de patches para versões não suportadas.
 
 ## Reportando uma Vulnerabilidade
 

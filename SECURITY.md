@@ -8,10 +8,10 @@ GOLMET (`golmet-cli`) materializes workflows and specs from external sources —
 
 | Version | Supported |
 | ------- | --------- |
-| 0.3.x   | ✅ Yes    |
-| < 0.3   | ❌ No     |
+| 1.0.x   | ✅ Yes    |
+| < 1.0   | ❌ No     |
 
-Only the latest 0.3.x release receives security fixes. If you are on an older release, upgrade first — we will not backport patches to unsupported versions.
+Only the latest 1.0.x release receives security fixes. If you are on an older release, upgrade first — we will not backport patches to unsupported versions.
 
 ## Reporting a Vulnerability
 
