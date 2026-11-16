@@ -542,9 +542,19 @@ func (w *installWizard) pickMCPs(installed map[string]string) ([]string, error) 
 func (w *installWizard) confirm(req install.Options) (bool, error) {
 	fmt.Fprintf(w.out, "\nResumo:\n\n  engine:   %s\n  perfil:   %s\n  mcps:     %s\n  workspace (doctor final): %s\n\n",
 		req.EngineID, req.Profile, strings.Join(req.MCPs, ", "), req.Workspace)
-	answer, perr := w.prompt("Confirmar e executar? (s/n): ")
+	// o frame ◆ isolado do resumo (o padrão visual do install — M28):
+	// ENTER confirma, n/esc cancelam (o install não tem passo de edição)
+	fmt.Fprintf(w.out, "%s◆ Confirmar e instalar?%s %s(ENTER confirma · n/esc cancelam)%s\n\n",
+		wizardANSI("\x1b[1m"), wizardANSI("\x1b[0m"), wizardANSI("\x1b[90m"), wizardANSI("\x1b[0m"))
+	answer, perr := w.prompt("> ")
 	if perr != nil {
 		return false, perr
 	}
-	return strings.EqualFold(strings.TrimSpace(answer), "s"), nil
+	switch {
+	case answer == "":
+		return true, nil // ENTER confirma (o default)
+	case strings.EqualFold(answer, "s"):
+		return true, nil // alias do ENTER (compat)
+	}
+	return false, nil // n (ou qualquer outra coisa) cancela
 }

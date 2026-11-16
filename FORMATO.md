@@ -105,6 +105,17 @@ console — o back acontece pelo `n` do confirm (o valor anterior é
 mantido com ENTER). O peek pós-ESC do menu (runPickTTY) usa a mesma
 janela curta do editor — o ESC sozinho responde imediatamente.
 
+**O confirm-frame (M28 — o padrão visual do install, em todos os wizards
+de linha):** o frame ◆ fica **isolado embaixo do resumo** (linha em
+branco entre eles — nunca colado) com o hint entre parênteses, e
+**re-renderiza a cada re-pergunta**. O input do confirm do init:
+**ENTER confirma e cria** (o default — a ação principal sem letra);
+**`n`/← voltam a editar** (M27); **esc/ctrl-c cancelam tudo**; **`s`
+confirma como ALIAS** (compat com quem digita s); qualquer outra resposta
+= re-pergunta. install: ENTER confirma, n/esc cancelam (não há passo de
+edição); uninstall: a remoção é destrutiva — o default permanece NÃO
+(`s` confirma; ENTER/n/esc cancelam, declarado no hint).
+
 **Padrão único de cancelamento dos wizards do CLI (M24/25/26 — init,install, uninstall; FORMATO §2/§9):** o modo RAW (o padrão quando há TTY+VT
 — o wizard do init INTEIRO é raw: menus e campos) entrega **ESC de
 teclado e CTRL+C como bytes** — cancelam em QUALQUER passo, o ESC nunca

@@ -177,7 +177,11 @@ func confirmUninstall(out interface{ Write([]byte) (int, error) }, plan *uninsta
 			fmt.Fprintf(out, "       manualmente no GitHub se quiser remover de vez.\n")
 		}
 	}
-	fmt.Fprintf(out, "\nTotal: %d alvo(s). Confirma a remoção? (s/N): ", total)
+	fmt.Fprintf(out, "\nTotal: %d alvo(s)\n\n", total)
+	// o frame ◆ isolado do resumo (o padrão visual do install — M28):
+	// a remoção é DESTRUTIVA — o default permanece NÃO (ENTER NÃO confirma)
+	fmt.Fprintf(out, "%s◆ Confirmar a remoção?%s %s(s confirma · ENTER/n/esc cancelam)%s\n\n",
+		wizardANSI("\x1b[1m"), wizardANSI("\x1b[0m"), wizardANSI("\x1b[90m"), wizardANSI("\x1b[0m"))
 	answer, cancelled, serr := readWizardLine(bufio.NewReader(os.Stdin), isTTY(),
 		"use --only <camadas> --yes para modo não-interativo")
 	if cancelled || serr != nil {

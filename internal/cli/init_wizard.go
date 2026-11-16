@@ -148,19 +148,26 @@ func (w *initWizard) askStepText(question, initial string, required bool) (strin
 	}
 }
 
-// confirmStep — o confirm NAVEGÁVEL (M27): s cria; n e ← voltam a editar
-// (o valor anterior fica pré-ecado no passo anterior); esc/ctrl-c
-// cancelam TUDO (o invariante: só esc/ctrl-c cancelam — nada é criado
-// antes da confirmação final). true = confirmado; false+nil = voltar a
-// editar; err = cancelamento/script.
+// confirmStep — o confirm NAVEGÁVEL (M27) com o desenho VISUAL do
+// install (M28): o frame ◆ fica ISOLADO embaixo do resumo (linha em
+// branco entre eles — nunca colado). O input: ENTER confirma e cria (o
+// default — a ação principal sem letra); n/← voltam a editar (M27 — o
+// valor anterior fica pré-ecado no passo anterior); esc/ctrl-c cancelam
+// TUDO (o invariante: só esc/ctrl-c cancelam); s confirma como ALIAS
+// (compat com quem digita s — documentado); qualquer outra resposta =
+// re-pergunta. true = confirmado; false+nil = voltar a editar; err =
+// cancelamento/script.
 func (w *initWizard) confirmStep(summary string, yes bool) (bool, error) {
-	fmt.Fprintf(w.out, "\nResumo:\n\n%s\n", summary)
+	fmt.Fprintf(w.out, "\nResumo:\n\n%s\n\n", summary)
 	if yes {
 		fmt.Fprintln(w.out, "--yes: confirmação pulada")
 		return true, nil
 	}
 	for {
-		answer, err := w.prompt("Confirmar e criar? (s cria · n volta a editar · esc cancela): ", "")
+		// o frame ◆ re-renderiza a cada re-pergunta (o padrão do install)
+		fmt.Fprintf(w.out, "%s◆ Confirmar e criar?%s %s(ENTER confirma · n volta a editar · esc cancela)%s\n\n",
+			wizardANSI("\x1b[1m"), wizardANSI("\x1b[0m"), wizardANSI("\x1b[90m"), wizardANSI("\x1b[0m"))
+		answer, err := w.prompt("> ", "")
 		if err != nil {
 			if errors.Is(err, errWizardBack) {
 				return false, nil // ← = voltar a editar
@@ -168,12 +175,14 @@ func (w *initWizard) confirmStep(summary string, yes bool) (bool, error) {
 			return false, err
 		}
 		switch {
+		case answer == "":
+			return true, nil // ENTER confirma (o default)
 		case strings.EqualFold(answer, "s"):
-			return true, nil
+			return true, nil // alias do ENTER (compat)
 		case strings.EqualFold(answer, "n"):
 			return false, nil
 		default:
-			fmt.Fprintln(w.out, "  responda s (criar) ou n (voltar a editar)")
+			fmt.Fprintln(w.out, "  resposta inválida — ENTER confirma · n volta a editar · esc cancela")
 		}
 	}
 }
