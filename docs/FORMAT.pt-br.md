@@ -1,3 +1,5 @@
+<p align="center"><a href="FORMAT.md">English</a> | <a href="../../README.pt-br.md">Português (Brasil)</a></p>
+
 # FORMAT v1 — Especificação Normativa do Workspace GOLMET
 
 > **Versão:** 1 (draft F1) · **Consumidores:** kit GOLMET (valida) · engines agênticos (executam transições) · ingestores externos futuros.

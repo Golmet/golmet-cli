@@ -1,3 +1,5 @@
+<p align="center">English | <a href="ROADMAP.pt-br.md">Português (Brasil)</a></p>
+
 # Roadmap
 
 The milestone plan and its state live in [CHANGELOG.md](CHANGELOG.md) — each
@@ -9,5 +11,4 @@ wave (`M*`) documents what shipped and why. The milestone ladder:
 | **F2** | The documentation site (the `docs/` tree rendered — the repo is the source) and a dogfooding case study | planned |
 | **F3** | The contribute flow and workspace migration tooling | planned |
 
-The normative contract is [docs/FORMAT.md](docs/FORMAT.md); the architecture record is
-[docs/ARQUITETURA_GOLMET_V2.md](docs/ARQUITETURA_GOLMET_V2.md).
+The normative contract is [docs/FORMAT.md](docs/FORMAT.md).
