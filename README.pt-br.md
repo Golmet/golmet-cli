@@ -8,6 +8,12 @@
 
 <h1 align="center">golmet-cli</h1>
 
+<p align="center">
+  <a href="https://www.npmjs.com/package/golmet-cli"><img src="https://img.shields.io/npm/v/golmet-cli.svg" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/golmet-cli"><img src="https://img.shields.io/npm/dm/golmet-cli.svg" alt="npm downloads"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License"></a>
+</p>
+
 ## O problema que o Golmet resolve
 
 Seus requisitos ficam num documento que ninguém relê. Os specs viram um diagrama
