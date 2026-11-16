@@ -91,8 +91,21 @@ não é uma Organização declarada — rode golmet init --org nela, ou informe
 outra"; golmet.yaml sem `container: true` → "essa pasta é um workspace-
 produto, não uma Organização"; `esc` cancela o wizard inteiro.
 
-**Padrão único de cancelamento dos wizards do CLI (M24/25/26 — init,
-install, uninstall; FORMATO §2/§9):** o modo RAW (o padrão quando há TTY+VT
+**Navegação multi-step do wizard do init (M27):** o wizard navega —
+**enter avança; ← no texto VAZIO volta ao passo anterior** (o valor
+anterior do passo fica **pré-ecado e editável** — o raw editor recebe o
+initial; com conteúdo a seta é ignorada, o backspace apaga); **`n` no
+confirm volta a editar** (não cancela — ← idem); o **primeiro passo** (a
+escolha) não tem anterior — ← nele é ignorado; **esc/ctrl-c cancelam
+tudo**; nada é criado antes da confirmação final (o invariante se
+mantém); a pré-checagem de duplicado do catálogo acontece antes de
+avançar e voltar não a re-dispara até o passo ser alcançado de novo. A
+navegação é de TTY (raw); no fallback cooked o ← não é entregável pelo
+console — o back acontece pelo `n` do confirm (o valor anterior é
+mantido com ENTER). O peek pós-ESC do menu (runPickTTY) usa a mesma
+janela curta do editor — o ESC sozinho responde imediatamente.
+
+**Padrão único de cancelamento dos wizards do CLI (M24/25/26 — init,install, uninstall; FORMATO §2/§9):** o modo RAW (o padrão quando há TTY+VT
 — o wizard do init INTEIRO é raw: menus e campos) entrega **ESC de
 teclado e CTRL+C como bytes** — cancelam em QUALQUER passo, o ESC nunca
 vaza como caractere no input (o console captura o ESC em modo COOKED — é

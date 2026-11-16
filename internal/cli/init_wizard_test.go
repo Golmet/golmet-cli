@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bufio"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -222,17 +223,35 @@ func TestInitWizardFreeRootFlow(t *testing.T) {
 	}
 }
 
-// Confirmação negativa: NADA é criado (o wizard devolve nil).
+// Cancelamento no confirm: só esc/ctrl-c cancelam TUDO — o `n` volta a
+// editar (M27; o cancelamento por n acabou).
 func TestInitWizardCancelled(t *testing.T) {
 	cwd := t.TempDir()
 	isolatedHome(t)
-	w, out := newTestWizard(cwd, "1\nMinhaOrg\nn\n")
+	w, out := newTestWizard(cwd, "1\nMinhaOrg\nesc\n")
 	opt, _, _, err := runInitWizard(w, false, false)
-	if err != nil || opt != nil {
+	if !errors.Is(err, errWizardCancelled) || opt != nil {
 		t.Fatalf("cancelamento = opt %v, err %v\n%s", opt, err, out)
 	}
 	if _, serr := os.Stat(filepath.Join(cwd, "golmet.yaml")); serr == nil {
 		t.Errorf("cancelado não deveria criar nada")
+	}
+}
+
+// M27 — o confirm navegável: `n` VOLTA a editar (não cancela) com o
+// valor anterior pré-ecado (o ENTER mantém no cooked); o s cria depois.
+func TestInitWizardConfirmNGoesBackToEdit(t *testing.T) {
+	base := t.TempDir()
+	isolatedHome(t)
+	// opção 1 → nome MinhaOrg → confirm n (volta ao nome) → ENTER mantém
+	// o pré-ecado → confirm s → criado
+	w, out := newTestWizard(base, "1\nMinhaOrg\nn\n\ns\n")
+	opt, _, name, err := runInitWizard(w, false, false)
+	if err != nil {
+		t.Fatalf("n deveria voltar a editar: %v\n%s", err, out)
+	}
+	if opt == nil || !opt.Org || name != "MinhaOrg" {
+		t.Errorf("opções/name = %+v/%s", opt, name)
 	}
 }
 

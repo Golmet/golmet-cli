@@ -80,12 +80,14 @@ var initChoiceOptions = []pickItem{
 		"Workspace-produto raiz livre é um projeto independente, sem Organização — para trabalho isolado ou repositório próprio."},
 }
 
-func (w *initWizard) prompt(question string) (string, error) {
+func (w *initWizard) prompt(question, initial string) (string, error) {
 	if w.raw {
 		// editor raw (o padrão da M26 revisada): em cooked o console do
 		// Windows captura o ESC — em raw mode o editor entrega ESC/CTRL+C
-		// como cancelamento e o texto com UTF-8/backspace/setas-ignoradas
-		return rawEditLine(question)
+		// como cancelamento, ← no texto vazio como back (o sentinel
+		// errWizardBack) e o texto com UTF-8/backspace/setas-ignoradas; o
+		// initial vem PRÉ-ECADO e editável (a navegação preserva o valor)
+		return rawEditLine(question, initial)
 	}
 	fmt.Fprint(w.out, question)
 	line, cancelled, serr := readWizardLine(w.in, w.tty,
@@ -102,7 +104,7 @@ func (w *initWizard) prompt(question string) (string, error) {
 // askNumber pergunta um número com default (ENTER vazio = default).
 func (w *initWizard) askNumber(question string, min, max, def int) (int, error) {
 	for {
-		answer, err := w.prompt(question)
+		answer, err := w.prompt(question, "")
 		if err != nil {
 			return 0, err
 		}
@@ -117,33 +119,63 @@ func (w *initWizard) askNumber(question string, min, max, def int) (int, error) 
 	}
 }
 
-// askRequired pergunta até receber algo não-vazio (EOF propaga).
-func (w *initWizard) askRequired(question string) (string, error) {
+// askStepText — UM campo de texto do wizard com navegação (M27): o valor
+// anterior vem PRÉ-ECADO e editável (raw editor com initial; no cooked o
+// ENTER mantém o anterior — o console não entrega ←). ← no texto vazio
+// volta ao passo anterior (errWizardBack); esc/ctrl-c cancelam TUDO;
+// required = ENTER vazio (sem anterior) re-pergunta.
+func (w *initWizard) askStepText(question, initial string, required bool) (string, bool, error) {
 	for {
-		answer, err := w.prompt(question)
+		line, err := w.prompt(question, initial)
 		if err != nil {
-			return "", err
+			if errors.Is(err, errWizardBack) {
+				return "", true, nil // ← no texto vazio — volta ao passo anterior
+			}
+			return "", false, err // errWizardCancelled ou raw indisponível
 		}
-		if answer != "" {
-			return answer, nil
+		if line == "" {
+			if !w.raw && initial != "" {
+				return initial, false, nil // cooked: ENTER mantém o anterior
+			}
+			if required {
+				fmt.Fprintln(w.out, "  obrigatório — informe um valor (ENTER não cria nada)")
+				initial = "" // o valor anterior foi limpo de propósito
+				continue
+			}
+			return line, false, nil // vazio permitido (= usar o dir atual)
 		}
-		fmt.Fprintln(w.out, "  obrigatório — informe um valor (ENTER não cria nada)")
+		return line, false, nil
 	}
 }
 
-// confirm exibe o resumo e pergunta s/n. yes=true pula (o mesmo contrato
-// do --yes dos wizards existentes). false = cancelado.
-func (w *initWizard) confirm(summary string, yes bool) (bool, error) {
+// confirmStep — o confirm NAVEGÁVEL (M27): s cria; n e ← voltam a editar
+// (o valor anterior fica pré-ecado no passo anterior); esc/ctrl-c
+// cancelam TUDO (o invariante: só esc/ctrl-c cancelam — nada é criado
+// antes da confirmação final). true = confirmado; false+nil = voltar a
+// editar; err = cancelamento/script.
+func (w *initWizard) confirmStep(summary string, yes bool) (bool, error) {
 	fmt.Fprintf(w.out, "\nResumo:\n\n%s\n", summary)
 	if yes {
 		fmt.Fprintln(w.out, "--yes: confirmação pulada")
 		return true, nil
 	}
-	answer, err := w.prompt("Confirmar e criar? (s/n): ")
-	if err != nil {
-		return false, err
+	for {
+		answer, err := w.prompt("Confirmar e criar? (s cria · n volta a editar · esc cancela): ", "")
+		if err != nil {
+			if errors.Is(err, errWizardBack) {
+				return false, nil // ← = voltar a editar
+			}
+			return false, err
+		}
+		switch {
+		case strings.EqualFold(answer, "s"):
+			return true, nil
+		case strings.EqualFold(answer, "n"):
+			return false, nil
+		default:
+			fmt.Fprintln(w.out, "  responda s (criar) ou n (voltar a editar)")
+		}
 	}
-	return strings.EqualFold(answer, "s"), nil
 }
 
 // suggestedOrg detecta a sugestão de Organização existente: o dir PAI do
@@ -225,16 +257,19 @@ func runPickTTY(header, hint string, items []pickItem, note string) (int, bool, 
 			return 0, true, nil
 		}
 		key := parseKey(single)
-		// setas chegam como sequência: lê o resto do frame ESC [ X
+		// ESC: a sequência/seta via peek com janela curta (o peek
+		// bloqueante antigo pendurava o ESC sozinho); ← no menu =
+		// ignorado (o primeiro passo não tem anterior)
 		if single[0] == 27 {
-			next := make([]byte, 2)
-			if n2, _ := rawStdin.Read(next); n2 == 2 && next[0] == '[' {
-				switch next[1] {
-				case 'A', 'H':
-					key = keyUp
-				case 'B', 'F':
-					key = keyDown
-				}
+			switch p := rawEscPeek(); p {
+			case escUp:
+				key = keyUp
+			case escDown:
+				key = keyDown
+			case escLeft, escOther:
+				key = "" // no-op no menu (← não tem para onde voltar)
+			default: // escSolo
+				key = keyCancel
 			}
 		}
 		newCur, selection, cancelled := pickApply(cur, len(items), key)
@@ -265,101 +300,161 @@ func (w *initWizard) pickNumbered(header string, items []pickItem, note string) 
 	return w.askNumber(fmt.Sprintf("número [1-%d] (default: 1): ", len(items)), 1, len(items), 1)
 }
 
-// ---- fluxo comum: campos + confirmação por opção escolhida ----
+// ---- o loop de STEPS com back (M27) ----
 
-// runInitWizard roda o wizard completo: escolha (visual quando visualTTY;
-// numerado no fallback) + campos/destino + confirmação. Cancelado →
-// (nil, nil).
-func runInitWizard(w *initWizard, yes, visualTTY bool) (*scaffold.Options, string, string, error) {
-	choice := 0
-	if visualTTY {
+// initStep — os passos do wizard do init na cadeia next/back.
+type initStep int
+
+const (
+	initStepChoice      initStep = iota // o menu — o PRIMEIRO passo (← ignorado)
+	initStepOrgName                     // opção 1: nome da Organização
+	initStepOrgPath                     // opção 2: caminho/seleção da Organização
+	initStepProductName                 // opção 2/3: nome do workspace-produto
+	initStepConfirm                     // confirmação (s cria · n/← voltam a editar)
+)
+
+// runInitWizard roda o wizard inteiro como LOOP DE STEPS com transições
+// next/back/cancel: enter/validação avança; **← no texto VAZIO volta ao
+// passo anterior** (o valor anterior pré-ecado e editável — com conteúdo
+// a seta é ignorada, o backspace apaga); **n/← no confirm voltam a
+// editar**; esc/ctrl-c cancelam TUDO — nada é criado antes da confirmação
+// final (invariante §2). A pré-checagem de duplicado do catálogo acontece
+// antes de avançar (voltar não a re-dispara até chegar no passo de novo).
+func runInitWizard(w *initWizard, yes, visual bool) (*scaffold.Options, string, string, error) {
+	step := initStepChoice
+	var (
+		choice   int
+		orgName  string
+		orgPath  string
+		prodName string
+	)
+	for {
+		switch step {
+		case initStepChoice:
+			c, err := w.pickChoice(visual)
+			if err != nil {
+				return nil, "", "", err
+			}
+			choice = c
+			switch c {
+			case 1:
+				step = initStepOrgName
+			case 2:
+				step = initStepOrgPath
+			default:
+				step = initStepProductName
+			}
+		case initStepOrgName:
+			name, back, err := w.askStepText(
+				fmt.Sprintf("Nome da Organização (vazio = usar o próprio dir atual %q): ", filepath.Base(w.cwd)),
+				orgName, false)
+			if err != nil {
+				return nil, "", "", err
+			}
+			if back { // ← — o valor do passo fica preservado para o retorno
+				step = initStepChoice
+				continue
+			}
+			root := w.cwd
+			if name != "" {
+				root = filepath.Join(w.cwd, name)
+			}
+			// a pré-checagem acontece ANTES de avançar (o kit nunca cria
+			// organização que não possa registrar)
+			if cerr := checkOrgCatalogName(root); cerr != nil {
+				return nil, "", "", cerr
+			}
+			orgName = name
+			step = initStepConfirm
+		case initStepOrgPath:
+			org, back, err := w.pickOrg(suggestedOrg(w.cwd), visual)
+			if err != nil {
+				return nil, "", "", err
+			}
+			if back {
+				step = initStepChoice
+				continue
+			}
+			orgPath = org
+			step = initStepProductName
+		case initStepProductName:
+			var question string
+			if choice == 2 {
+				question = "Nome do workspace-produto: "
+			} else {
+				question = fmt.Sprintf("Nome do workspace-produto (vazio = usar o próprio dir atual %q): ", filepath.Base(w.cwd))
+			}
+			name, back, err := w.askStepText(question, prodName, choice == 2)
+			if err != nil {
+				return nil, "", "", err
+			}
+			if back {
+				if choice == 2 {
+					step = initStepOrgPath // ← volta ao passo da Organização
+				} else {
+					step = initStepChoice
+				}
+				continue
+			}
+			prodName = name
+			step = initStepConfirm
+		case initStepConfirm:
+			var opt scaffold.Options
+			var summary string
+			switch choice {
+			case 1:
+				root := w.cwd
+				if orgName != "" {
+					root = filepath.Join(w.cwd, orgName)
+				}
+				opt = scaffold.Options{Org: true}
+				summary = fmt.Sprintf("  tipo:      Organização (container: true)\n  raiz:      %s\n  arquivos:  golmet.yaml · CONSTITUTION.md · INDEX.md", root)
+			case 2:
+				opt = scaffold.Options{Into: orgPath}
+				summary = fmt.Sprintf("  tipo:      Workspace-produto dentro de Organização\n  org:       %s\n  produto:   %s (products: da Organização ganha o produto)", orgPath, prodName)
+			default:
+				root := w.cwd
+				if prodName != "" {
+					root = filepath.Join(w.cwd, prodName)
+				}
+				summary = fmt.Sprintf("  tipo:      Workspace-produto raiz livre\n  raiz:      %s", root)
+			}
+			confirmed, err := w.confirmStep(summary, yes)
+			if err != nil {
+				return nil, "", "", err
+			}
+			if !confirmed { // n/← — volta ao campo anterior para editar
+				if choice == 2 {
+					step = initStepProductName
+				} else {
+					step = initStepOrgName
+				}
+				continue
+			}
+			name := orgName
+			if choice != 1 {
+				name = prodName
+			}
+			return &opt, w.cwd, name, nil
+		}
+	}
+}
+
+// pickChoice — o passo da ESCOLHA (o primeiro — ← ignorado nele: não há
+// anterior; o cancelamento segue esc/ctrl-c).
+func (w *initWizard) pickChoice(visual bool) (int, error) {
+	if visual {
 		sel, cancelled, err := runPickTTY("O que inicializar?",
 			"↑/↓ move · enter confirma · esc cancela", initChoiceOptions, "")
 		if err != nil {
-			return nil, "", "", err
+			return 0, err
 		}
 		if cancelled {
-			return nil, "", "", nil
+			return 0, errWizardCancelled
 		}
-		choice = sel
-	} else {
-		n, err := w.pickNumbered("O que inicializar? (ENTER = opção 1)", initChoiceOptions, "")
-		if err != nil {
-			return nil, "", "", err
-		}
-		choice = n
+		return sel, nil
 	}
-	return initWizardCollect(w, choice, yes, visualTTY)
-}
-
-// initWizardCollect — os campos de texto e a confirmação final (linha-a-
-// linha, o estilo dos campos livres do install) para a opção escolhida.
-// A pré-checagem de nome duplicado no catálogo acontece ANTES da
-// confirmação — o kit nunca cria organização que não possa registrar.
-func initWizardCollect(w *initWizard, choice int, yes, visualTTY bool) (*scaffold.Options, string, string, error) {
-	suggestion := suggestedOrg(w.cwd)
-	switch choice {
-	case 1: // Organização
-		name, err := w.prompt(fmt.Sprintf("Nome da Organização (vazio = usar o próprio dir atual %q): ", filepath.Base(w.cwd)))
-		if err != nil {
-			return nil, "", "", err
-		}
-		root := w.cwd
-		if name != "" {
-			root = filepath.Join(w.cwd, name)
-		}
-		if err := checkOrgCatalogName(root); err != nil {
-			return nil, "", "", err
-		}
-		summary := fmt.Sprintf("  tipo:      Organização (container: true)\n  raiz:      %s\n  arquivos:  golmet.yaml · CONSTITUTION.md · INDEX.md", root)
-		ok, err := w.confirm(summary, yes)
-		if err != nil {
-			return nil, "", "", err
-		}
-		if !ok {
-			return nil, "", "", nil
-		}
-		return &scaffold.Options{Org: true}, w.cwd, name, nil
-	case 2: // workspace dentro de Organização existente
-		org, cancelled, err := w.pickOrg(suggestion, visualTTY)
-		if err != nil {
-			return nil, "", "", err
-		}
-		if cancelled {
-			return nil, "", "", nil
-		}
-		name, err := w.askRequired("Nome do workspace-produto: ")
-		if err != nil {
-			return nil, "", "", err
-		}
-		summary := fmt.Sprintf("  tipo:      Workspace-produto dentro de Organização\n  org:       %s\n  produto:   %s (products: da Organização ganha o produto)", org, name)
-		ok, err := w.confirm(summary, yes)
-		if err != nil {
-			return nil, "", "", err
-		}
-		if !ok {
-			return nil, "", "", nil
-		}
-		return &scaffold.Options{Into: org}, w.cwd, name, nil
-	default: // raiz livre
-		name, err := w.prompt(fmt.Sprintf("Nome do workspace-produto (vazio = usar o próprio dir atual %q): ", filepath.Base(w.cwd)))
-		if err != nil {
-			return nil, "", "", err
-		}
-		root := w.cwd
-		if name != "" {
-			root = filepath.Join(w.cwd, name)
-		}
-		summary := fmt.Sprintf("  tipo:      Workspace-produto raiz livre\n  raiz:      %s", root)
-		ok, err := w.confirm(summary, yes)
-		if err != nil {
-			return nil, "", "", err
-		}
-		if !ok {
-			return nil, "", "", nil
-		}
-		return &scaffold.Options{}, w.cwd, name, nil
-	}
+	return w.pickNumbered("O que inicializar? (ENTER = opção 1)", initChoiceOptions, "")
 }
 
 // askOrgPathManual — o input MANUAL do caminho da Organização (opção 2 —
@@ -368,34 +463,36 @@ func initWizardCollect(w *initWizard, choice int, yes, visualTTY bool) (*scaffol
 // prompt não expõe username/estrutura de pastas do usuário; o catálogo
 // alimenta APENAS a lista de seleção, onde o path é funcional). Validação
 // com loop de re-pergunta — mensagens em linguagem de usuário, nada de
-// jargão. `esc` cancela o wizard inteiro; ENTER aceita a sugestão (quando
-// há — e ela também é validada). Devolve o caminho ABSOLUTO resolvido
+// jargão. `esc`/CTRL+C cancelam o wizard inteiro (errWizardCancelled); ←
+// no texto vazio VOLTA ao passo da escolha (errWizardBack); ENTER aceita
+// a sugestão (quando há — também validada); o valor inválido digitado
+// volta pré-ecado para correção. Devolve o caminho ABSOLUTO resolvido
 // (o que aparece na confirmação).
 func (w *initWizard) askOrgPathManual(suggestion string) (string, bool, error) {
 	const example = `C:\Projetos\MinhaOrganizacao` // placeholder genérico — nunca path de catálogo
 	fmt.Fprintf(w.out, "\nCaminho completo da pasta que contém o golmet.yaml da Organização\n")
-	fmt.Fprintf(w.out, "(ex.: %s · esc cancela)\n", example)
+	fmt.Fprintf(w.out, "(ex.: %s · esc cancela · ← volta)\n", example)
+	last := suggestion // o valor pré-ecado (a sugestão ou o último digitado)
 	for {
-		raw, err := w.prompt("Caminho da Organização: ")
+		raw, err := w.prompt("Caminho da Organização: ", last)
 		if err != nil {
-			if errors.Is(err, errWizardCancelled) {
-				return "", true, nil // ESC/CTRL+C — o wizard inteiro cancela
+			if errors.Is(err, errWizardBack) {
+				return "", true, nil // ← no texto vazio — volta à escolha
 			}
-			return "", false, err
+			return "", false, err // errWizardCancelled ou raw indisponível
 		}
-		if strings.EqualFold(strings.TrimSpace(raw), "esc") {
-			return "", true, nil
-		}
-		if raw == "" && suggestion != "" {
-			raw = suggestion // ENTER = sugestão do pai (também validada)
+		if raw == "" && !w.raw && suggestion != "" {
+			raw = suggestion // cooked: ENTER = sugestão do pai (também validada)
 		}
 		p := normalizeOrgPathInput(w.cwd, raw)
 		if p == "" {
 			fmt.Fprintln(w.out, "obrigatório — informe o caminho da pasta da Organização")
+			last = ""
 			continue
 		}
 		if valid, msg := validateOrgPath(p); !valid {
 			fmt.Fprintln(w.out, msg)
+			last = p // o inválido volta pré-ecado para correção
 			continue
 		}
 		return p, false, nil
@@ -442,9 +539,10 @@ func normalizeOrgPathInput(cwd, raw string) string {
 // pickOrg — o passo de Organização da opção 2: seleção das organizações
 // do catálogo global (path vivo; morta = pulada com aviso discreto) +
 // "Outra — caminho manual" por último. 0 registradas → direto no caminho
-// manual (o fluxo anterior) com o aviso de catálogo vazio. Cancelado →
-// cancelled (o wizard inteiro cancela — nada criado).
-func (w *initWizard) pickOrg(suggestion string, visualTTY bool) (org string, cancelled bool, err error) {
+// manual (o fluxo anterior) com o aviso de catálogo vazio. Cancelado =
+// errWizardCancelled (o wizard inteiro cancela — nada criado); back =
+// ← no campo manual (volta à escolha).
+func (w *initWizard) pickOrg(suggestion string, visualTTY bool) (org string, back bool, err error) {
 	var alive []orgs.Entry
 	dead := 0
 	registered := false
@@ -490,7 +588,7 @@ func (w *initWizard) pickOrg(suggestion string, visualTTY bool) (org string, can
 			return "", false, perr
 		}
 		if canc {
-			return "", true, nil
+			return "", false, errWizardCancelled
 		}
 		idx = sel
 	} else {

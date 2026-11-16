@@ -351,15 +351,13 @@ func TestAskOrgPathRelativeAndSuggestion(t *testing.T) {
 	}
 }
 
-// `esc` cancela o wizard inteiro (nada criado).
+// `esc` cancela o wizard inteiro (nada criado); ← no texto vazio volta
+// (o back do passo — testado nos fluxos do wizard).
 func TestAskOrgPathEscCancels(t *testing.T) {
 	w, out := newTestWizard(t.TempDir(), "esc\n")
-	org, cancelled, err := w.askOrgPathManual("")
-	if err != nil && !errors.Is(err, errWizardCancelled) {
-		t.Fatalf("esc = %v\n%s", err, out)
-	}
-	if !cancelled || org != "" {
-		t.Errorf("esc deveria cancelar: org %s, cancelled %v", org, cancelled)
+	org, back, err := w.askOrgPathManual("")
+	if !errors.Is(err, errWizardCancelled) {
+		t.Fatalf("esc deveria cancelar (errWizardCancelled), got org %s/back %v/err %v\n%s", org, back, err, out)
 	}
 }
 
