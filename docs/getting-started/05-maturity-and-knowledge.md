@@ -22,7 +22,7 @@ its own owned by the org**, not in a loose folder on your computer. Create
 the private repo (on the GitHub UI or with the CLI):
 
 ```bash
-gh repo create MinhaOrganizacao/TM.PACK.RDD --private
+gh repo create <org>/<pack-repo> --private
 ```
 
 The name is up to you — what matters is: private repo, owned by the org,
@@ -123,7 +123,7 @@ local accumulation and rebase — never discarding what you have).
    golmet pack publish ── WIP commit + push (manual by design)
           │
           ▼
-   organization repo (e.g. MinhaOrganizacao/TM.PACK.RDD) ── the source of truth
+   organization repo (e.g. <org>/<pack-repo>) ── the source of truth
           │
           ▼
    golmet pack add (the next project · the new machine) ── inheriting

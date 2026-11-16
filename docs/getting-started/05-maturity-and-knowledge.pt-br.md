@@ -22,7 +22,7 @@ próprio da org**, não numa pasta solta do seu computador. Crie o repo
 privado (na interface do GitHub ou com a CLI):
 
 ```bash
-gh repo create MinhaOrganizacao/TM.PACK.RDD --private
+gh repo create <org>/<pack-repo> --private
 ```
 
 O nome fica a seu critério — o que importa é: repo privado, da org, com
@@ -125,7 +125,7 @@ herda.**
    golmet pack publish ── commit do WIP + push (manual por design)
           │
           ▼
-   repo da organização (ex.: MinhaOrganizacao/TM.PACK.RDD) ── a fonte da verdade
+   repo da organização (ex.: <org>/<pack-repo>) ── a fonte da verdade
           │
           ▼
    golmet pack add (o próximo projeto · a máquina nova) ── herdando

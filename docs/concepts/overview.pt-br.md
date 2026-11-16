@@ -100,11 +100,6 @@ contagens reais — tudo selecionado por default exceto os packs (o seu
 working copy local fica deselecionado; o repositório remoto nunca é
 tocado). Veja [init.md](init.pt-br.md).
 
-## Documentação em dois idiomas
-
-Cada doc público vem em **inglês** + **português (Brasil)** com o badge de
-alternância no topo — incluindo esta página.
-
 ## O design em um diagrama
 
 A tese sobre a qual a plataforma inteira se sustenta:
