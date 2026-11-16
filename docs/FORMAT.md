@@ -1,4 +1,7 @@
 <p align="center">English | <a href="FORMAT.pt-br.md">Português (Brasil)</a></p>
+[overview.md](overview.md) §6.
+| L13 | warning | Âncoras de idioma: link de um doc `*.pt-br.md` apontando o destino em EN **quando o par PT-BR existe no disco** (o achado real: o README.pt-br navegava para os docs EN - o link resolvia no L1, mas ensinava o idioma errado). Só docs PT são validados (o EN base pode linkar o par PT legitimamente - badge, cross-links); link já PT, sem par PT no disco (o EN é o único destino), externo e âncora pura = OK; link morto = skip (o L1 cobre). A remediação mantém o fragmento `#...` e avisa para conferir a âncora no idioma |
+<p align="center">English | <a href="FORMAT.pt-br.md">Português (Brasil)</a></p>
 
 # FORMAT v1 — Normative Specification of the GOLMET Workspace
 

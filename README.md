@@ -79,7 +79,7 @@ golmet init
 
 # the first commands, in order
 golmet validate   # the workspace against FORMAT v1 — exit ≠ 0 blocks CI
-golmet lint       # the deterministic structural sweep (L1-L12)
+golmet lint       # the deterministic structural sweep (L1-L13)
 golmet doctor     # environment health (S1–S5, machine checks)
 golmet status     # the entity-state dashboard
 ```
@@ -99,7 +99,7 @@ The public docs are written as a **journey** — start there:
 | [docs/recommended.md](docs/recommended.md) | The recommended mode (Organization + FULL + Opencode) — and what you lose without it |
 | [docs/concepts/](docs/concepts/) | The concepts in depth: organization and versioning, content layers, profile, knowledge, self-governing |
 | [docs/FORMAT.md](docs/FORMAT.md) | The normative spec (v1) — the contract every check enforces |
-| [docs/ARQUITETURA_GOLMET_V2.md](docs/ARQUITETURA_GOLMET_V2.md) | The platform architecture (layers, decision records DR-001..022) |
+| [docs/reference/compatibility.md](docs/reference/compatibility.md) | The real MCP x engine compatibility matrix - verified cell by cell, locked by tests (honest "unverified" marks) |
 | [docs/reference/](docs/reference/) | Reference: the 18 commands, the 14 MCP tools |
 | [CHANGELOG.md](CHANGELOG.md) | Wave by wave, with the real-world motivation |
 | [LICENSE](LICENSE) | MIT |

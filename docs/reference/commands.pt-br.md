@@ -48,7 +48,7 @@ superfície; quando a IA atua, as tools MCP são - os guardas de mutação
 | `golmet template <alvo>` | Emite o template do kit direto do embed (`agents` → `client-profile` → `operator-profile`). `--out <path>` grava em arquivo. Templates são artefatos de construção: vivem no kit, NUNCA se instalam no config |
 | `golmet uninstall` | Remove a estrutura global do Golmet por camadas, com descoberta dinâmica do estado real (manifest + personal.json + engine). Interativo; `--only <csv> --yes` para não-interativo · `--dry-run` · `--json`. O pack é DESELECIONADO por default (o repo remoto nunca é tocado) |
 | `golmet upgrade` | Self-update do binário da última release GitHub (SHA-256 verificado). `--check` read-only · rollback via `<bin>.old` · o binário sob gestão npm → orienta `npm update -g golmet-cli` |
-| `golmet lint` | Varredura estrutural determinística L1-L12 (+L7-size) sobre o kit/config/packs/workspace - findings com severidade + remediação PT-BR. Exit 0 limpo · 2 com findings · `--json`. A remediação cita o escritor canônico responsável |
+| `golmet lint` | Varredura estrutural determinística L1-L13 (+L7-size) sobre o kit/config/packs/workspace - findings com severidade + remediação PT-BR. Exit 0 limpo · 2 com findings · `--json`. A remediação cita o escritor canônico responsável |
 
 ## Convenções transversais
 

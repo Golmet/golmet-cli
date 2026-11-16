@@ -397,6 +397,9 @@ func Run(opt Options) (*Report, error) {
 	// ---- L12 - encoding e texto quebrado (error; BOM = warning) ----
 	lintL12Encoding(rep, ws, kitMode, configRoot)
 
+	// ---- L13 - âncoras de idioma (warning) ----
+	lintL13Anchors(rep, ws, kitMode, configRoot)
+
 	// ---- resumo ----
 	for _, f := range rep.Findings {
 		if f.Severity == "error" {
@@ -1595,6 +1598,114 @@ func l12CheckFile(rep *Report, rel string, data []byte) {
 	if m := mojibakeRe.FindString(s); m != "" {
 		l12Find("error", "dupla codificação detectada (ex.: \""+m+"\" — UTF-8 lido como Latin-1/Windows-1252 e regravado: o acento virou dois caracteres ilegíveis)",
 			"regravar o arquivo com a decodificação correta (converter de Latin-1 para UTF-8 — o texto original é recuperável")
+	}
+}
+
+// ---- L13 - âncoras de idioma (warning) ----
+
+// lintL13Anchors valida as âncoras de navegação dos docs PT-BR: um link de
+// um *.pt-br.md deve apontar o PAR PT do destino quando o par existe no
+// disco (o achado real: o README.pt-br navegava para os docs EN — o link
+// resolvia no L1, mas ensinava o idioma errado). Só docs PT são validados:
+// o EN (base) pode linkar o par PT legitimamente (badge de alternância,
+// cross-links de corpo). Severidade warning: a navegação FUNCIONA — é
+// idioma, não estrutura. Anti-falso-positivo: o par PT DEVE existir no
+// disco (senão o link EN é o único destino possível); âncoras (#seção)
+// mantêm o fragmento e a remediação avisa para conferir a âncora no idioma.
+func lintL13Anchors(rep *Report, ws string, kitMode bool, configRoot string) {
+	var targets []string
+	add := func(abs string) { targets = append(targets, abs) }
+	skipDir := func(name string) bool {
+		return name == ".git" || name == "node_modules" || name == ".golmet" ||
+			name == "evals" || name == "testdata" || name == "coredata"
+	}
+	if kitMode {
+		_ = filepath.WalkDir(ws, func(p string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return nil
+			}
+			if d.IsDir() {
+				if skipDir(d.Name()) {
+					return fs.SkipDir
+				}
+				return nil
+			}
+			if strings.HasSuffix(p, ".pt-br.md") {
+				add(p)
+			}
+			return nil
+		})
+	}
+	if configRoot != "" {
+		if packsRoot := filepath.Join(configRoot, "packs"); dirExists(packsRoot) {
+			_ = filepath.WalkDir(packsRoot, func(p string, d fs.DirEntry, err error) error {
+				if err != nil {
+					return nil
+				}
+				if !d.IsDir() && strings.HasSuffix(p, ".pt-br.md") {
+					add(p)
+				}
+				return nil
+			})
+		}
+	}
+	if !kitMode {
+		_ = filepath.WalkDir(ws, func(p string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return nil
+			}
+			if d.IsDir() {
+				if skipDir(d.Name()) {
+					return fs.SkipDir
+				}
+				return nil
+			}
+			if strings.HasSuffix(p, ".pt-br.md") {
+				add(p)
+			}
+			return nil
+		})
+	}
+
+	linkRe := regexp.MustCompile(`\]\(([^\)\s]+)(#[^\)\s]*)?\)`)
+	for _, f := range targets {
+		data, rerr := os.ReadFile(f)
+		if rerr != nil {
+			continue
+		}
+		dir := filepath.Dir(f)
+		lines := strings.Split(string(data), "\n")
+		for li, raw := range lines {
+			for _, m := range linkRe.FindAllStringSubmatch(raw, -1) {
+				path := m[1]
+				frag := m[2]
+				if path == "" || strings.Contains(path, "://") || path == "#" {
+					continue
+				}
+				if strings.HasSuffix(path, ".pt-br.md") {
+					continue // já aponta o par PT
+				}
+				abs := filepath.Clean(filepath.Join(dir, filepath.FromSlash(path)))
+				if !fileExists(abs) {
+					continue // ref morta é do L1
+				}
+				absPt := filepath.FromSlash(strings.TrimSuffix(path, filepath.Ext(path)) + ".pt-br.md")
+				absPt = filepath.Clean(filepath.Join(dir, absPt))
+				if !fileExists(absPt) {
+					continue // o par PT não existe - o EN é o único destino
+				}
+				fix := "troque o link para o par PT-BR: `" + absPt + "`"
+				if frag != "" {
+					fix += " — e confira a âncora `#...` no idioma (a âncora da seção muda com o idioma)"
+				}
+				rep.Findings = append(rep.Findings, Finding{
+					Check: "L13", Severity: "warning", File: f,
+					Line:        li + 1,
+					Description: "âncora de doc PT-BR aponta o destino em EN — e o par PT-BR existe no disco (\"" + path + "\")",
+					Fix:         fix,
+				})
+			}
+		}
 	}
 }
 

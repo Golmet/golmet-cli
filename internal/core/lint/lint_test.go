@@ -945,3 +945,59 @@ func TestL12Encoding(t *testing.T) {
 		t.Fatalf("dupla codificação: want 1 error, got %+v", got)
 	}
 }
+
+// ---- L13 - âncoras de idioma ----
+
+// TestL13Anchors cobre o check L13 via lintL13Anchors direto (sandboxes
+// temporários, não-kit): doc PT linkando o par EN que existe = flag; link
+// já PT = ok; link sem par PT no disco = ok (o EN é o único destino);
+// externo e âncora pura = ok. O doc EN (base) NÃO é alvo do L13 (o L13
+// valida só docs PT — um .md base linkando o par PT é legítimo: badge,
+// cross-links); link morto = skip (o L1 cobre).
+func TestL13Anchors(t *testing.T) {
+	// sandbox 1 — doc PT com os casos de link
+	ws1 := t.TempDir()
+	write1 := func(rel, content string) {
+		t.Helper()
+		p := filepath.Join(ws1, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write1("guide.pt-br.md", "[base](guide.md)\n[par PT](guide.pt-br.md)\n[sem par](only-en.md)\n[externo](https://exemplo.io)\n[âncora pura](#seção)\n[vídeo](video.mp4)\n")
+	write1("guide.md", "# Guide EN\n")
+	write1("only-en.md", "# Only EN\n")
+
+	rep := &Report{Findings: []Finding{}, ByCheck: map[string]int{}}
+	lintL13Anchors(rep, ws1, false, "")
+	if len(rep.Findings) != 1 {
+		t.Fatalf("want 1 finding (o link [base] deve apontar o par PT), got %d: %+v", len(rep.Findings), rep.Findings)
+	}
+	f := rep.Findings[0]
+	if f.Check != "L13" || f.Severity != "warning" || !strings.Contains(f.Description, "guide.md") {
+		t.Fatalf("finding = %+v", f)
+	}
+	if !strings.Contains(f.Fix, "guide.pt-br.md") {
+		t.Fatalf("fix sem o par PT: %+v", f)
+	}
+
+	// sandbox 2 — doc EN (base) linkando o par PT: o .md base não é alvo
+	// do L13 (o L13 valida só *.pt-br.md) — zero findings
+	ws2 := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(ws2, "docs"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(ws2, "docs", "guide.md"), []byte("# Guide EN\n[par PT](guide.pt-br.md)\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rep2 := &Report{Findings: []Finding{}, ByCheck: map[string]int{}}
+	lintL13Anchors(rep2, ws2, false, "")
+	if len(rep2.Findings) != 0 {
+		t.Fatalf("doc EN base não é alvo do L13 — findings: %+v", rep2.Findings)
+	}
+}
+
+// ---- L13 - âncoras de idioma ----
