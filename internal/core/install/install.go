@@ -18,7 +18,6 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core/content"
 	"github.com/Golmet/golmet-cli/internal/core/doctor"
 	"github.com/Golmet/golmet-cli/internal/core/indexstate"
-	"github.com/Golmet/golmet-cli/internal/core/source"
 	"github.com/Golmet/golmet-cli/internal/core/tools"
 	"github.com/Golmet/golmet-cli/internal/core/update"
 )
@@ -181,41 +180,41 @@ func resolveFullTarget(adapter EngineAdapter, home, workspace string) (FullPlace
 // DR-008; workspace vazio = erro). É exportado para `install --full` e
 // `update --full`, mantendo um único caminho de 3-way e de proveniência.
 func MaterializeFull(home, engineID, workspace string, force bool) (*content.MaterializeReport, *FullPlacement, error) {
-	rep, place, _, err := materializeFullWithOptions(home, engineID, workspace, force, false)
+	rep, place, err := materializeFullWithOptions(home, engineID, workspace, force, false)
 	return rep, place, err
 }
 
 // MaterializeFullWithOptions é a variante usada por transportes que precisam
 // de planejar a operação sem tocar o runtime.
 func MaterializeFullWithOptions(home, engineID, workspace string, force, dryRun bool) (*content.MaterializeReport, *FullPlacement, error) {
-	rep, place, _, err := materializeFullWithOptions(home, engineID, workspace, force, dryRun)
+	rep, place, err := materializeFullWithOptions(home, engineID, workspace, force, dryRun)
 	return rep, place, err
 }
 
-func materializeFullWithOptions(home, engineID, workspace string, force, dryRun bool) (*content.MaterializeReport, *FullPlacement, *source.SyncReport, error) {
+func materializeFullWithOptions(home, engineID, workspace string, force, dryRun bool) (*content.MaterializeReport, *FullPlacement, error) {
 	adapter, ok := LookupEngine(engineID)
 	if !ok {
-		return nil, nil, nil, fmt.Errorf("engine %q não suportado", engineID)
+		return nil, nil, fmt.Errorf("engine %q não suportado", engineID)
 	}
 	place, terr := resolveFullTarget(adapter, home, workspace)
 	if terr != nil {
-		return nil, nil, nil, terr
+		return nil, nil, terr
 	}
 	coreFS, err := fs.Sub(golmet.CoreDataFS(), "coredata")
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("FULL embarcado ilegível: %w", err)
+		return nil, nil, fmt.Errorf("FULL embarcado ilegível: %w", err)
 	}
 	registryData, err := fs.ReadFile(coreFS, "registry.yaml")
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("registry FULL ilegível: %w", err)
+		return nil, nil, fmt.Errorf("registry FULL ilegível: %w", err)
 	}
 	reg := content.ParseRegistry(string(registryData))
 	skills, skillErrs, err := update.EmbeddedSkills()
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	if len(skillErrs) > 0 {
-		return nil, nil, nil, fmt.Errorf("BASE embutida inválida: %d erro(s)", len(skillErrs))
+		return nil, nil, fmt.Errorf("BASE embutida inválida: %d erro(s)", len(skillErrs))
 	}
 	baseHashes := map[string]string{}
 	for _, sk := range skills {
@@ -228,50 +227,9 @@ func materializeFullWithOptions(home, engineID, workspace string, force, dryRun 
 		ManifestPath: place.Manifest,
 	})
 	if err != nil {
-		return nil, nil, nil, err
-	}
-	return rep, &place, nil, nil
-}
-
-// MaterializeExternalCore sincroniza um core Git/local e renderiza o mesmo
-// registry do FULL embarcado. O cache fica em ~/.golmet/sources/core e o
-// manifest registra a origem; a semântica de overlay/3-way é a mesma.
-func MaterializeExternalCore(home, engineID, sourceURL string, force bool) (*content.MaterializeReport, *source.SyncReport, error) {
-	return MaterializeExternalCoreWithOptions(home, engineID, sourceURL, force, false)
-}
-
-// MaterializeExternalCoreWithOptions mantém o cache Git intocado em dry-run.
-func MaterializeExternalCoreWithOptions(home, engineID, sourceURL string, force, dryRun bool) (*content.MaterializeReport, *source.SyncReport, error) {
-	adapter, ok := LookupEngine(engineID)
-	if !ok {
-		return nil, nil, fmt.Errorf("engine %q não suportado", engineID)
-	}
-	skillsDir := adapter.SkillsDir(home)
-	if skillsDir == "" {
-		return nil, nil, fmt.Errorf("engine %q não possui diretório de skills para o core", engineID)
-	}
-	sync, err := source.SyncWithOptions(sourceURL, filepath.Join(home, ".golmet", "sources", "core"), source.SyncOptions{DryRun: dryRun})
-	if err != nil {
 		return nil, nil, err
 	}
-	coreFS, err := content.SafeDirFS(sync.Path)
-	if err != nil {
-		return nil, sync, err
-	}
-	registryData, err := fs.ReadFile(coreFS, "registry.yaml")
-	if err != nil {
-		return nil, sync, fmt.Errorf("registry externo ilegível: %w", err)
-	}
-	reg := content.ParseRegistry(string(registryData))
-	rep, err := content.Materialize(coreFS, reg, content.MaterializeOptions{
-		ConfigRoot: filepath.Dir(skillsDir), Engine: engineID,
-		KitVersion: indexstate.KitVersion, Force: force,
-		Source: source.Redact(sourceURL) + "@" + sync.SHA, DryRun: dryRun,
-	})
-	if err != nil {
-		return nil, sync, err
-	}
-	return rep, sync, nil
+	return rep, &place, nil
 }
 
 // emitProgress — nil-safe (sem consumidor = silencioso).
@@ -467,7 +425,7 @@ func (opt *Options) runFull(home string, res *Result) error {
 		return terr
 	}
 	opt.emitProgress(StepEvent{Kind: "start", Step: "full", Label: "workflow FULL gm-* → " + place.ConfigRoot})
-	fullRep, _, _, merr := materializeFullWithOptions(home, opt.EngineID, ws, opt.Force, false)
+	fullRep, _, merr := materializeFullWithOptions(home, opt.EngineID, ws, opt.Force, false)
 	if merr != nil {
 		return fmt.Errorf("FULL não instalado: %w", merr)
 	}

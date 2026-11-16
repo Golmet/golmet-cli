@@ -3,7 +3,6 @@ package mcpserve
 import (
 	"context"
 	"encoding/json"
-	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	golmet "github.com/Golmet/golmet-cli"
 	"github.com/Golmet/golmet-cli/internal/core/indexstate"
 	"github.com/Golmet/golmet-cli/internal/core/scaffold"
 	"github.com/Golmet/golmet-cli/internal/core/update"
@@ -286,43 +284,19 @@ func TestGmUpdateWeakEngineErrors(t *testing.T) {
 	}
 }
 
-func TestGmUpdateExternalCoreAndPackViaMCP(t *testing.T) {
+func TestGmUpdateEmbeddedAndPackViaMCP(t *testing.T) {
 	home := t.TempDir()
-	coreDir := filepath.Join(t.TempDir(), "core")
-	coreFS, err := fs.Sub(golmet.CoreDataFS(), "coredata")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := fs.WalkDir(coreFS, ".", func(path string, entry fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		target := filepath.Join(coreDir, filepath.FromSlash(path))
-		if entry.IsDir() {
-			return os.MkdirAll(target, 0o755)
-		}
-		data, err := fs.ReadFile(coreFS, path)
-		if err != nil {
-			return err
-		}
-		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-			return err
-		}
-		return os.WriteFile(target, data, 0o644)
-	}); err != nil {
-		t.Fatal(err)
-	}
 
 	cs := session(t, context.Background())
 	_, out := callTool(t, cs, "gm_update", map[string]any{
-		"home": home, "engine": "opencode", "core": coreDir,
+		"home": home, "engine": "opencode",
 		"confirm": true, "dry_run": true,
 	})
-	if !strings.Contains(out, `"origin":"external"`) || !strings.Contains(out, `"source"`) {
-		t.Fatalf("core externo dry-run inesperado: %s", out)
+	if !strings.Contains(out, `"origin":"embedded"`) {
+		t.Fatalf("gm_update dry-run inesperado: %s", out)
 	}
 	if _, err := os.Stat(filepath.Join(home, ".golmet")); !os.IsNotExist(err) {
-		t.Fatalf("core externo dry-run criou cache/runtime: %v", err)
+		t.Fatalf("gm_update dry-run criou cache/runtime: %v", err)
 	}
 
 	packDir := filepath.Join(t.TempDir(), "pack")

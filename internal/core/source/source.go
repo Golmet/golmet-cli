@@ -1,6 +1,8 @@
-// Package source gerencia fontes Git opcionais do GOLMET: core externo (L1)
-// e packs (L2). O kit mantém cache local por slug e fixa o SHA resolvido no
-// relatório/manifest; diretórios locais sem Git usam digest determinístico.
+// Package source gerencia fontes Git opcionais do GOLMET: os packs (L2 —
+// overlay e state). O mecanismo de core externo (L1) foi aposentado (M32 —
+// supersedido pelo modelo de packs; FORMAT §2.1). O kit mantém cache local
+// por slug e fixa o SHA resolvido no relatório/manifest; diretórios locais
+// sem Git usam digest determinístico.
 package source
 
 import (

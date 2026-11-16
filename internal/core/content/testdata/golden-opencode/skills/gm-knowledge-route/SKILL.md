@@ -89,7 +89,7 @@ rota:
    nuances da org → `accumulation/nuances/<dominio>-nuances.md`.
 5. **VÁLVULA DE ESCAPE — não é nenhum destes?** (rascunho, relatório
    ad-hoc, dump de análise, artefato sem função definida) → roteia para
-   `.golmet/` do container (zona de trabalho, temporária — FORMATO §2.3)
+   `.golmet/` do container (zona de trabalho, temporária — FORMAT §2.3)
    e pergunte ao operador se merece virar estrutura canônica (**promover**,
    via o escritor canônico correspondente) ou permanecer temporário. O
    temporário nasce NA ZONA, nunca solto na raiz — e morre ignorado pelo

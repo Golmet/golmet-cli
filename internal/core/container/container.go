@@ -1,5 +1,5 @@
 // Package container — contrato da estrutura canônica do CONTAINER de
-// organização (FORMATO §2): fonte única consumida pelo doctor (checklist
+// organização (FORMAT §2): fonte única consumida pelo doctor (checklist
 // de hierarquia) e pelo lint (L7/L1 do container). Read-only — nunca muta;
 // quem escreve é o `golmet init` (scaffold).
 package container
@@ -22,7 +22,7 @@ import (
 var CanonicalDirs = []string{}
 
 // WorkZoneDir — a zona de trabalho do kit na raiz do container (M19):
-// mesma pasta do kit em qualquer contexto, semântica CONTEXTUAL (FORMATO
+// mesma pasta do kit em qualquer contexto, semântica CONTEXTUAL (FORMAT
 // §2.3) — no workspace-produto é VERSIONADA (DR-008, kit do repositório);
 // no CONFIG do engine é estado do kit (manifest/personal.json); no
 // CONTAINER da organização é a zona de TRABALHO não-versionada

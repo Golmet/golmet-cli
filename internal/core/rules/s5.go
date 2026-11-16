@@ -5,7 +5,7 @@ import (
 )
 
 // S5 — Capacidade kit.jev/kit.graph declarada e ausente no ambiente
-// (FORMATO §9/§10, DR-015/016). v0 nunca detecta essas capacidades —
+// (FORMAT §9/§10, DR-015/016). v0 nunca detecta essas capacidades —
 // emite AVISO com remediação.
 func S5(ctx *Context) []core.GolmetError {
 	skills := readSkills(ctx.Root)

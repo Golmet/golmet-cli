@@ -1,5 +1,5 @@
 // Package frontmatter implementa o parser do subset YAML normativo do
-// FORMATO v1 §6.1: chaves escalares, valores escalares, arrays inline de
+// FORMAT v1 §6.1: chaves escalares, valores escalares, arrays inline de
 // escalares e mapas de no máximo 1 nível. Sem multiline (|, >), sem
 // anchors/aliases (&, *) e sem tags (!!) — rejeitados com erro estruturado.
 // Comentários # são tolerados em qualquer linha e ignorados.

@@ -1,7 +1,7 @@
 # gm-rule-keeper — Guardião de Normas do Pack (T3 — rules/)
 
 Cria e edita **normas da organização** em `packs/<pack-ativo>/rules/` com o
-FORMATO canônico e o fluxo seguro de escrita e publicação. É a skill
+FORMAT canônico e o fluxo seguro de escrita e publicação. É a skill
 escritora da store T3 (o destino que `gm-knowledge-route` aponta quando o
 conteúdo é norma que muda comportamento).
 
@@ -15,7 +15,7 @@ conteúdo é norma que muda comportamento).
 
 O **conteúdo** da norma é decisão do operador/da org (o IMP ou a decisão de
 origem é do processo próprio — `gm-decision-log` quando formalizar): esta
-skill **garante o FORMATO e o fluxo seguro** — classificação de tema,
+skill **garante o FORMAT e o fluxo seguro** — classificação de tema,
 estrutura com gatilho, lazy index e publicação. Norma sem decisão de origem
 clara → pergunte quem decide antes de escrever (norma é comportamento
 obrigatório da org, não anotação).
@@ -74,7 +74,7 @@ Globe `packs/<pack-ativo>/rules/*.md` e decida:
   "cabe" num arquivo existente só por conveniência, prefira arquivo novo
   com gatilho próprio.
 
-### Passo 2 — Escrever no FORMATO canônico
+### Passo 2 — Escrever no FORMAT canônico
 
 ```markdown
 # <assunto> — <o que a norma governa>

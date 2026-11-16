@@ -71,7 +71,7 @@ type Criteria struct {
 
 // ParseCriteria decodifica e valida o criteria.yaml — campo obrigatório
 // ausente = erro estruturado (§11-style, CLI sai 2). Algumas fixtures
-// legadas trazem um header pré-FORMATO ("mode: manual") seguido de "—"
+// legadas trazem um header pré-FORMAT ("mode: manual") seguido de "—"
 // — YAML multi-documento: o critério real é o documento que contém checks.
 func ParseCriteria(data []byte) (*Criteria, error) {
 	decoder := yaml.NewDecoder(strings.NewReader(string(data)))

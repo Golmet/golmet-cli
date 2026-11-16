@@ -1,4 +1,4 @@
-// Testes do checklist de container no doctor (FORMATO §2): hierarquia
+// Testes do checklist de container no doctor (FORMAT §2): hierarquia
 // products ↔ disco, base canônica e artefatos org-level soltos; os checks
 // de workspace-produto (índice/scan/manifest/capacidades) não rodam na
 // raiz do container.

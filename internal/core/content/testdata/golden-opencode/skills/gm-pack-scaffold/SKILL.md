@@ -1,7 +1,7 @@
 ---
 name: gm-pack-scaffold
 description: >-
-   Onboarding de uma NOVA organização no ecossistema de packs (L2) — cria o esqueleto completo do pack a partir APENAS do contrato FORMATO §3.1 (pack.yaml, README, componentes de exemplo, accumulation vazio), faz o primeiro commit, cria o repo remoto (`gh repo create <org>/<nome> --private`), aplica o topic `golmet-pack` em packs públicos (descoberta da comunidade), registra em `golmet.yaml` e instala com `golmet pack add --engine <id>`. Passos de efeito externo só com confirmação explícita do operador.
+   Onboarding de uma NOVA organização no ecossistema de packs (L2) — cria o esqueleto completo do pack a partir APENAS do contrato FORMAT §3.1 (pack.yaml, README, componentes de exemplo, accumulation vazio), faz o primeiro commit, cria o repo remoto (`gh repo create <org>/<nome> --private`), aplica o topic `golmet-pack` em packs públicos (descoberta da comunidade), registra em `golmet.yaml` e instala com `golmet pack add --engine <id>`. Passos de efeito externo só com confirmação explícita do operador.
 requires: [file, write, glob, grep, shell, ask]
 degrades: [edit, webfetch]
 ---
@@ -9,14 +9,14 @@ degrades: [edit, webfetch]
 # gm-pack-scaffold — Scaffold de pack de organização
 
 Onboarding de uma nova organização no ecossistema de packs (camada L2): a
-partir **apenas** do contrato de pack (FORMATO §3.1), cria o esqueleto
+partir **apenas** do contrato de pack (FORMAT §3.1), cria o esqueleto
 completo do pack — nada do template assume uma organização específica.
 Passos de efeito externo (repo remoto, registro no `golmet.yaml`, instalação
 no engine) só acontecem com confirmação explícita do operador.
 
 ## Lê (upstream)
 
-- `FORMATO.md` §3.1 — contrato mínimo do pack: `id`, `name`, `version`,
+- `FORMAT.md` §3.1 — contrato mínimo do pack: `id`, `name`, `version`,
   `requires-core`, `no-override`, `provides` (somente `agents/` e `skills/`)
 - `golmet.yaml` — packs já registrados (`packs: [{id, repo, pin}]`)
 - Registry local + `BREAKING-CHANGES.md` — versão do core para derivar a
@@ -26,7 +26,7 @@ no engine) só acontecem com confirmação explícita do operador.
 ## Gera (downstream)
 
 - Esqueleto do pack em `packs/<id>/` (NOVO):
-  - `pack.yaml` (v0.1.0) — contrato FORMATO §3.1 completo, derivado das
+  - `pack.yaml` (v0.1.0) — contrato FORMAT §3.1 completo, derivado das
     respostas
   - `README.md` do pack — propósito, instalação de exemplo, requisitos
   - `agents/` e/ou `skills/` — ao menos 1 componente de exemplo

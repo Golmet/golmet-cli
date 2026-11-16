@@ -1,4 +1,4 @@
-// Testes do contrato do container de organização (FORMATO §2): hierarquia
+// Testes do contrato do container de organização (FORMAT §2): hierarquia
 // products ↔ disco, base canônica e artefatos org-level soltos — fonte
 // única consumida pelo doctor e pelo lint.
 package container

@@ -131,6 +131,15 @@ func CompareVersions(current, latest string) (int, error) {
 	return 0, nil
 }
 
+// npmManaged — o binário está sob gestão npm? (KISS: o path contém
+// node_modules — o layout do npm instala o launcher em
+// <prefix>/node_modules/golmet-cli/bin/ e o binário nativo em
+// <prefix>/node_modules/@golmet/cli-<plat>/). M31 — a via npm orienta o
+// npm no lugar do self-update.
+func npmManaged(bin string) bool {
+	return strings.Contains(filepath.ToSlash(bin), "node_modules/")
+}
+
 // AssetForPlatform devolve o nome do asset esperado para a plataforma.
 func AssetForPlatform(goos, goarch string) string {
 	name := "golmet_" + goos + "_" + goarch
@@ -290,6 +299,14 @@ func Run(ctx context.Context, opt Options, current string) (*Result, error) {
 	bin, err = filepath.Abs(bin)
 	if err != nil {
 		return res, fmt.Errorf("não foi possível resolver o caminho do binário corrente: %w", err)
+	}
+	// M31 — via npm: o binário sob gestão npm (o path contém node_modules)
+	// NÃO é substituído pelo self-update (o npm rematerializaria o antigo
+	// no próximo install/update) — orienta a via npm e sai limpo.
+	if npmManaged(bin) {
+		fmt.Fprintf(out, "instalação via npm detectada (%s)\n", bin)
+		fmt.Fprintf(out, "atualize com: npm update -g golmet-cli (ou reinstale: npm install -g golmet-cli)\n")
+		return res, nil
 	}
 	wantAsset := AssetForPlatform(runtime.GOOS, runtime.GOARCH)
 	var asset, sums *Asset

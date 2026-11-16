@@ -312,7 +312,7 @@ func TestToolsCmdList(t *testing.T) {
 }
 
 func TestAdoptCmdDryRunJSONAndExclusives(t *testing.T) {
-	// workspace pré-FORMATO mínimo
+	// workspace pré-FORMAT mínimo
 	base := inTempDir(t)
 	ws := filepath.Join(base, "ws")
 	os.MkdirAll(ws, 0o755)

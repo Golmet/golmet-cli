@@ -1,5 +1,5 @@
 // wizard_read.go — o padrão ÚNICO de cancelamento dos wizards de linha do
-// CLI (init, install, uninstall) — FORMATO §2/§9:
+// CLI (init, install, uninstall) — FORMAT §2/§9:
 //   - ESC de teclado: a linha "\x1b" (ESC sozinho vaza como byte em
 //     alguns terminais) e a linha literal "esc" CANCELAM — o ESC nunca
 //     vaza como caractere no input;

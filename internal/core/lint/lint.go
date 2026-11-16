@@ -42,7 +42,7 @@ type Report struct {
 	Workspace  string         `json:"workspace"`
 	ConfigRoot string         `json:"config_root,omitempty"`
 	KitMode    bool           `json:"kit_mode"`
-	Container  bool           `json:"container,omitempty"` // golmet.yaml com container: true (FORMATO §2)
+	Container  bool           `json:"container,omitempty"` // golmet.yaml com container: true (FORMAT §2)
 	Findings   []Finding      `json:"findings"`
 	Errors     int            `json:"errors"`
 	Warnings   int            `json:"warnings"`
@@ -50,7 +50,7 @@ type Report struct {
 }
 
 // ---- padrões canônicos DECLARADOS (contrato da estrutura — fonte única
-// em código; documentado no FORMATO §9.1) ----
+// em código; documentado no FORMAT §9.1) ----
 
 // packStateRootDirs — dirs canônicos na raiz de um state pack (working
 // copy): pack.yaml + qualquer subconjunto destes (+ meta .git/README/LICENSE).
@@ -67,7 +67,7 @@ var accumulationOnly = []string{"patterns", "metrics", "nuances"}
 var patternTypes = []string{"process", "architecture", "code", "ui", "test", "data"}
 
 // specAggregates — agregados técnicos do workspace de produto que aceitam
-// QUEBRA por micro-contexto (FORMATO §7.7.1): `specs/<dir>/` (formato
+// QUEBRA por micro-contexto (FORMAT §7.7.1): `specs/<dir>/` (formato
 // quebrado — INDEX.md obrigatório + `<escopo>.md` auto-contidos) ou o
 // unitário `specs/<file>.md` (continua válido). AS DUAS formas são
 // canônicas simultaneamente; a implantação começa no DATA_MODEL.
@@ -84,13 +84,13 @@ var specAggregates = []struct {
 // unitário specs/DATA_MODEL.md: acima disso o lint emite warning
 // (categoria L7-size) recomendando o split por micro-contexto. Constante
 // COMPARTILHADA com o gm-datamodel (a skill cita o mesmo número no
-// procedimento de Split) e declarada no FORMATO §7.7.1 — mudar aqui =
+// procedimento de Split) e declarada no FORMAT §7.7.1 — mudar aqui =
 // mudar lá.
 const DataModelSplitLines = 800
 
 // aggregateSizeWarns — avisos PRECOCES de tamanho (warning L7-size) para os
 // próximos candidatos a quebra por micro-contexto: agregados que crescem
-// mas AINDA NÃO TÊM gramática quebrada declarada no FORMATO (só o
+// mas AINDA NÃO TÊM gramática quebrada declarada no FORMAT (só o
 // data_model tem — §7.7.1). Acima do limiar de aviso, o warning recomenda
 // PLANEJAR a quebra com o gm-doc — a gramática de cada artefato será
 // declarada quando o volume justificar (decisão do operador). Limiar
@@ -125,15 +125,15 @@ var ghostAllowlist = map[string]string{
 	"gm-stack-react":       "playbook React não criado — o frontend da casa é Angular (gm-stack-angular)",
 	"gm-pia-connect-setup": "skill opcional de pack (IMP-105) — só existe quando o pack a fornece",
 	"gm-coverage-audit":    "avaliada e não criada — cobertura é do gm-dev-qa/playbook da stack",
-	"gm-a11y":              "exemplo ilustrativo do FORMATO §6",
-	"gm-a11y-reviewer":     "exemplo ilustrativo do FORMATO §6",
+	"gm-a11y":              "exemplo ilustrativo do FORMAT §6",
+	"gm-a11y-reviewer":     "exemplo ilustrativo do FORMAT §6",
 	"gm-xxx":               "exemplo ilustrativo (gm-registry-render)",
 	"gm-yyy":               "exemplo ilustrativo (gm-registry-render)",
 	"gm-zzz":               "exemplo ilustrativo (gm-registry-render)",
 	"gm-orchestrator":      "exemplo ilustrativo (gm-registry-render)",
-	"gm-s1":                "referência de seção S1 do FORMATO, não componente",
+	"gm-s1":                "referência de seção S1 do FORMAT, não componente",
 	"gm-docs":              "exemplo de nome de REPO_DOCS no gm-init (`minha-org/gm-docs`) — não é componente",
-	"gm-x":                 "exemplo de id no front matter do FORMATO §10",
+	"gm-x":                 "exemplo de id no front matter do FORMAT §10",
 }
 
 // refAllowlist — paths citados sabidamente mortos, com motivo (pendências
@@ -143,7 +143,7 @@ var refAllowlist = map[string]string{
 }
 
 // ---- L8 — estrutura mínima definitivo ↔ template (declarativa; política
-// anti-ruído do FORMATO §9.1: evolução NÃO flaga — o mínimo é o que não
+// anti-ruído do FORMAT §9.1: evolução NÃO flaga — o mínimo é o que não
 // muda entre versões do kit; template ganhar seção nova não obriga
 // definitivos antigos; só a PERDA/ausência da estrutura mínima flaga) ----
 
@@ -225,7 +225,7 @@ var (
 
 // knownExt — extensões que caracterizam um path citado verificável (ref de
 // DIR sem extensão não é verificada — heurística anti-falso-positivo
-// documentada no FORMATO §9.1).
+// documentada no FORMAT §9.1).
 var knownExt = map[string]bool{
 	".md": true, ".json": true, ".yaml": true, ".yml": true, ".go": true,
 	".sh": true, ".ps1": true, ".mjs": true, ".txt": true, ".toml": true,
@@ -264,7 +264,7 @@ func Run(opt Options) (*Report, error) {
 	kitMode := fileExists(filepath.Join(ws, "coredata", "registry.yaml"))
 	rep.KitMode = kitMode
 
-	// container de organização (FORMATO §2): golmet.yaml com container: true
+	// container de organização (FORMAT §2): golmet.yaml com container: true
 	// — a raiz é um CONTAINER, não um workspace-produto: os checks ganham a
 	// visão de hierarquia (produtos declarados, docs/, meetings/, migrations/)
 	// e o L1 varre os *.md do container.
@@ -369,7 +369,7 @@ func Run(opt Options) (*Report, error) {
 	// ---- L7 — agregados de spec do workspace (unitário | quebrado, §7.7.1) ----
 	lintL7SpecAggregates(rep, ws)
 
-	// ---- L7/L1 — container de organização (FORMATO §2) ----
+	// ---- L7/L1 — container de organização (FORMAT §2) ----
 	if rep.Container {
 		lintL7Container(rep, ws, container.Inspect(ws, contProducts))
 		lintL1Container(rep, ws, configRoot)
@@ -490,7 +490,7 @@ func checkMDRefs(rep *Report, rel, fpath string, roots []string, extra func(stri
 // isModuleStoreRef — o candidate aponta para artefato de WORKSPACE DE
 // PRODUTO citado por design (store de módulo/dir de store/relatório com
 // timestamp)? O destino existe no workspace do operador, não no kit — o
-// L1 não opina (heurística declarativa documentada no FORMATO §9.1).
+// L1 não opina (heurística declarativa documentada no FORMAT §9.1).
 func isModuleStoreRef(cand string) bool {
 	base := filepath.Base(cand)
 	if moduleStoreNames[base] {
@@ -952,7 +952,7 @@ func lintL7(rep *Report, ws string, kitMode bool, configRoot string) {
 // ---- L7 — agregados de spec do workspace (unitário | quebrado) ----
 
 // lintL7SpecAggregates — L7 sobre os agregados técnicos do WORKSPACE de
-// produto (specs/, FORMATO §7.7.1): reconhece AS DUAS formas canônicas —
+// produto (specs/, FORMAT §7.7.1): reconhece AS DUAS formas canônicas —
 // unitário (`specs/DATA_MODEL.md`) e quebrado (`specs/data_model/` com
 // INDEX.md OBRIGATÓRIO, o mestre: visão global + índice dos escopos) —,
 // avisa quando o unitário passa do limiar de quebra (DataModelSplitLines)
@@ -970,7 +970,7 @@ func lintL7SpecAggregates(rep *Report, ws string) {
 			})
 		}
 	}
-	// DATA_MODEL — gramática quebrada JÁ declarada (FORMATO §7.7.1): o
+	// DATA_MODEL — gramática quebrada JÁ declarada (FORMAT §7.7.1): o
 	// aviso aponta o Split do gm-datamodel
 	if n, ok := lineCount(filepath.Join(ws, "specs", "DATA_MODEL.md")); ok && n > DataModelSplitLines {
 		rep.Findings = append(rep.Findings, Finding{
@@ -980,7 +980,7 @@ func lintL7SpecAggregates(rep *Report, ws string) {
 		})
 	}
 	// Candidatos PRECOCES — sem gramática quebrada declarada ainda: o aviso
-	// só recomenda PLANEJAR a quebra (gramática será definida no FORMATO
+	// só recomenda PLANEJAR a quebra (gramática será definida no FORMAT
 	// quando o volume justificar). 1º path existente do agregado vale.
 	for _, a := range aggregateSizeWarns {
 		for _, p := range a.Paths {
@@ -992,7 +992,7 @@ func lintL7SpecAggregates(rep *Report, ws string) {
 				rep.Findings = append(rep.Findings, Finding{
 					Check: "L7-size", Severity: "warning", File: p,
 					Description: fmt.Sprintf("agregado candidato à quebra com %d linhas (limiar de aviso: %d) — crescendo sem gramática quebrada declarada", n, a.Lines),
-					Fix:         "considere planejar a quebra por micro-contexto deste agregado com o gm-doc — a gramática quebrada deste artefato ainda não está declarada no FORMATO (será definida quando o volume justificar)",
+					Fix:         "considere planejar a quebra por micro-contexto deste agregado com o gm-doc — a gramática quebrada deste artefato ainda não está declarada no FORMAT (será definida quando o volume justificar)",
 				})
 			}
 			break
@@ -1093,7 +1093,7 @@ func lintL8(rep *Report, configRoot string) {
 // do install; pack sem registry é estado legítimo). Check SEPARADO do L7
 // de propósito: L7 é estrutura de DIRETÓRIOS declarativa; L9 é schema de
 // CONTEÚDO de arquivos específicos — separados, o by_check do gm_lint
-// diagnostica com precisão (contrato documentado no FORMATO §9.1 e §2.2).
+// diagnostica com precisão (contrato documentado no FORMAT §9.1 e §2.2).
 func lintL9(rep *Report, configRoot string) {
 	// (1) registry kit-canônico materializado no config.
 	const rel = "profile/stack-templates.yaml"

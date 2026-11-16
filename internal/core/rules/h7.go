@@ -6,7 +6,7 @@ import (
 )
 
 // H7 — Toda evidência DEVE parsear; hash resolve em exatamente 1 repo
-// do charter §1 (FORMATO §5/§9). Com --tolerant degrada para aviso com
+// do charter §1 (FORMAT §5/§9). Com --tolerant degrada para aviso com
 // worklist; sem git disponível degrada com aviso S-level.
 func H7(ctx *Context) []core.GolmetError {
 	var out []core.GolmetError

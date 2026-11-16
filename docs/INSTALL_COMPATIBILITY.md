@@ -68,7 +68,7 @@ Notas:
 - dry-run da materialização em zona não escreve nada
   (`TestFullFallbackDryRunWritesNothing`).
 - Nomes dos PERFIS do CLI: `essencial` | `completo` (semântica de contrato —
-  veja a NOTA em FORMATO §2.1); `base`/`full` são aliases aceitos pelas
+  veja a NOTA em FORMAT §2.1); `base`/`full` são aliases aceitos pelas
   flags. Os nomes de CAMADA L0–L3 (DR-021) não mudam.
 
 ## Matriz MCP × Engine

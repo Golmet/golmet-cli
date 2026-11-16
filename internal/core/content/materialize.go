@@ -283,7 +283,7 @@ func Materialize(fsys fs.FS, reg *Registry, opt MaterializeOptions) (*Materializ
 			continue
 		}
 		// Precedência local > full: arquivo registrado como local não é
-		// sobrescrito sem --force (a exceção explícita do FORMATO §2.1) —
+		// sobrescrito sem --force (a exceção explícita do FORMAT §2.1) —
 		// diferença só de EOL não é customização: cura escrevendo o LF.
 		if hadOld && oldEntry.Layer == "local" && !opt.Force && !sameNorm {
 			rep.Preserved = append(rep.Preserved, rel)

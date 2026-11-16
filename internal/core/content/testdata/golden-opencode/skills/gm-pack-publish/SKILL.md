@@ -11,7 +11,7 @@ degrades: [edit, write, webfetch]
 Fecha o ciclo do mantenedor: editou o conteúdo do pack → publica (commit +
 push) → reaplica no engine → move o pin. Espelho do par: `gm-pack-update`
 traz do remote para o engine; esta skill leva do working tree do clone para
-o remote e o engine. Contrato do `pack.yaml` em FORMATO §3.1;
+o remote e o engine. Contrato do `pack.yaml` em FORMAT §3.1;
 compatibilidade em `BREAKING-CHANGES.md`.
 
 ## Lê (upstream)

@@ -7,7 +7,7 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core/entities"
 )
 
-// H2 — IDs únicos e imutáveis (FORMATO §4/§9). A verificação v0 cobre
+// H2 — IDs únicos e imutáveis (FORMAT §4/§9). A verificação v0 cobre
 // duplicados; a detecção de renome via índice fica completa no bloco 2
 // (junto à persistência do golmet.index.json).
 func H2(ctx *Context) []core.GolmetError {

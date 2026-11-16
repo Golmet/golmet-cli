@@ -46,7 +46,7 @@ func TestL1DeadRefsAndFalsePositives(t *testing.T) {
 	ws := kitFixture(t)
 	src := filepath.Join(ws, "coredata", "sources", "gm-a.md")
 	os.WriteFile(src, []byte(strings.Join([]string{
-		"- [ok](README.md) e `FORMATO.md` — existem na raiz do kit",
+		"- [ok](README.md) e `FORMAT.md` — existem na raiz do kit",
 		"- `docs/guia.md` — existe em docs/",
 		"- [morto](sub/nada-disso.md) — não existe → L1",
 		"- `profile/context7.md` — resolve via coredata/rules (mapping canônico)",
@@ -67,7 +67,7 @@ func TestL1DeadRefsAndFalsePositives(t *testing.T) {
 	os.MkdirAll(filepath.Join(ws, "docs"), 0o755)
 	os.WriteFile(filepath.Join(ws, "docs", "guia.md"), []byte("guia\n"), 0o644)
 	os.WriteFile(filepath.Join(ws, "README.md"), []byte("readme\n"), 0o644)
-	os.WriteFile(filepath.Join(ws, "FORMATO.md"), []byte("formato\n"), 0o644)
+	os.WriteFile(filepath.Join(ws, "FORMAT.md"), []byte("formato\n"), 0o644)
 	os.MkdirAll(filepath.Join(ws, "coredata", "rules"), 0o755)
 	os.WriteFile(filepath.Join(ws, "coredata", "rules", "context7.md"), []byte("rule\n"), 0o644)
 
@@ -282,8 +282,8 @@ func TestL7CanonicalStructure(t *testing.T) {
 
 func TestLintCleanSandboxAndInvalidWorkspace(t *testing.T) {
 	ws := kitFixture(t)
-	os.WriteFile(filepath.Join(ws, "coredata", "sources", "gm-a.md"), []byte("- `gm-a.md` no registry e `FORMATO.md` na raiz\n"), 0o644)
-	os.WriteFile(filepath.Join(ws, "FORMATO.md"), []byte("formato\n"), 0o644)
+	os.WriteFile(filepath.Join(ws, "coredata", "sources", "gm-a.md"), []byte("- `gm-a.md` no registry e `FORMAT.md` na raiz\n"), 0o644)
+	os.WriteFile(filepath.Join(ws, "FORMAT.md"), []byte("formato\n"), 0o644)
 	rep := runLint(t, ws, t.TempDir())
 	if rep.Errors != 0 || rep.Warnings != 0 {
 		t.Fatalf("sandbox limpo deveria zerar findings: %+v", rep.Findings)
@@ -505,7 +505,7 @@ func TestL7SizeWarningsEarlyCandidates(t *testing.T) {
 		if f.Severity != "warning" || f.File != tc.path {
 			t.Errorf("aviso %s = %+v, want warning em %s", tc.path, f, tc.path)
 		}
-		if !strings.Contains(f.Fix, "gm-doc") || !strings.Contains(f.Fix, "ainda não está declarada no FORMATO") {
+		if !strings.Contains(f.Fix, "gm-doc") || !strings.Contains(f.Fix, "ainda não está declarada no FORMAT") {
 			t.Errorf("remediação deveria apontar planejamento com gm-doc (sem gramática declarada): %+v", f)
 		}
 	}

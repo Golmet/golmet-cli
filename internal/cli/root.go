@@ -32,7 +32,7 @@ func newRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:     "golmet",
 		Short:   "The stone guardian of your product's documented truth",
-		Long:    "golmet valida workspaces contra o FORMATO v1: requisitos, specs e evidência congruentes com o código.",
+		Long:    "golmet valida workspaces contra o FORMAT v1: requisitos, specs e evidência congruentes com o código.",
 		Version: Version, // binVersion — ldflags no release; "dev" no build local
 		CompletionOptions: cobra.CompletionOptions{
 			DisableDefaultCmd: true,
@@ -73,7 +73,7 @@ func newValidateCmd() *cobra.Command {
 	var jsonOut, tolerant, strict, fix bool
 	cmd := &cobra.Command{
 		Use:   "validate [workspace]",
-		Short: "Valida o workspace contra o FORMATO v1 (H1–H10, S1–S5)",
+		Short: "Valida o workspace contra o FORMAT v1 (H1–H10, S1–S5)",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if tolerant && strict && cmd.Flags().Changed("strict") {
@@ -136,7 +136,7 @@ func printHuman(w io.Writer, res *scan.Result) {
 		return
 	}
 	if len(res.Errors) == 0 && len(res.Warnings) == 0 {
-		fmt.Fprintln(w, "ok — workspace conforme (FORMATO v1)")
+		fmt.Fprintln(w, "ok — workspace conforme (FORMAT v1)")
 	}
 	fmt.Fprintf(w, "%d erro(s), %d aviso(s) — %d arquivo(s), RN %d, PEND %d, CR %d, ADR %d, CAND %d, Feature %d, Task %d, Spec %d\n",
 		len(res.Errors), len(res.Warnings), res.Files,

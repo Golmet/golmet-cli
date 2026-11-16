@@ -8,7 +8,7 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core/entities"
 )
 
-// H5 — Front matter obrigatório presente e parseável (FORMATO §9):
+// H5 — Front matter obrigatório presente e parseável (FORMAT §9):
 // Charter e Feature. golmet.yaml é tratado no scan.Run (gate de config).
 
 var charterStates = map[string]bool{"draft": true, "confirmed": true}

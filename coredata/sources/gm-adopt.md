@@ -1,17 +1,17 @@
 # gm-adopt — Adoção do formato GOLMET por um workspace existente
 
 Conduz a migração de um workspace de produto já existente (documentação
-prévia em qualquer arranjo) para o FORMATO GOLMET, usando o handshake do kit.
+prévia em qualquer arranjo) para o FORMAT GOLMET, usando o handshake do kit.
 A regra central: **agente conduz, kit executa** — o agente investiga, propõe
 e pergunta gates (julgamento); o kit executa os transforms determinísticos e
 valida (único escritor do índice e do scaffold).
 
 ## Referências
 
-- Estados e transições de cada entidade: FORMATO §7 (§7.1 Charter — §7.9 Candidate)
-- Gramática de evidência: FORMATO §5
-- Erros estruturados com `fix:`: FORMATO §11
-- Enforcement de dois níveis (H/S): FORMATO §9
+- Estados e transições de cada entidade: FORMAT §7 (§7.1 Charter — §7.9 Candidate)
+- Gramática de evidência: FORMAT §5
+- Erros estruturados com `fix:`: FORMAT §11
+- Enforcement de dois níveis (H/S): FORMAT §9
 
 ## Lê (upstream)
 
@@ -95,7 +95,7 @@ Com o relatório em mãos, conduza a priorização:
 Confirme via `ask` (sem ask nativo: pergunte no chat e PARE — nunca adivinhe)
 — agrupe TODOS os gates pendentes num único bloco de perguntas:
 
-- Charter pode nascer `confirmed`? (pré-condição FORMATO §7.1: §1 registra
+- Charter pode nascer `confirmed`? (pré-condição FORMAT §7.1: §1 registra
   cada repo com path + branch + HEAD congelado)
 - RNs fora de vigor: `dropped` (com motivo no corpo) ou `superseded` (citando
   a sucessora)? `dropped` nunca reverte.

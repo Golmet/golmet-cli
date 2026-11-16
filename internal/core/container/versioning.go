@@ -1,4 +1,4 @@
-// versioning.go — os 2 MODELOS DE VERSIONAMENTO DE ORGANIZAÇÃO (FORMATO
+// versioning.go — os 2 MODELOS DE VERSIONAMENTO DE ORGANIZAÇÃO (FORMAT
 // §2.3 — M29): o golmet.yaml do container declara `versioning:` e todo o
 // kit (scaffold do produto, zona do kit, gitignore) respeita o modelo
 // declarado. Fonte única consumida pelo scaffold (init --into), pelo
@@ -73,7 +73,7 @@ func VersioningOf(fields map[string]frontmatter.Value) string {
 // raiz (EnsureKitZoneException) — sem update, a org fica sem zona de kit
 // (o estado real do TM.RDD.DOCS). `.golmet/*` (o CONTEÚDO, não o dir — a
 // negação git não re-inclui sob um dir excluído).
-const orgGitignoreContent = `# Zona de trabalho do kit no container (FORMATO §2.3/M19) - checkpoints e
+const orgGitignoreContent = `# Zona de trabalho do kit no container (FORMAT §2.3/M19) - checkpoints e
 # histórico de processo, nunca versionados
 .golmet/*
 

@@ -1,4 +1,4 @@
-// container.go — contexto CONTAINER do validate (FORMATO §2.3): um
+// container.go — contexto CONTAINER do validate (FORMAT §2.3): um
 // container de organização NÃO é workspace-produto — aplicar a gramática
 // integral (H1-H10/S1-S5) sobre ele produzia centenas de findings falsos
 // sobre os produtos ainda não adotados ("RN-022 não existe no workspace").

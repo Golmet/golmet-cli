@@ -21,7 +21,7 @@ que mapeia cada RN-XXX aos documentos downstream que a implementam.
 Os artefatos do módulo seguem a estrutura com subpastas:
 
 - **Raiz:** PROJECT_CHARTER.md, CONSTITUTION.md, REQUIREMENTS.md, DECISIONS.md, CHANGELOG.md
-- **`specs/`:** DATA_MODEL.md, API_CONTRACTS.md, ERROR_CATALOG.md, UI_SPEC.md, ARCHITECTURE.md, SECURITY.md, ACCEPTANCE_CRITERIA.md, USER_STORIES.md, US<NNN>.md, FIGMA_PROMPTS.md, COMPLIANCE.md — agregados técnicos também podem estar **quebrados por micro-contexto** (FORMATO §7.7.1): `specs/data_model/` com `INDEX.md` + escopos (idem `api_contracts/`, `ui_spec/`)
+- **`specs/`:** DATA_MODEL.md, API_CONTRACTS.md, ERROR_CATALOG.md, UI_SPEC.md, ARCHITECTURE.md, SECURITY.md, ACCEPTANCE_CRITERIA.md, USER_STORIES.md, US<NNN>.md, FIGMA_PROMPTS.md, COMPLIANCE.md — agregados técnicos também podem estar **quebrados por micro-contexto** (FORMAT §7.7.1): `specs/data_model/` com `INDEX.md` + escopos (idem `api_contracts/`, `ui_spec/`)
 - **`quality/`:** TEST_STRATEGY.md, DEFINITION_OF_DONE.md, TRACEABILITY.md, VALIDATION_REPORT.md, PROPAGATION_STATUS.md, PROGRESS_REPORT.md
 - **`delivery/`:** arquivos de feature/tasks, SCOPE_AGREEMENT.md, CLIENT_REQUIREMENTS.md, CLIENT_REPORT_*.md, HANDOVER_LOG.md
 - **`support/`:** LEGACY_CONTEXT.md, KNOWN_ERRORS.md, MIGRATION.md, CHANGE_REQUESTS.md
@@ -75,7 +75,7 @@ docs: update traceability matrix for <projeto>
 
 0. **Pré-scan determinístico (determinístico > agêntico):** se `quality/scan.json` existir (gerado pelo pré-scan do kit golmet `validate`), consuma `coverage` e `coberturaCandidatos` — a matriz de presença RN × downstream dos passos 2–3 já está computada (com expansão de ranges). O julgamento permanece seu no merge (passo 6) e na narração dos gaps.
 1. Leia `REQUIREMENTS.md` — extraia todas as RN-XXX
-2. Leia cada documento downstream — identifique quais RNs cada um implementa; se o DATA_MODEL estiver **quebrado por micro-contexto** (FORMATO §7.7.1), o escopo `<escopo>.md` que cita a RN é o caminho do mapeamento
+2. Leia cada documento downstream — identifique quais RNs cada um implementa; se o DATA_MODEL estiver **quebrado por micro-contexto** (FORMAT §7.7.1), o escopo `<escopo>.md` que cita a RN é o caminho do mapeamento
 3. Para cada RN, marque se está coberta em cada documento — com o agregado quebrado, registre o **caminho de escopo específico** (ex.: `specs/data_model/agendamento.md`), não o agregado inteiro: quem implementa a RN lê só o escopo, não o arquivo todo (finura maior da matriz)
 4. Identifique RNs sem cobertura (gap) — registre na seção de gaps
 5. Identifique CRs aprovados e verifique se já foram refletidos nos downstreams
@@ -112,7 +112,7 @@ status: draft
 **Legenda:**
 - ✅ = coberto, ❌ = gap, — = não se aplica
 
-**Agregado quebrado (FORMATO §7.7.1):** na célula do agregado quebrado, registre o caminho do escopo específico — ex.: `✅ data_model/agendamento.md` — em vez de só `✅`; a matriz ganha finura de leitura (a RN aponta o micro-contexto que a implementa).
+**Agregado quebrado (FORMAT §7.7.1):** na célula do agregado quebrado, registre o caminho do escopo específico — ex.: `✅ data_model/agendamento.md` — em vez de só `✅`; a matriz ganha finura de leitura (a RN aponta o micro-contexto que a implementa).
 
 ---
 

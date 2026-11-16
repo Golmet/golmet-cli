@@ -14,7 +14,7 @@ import (
 // newInitCmd — golmet init [produto] [--org] [--into <container>] [--yes]
 // [--plain]. SEM flags e SEM arg (init bare): wizard interativo em TTY —
 // pergunta o que inicializar (Organização / workspace em Organização /
-// raiz livre) e confirma antes de criar (M22 — FORMATO §2); nunca mais
+// raiz livre) e confirma antes de criar (M22 — FORMAT §2); nunca mais
 // cria no cwd silenciosamente. Sem TTY e sem --plain: fail-closed com o
 // comando a rodar (scripts/CI exigem --org ou --into + --yes).
 func newInitCmd() *cobra.Command {
@@ -119,6 +119,12 @@ func finishInit(cmd *cobra.Command, isOrg bool, rep *scaffold.Report, err error)
 		}
 		if msg != "" {
 			fmt.Fprintln(cmd.OutOrStdout(), msg)
+		}
+		// M33 — a Organização (org-repo) é o repositório de versionamento:
+		// o hint orienta o passo de Git do operador (o kit NUNCA roda
+		// git init por conta própria)
+		if !adoptedOrg(rep) {
+			fmt.Fprintln(cmd.OutOrStdout(), "Organização criada. Ela foi feita para ser o seu repositório de versionamento: rode `git init` na raiz e faça o primeiro commit (o .gitignore já protege a zona de trabalho).")
 		}
 	}
 	return nil

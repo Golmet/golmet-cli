@@ -1,7 +1,7 @@
 ---
 name: gm-rule-keeper
 description: >-
-   Guardião de normas do pack (T3 — rules/) — cria e edita normas da organização em packs/<pack-ativo>/rules/ com o FORMATO canônico e o fluxo seguro: classifica o assunto (edit/append no arquivo do tema ou arquivo novo), impõe header H1 + gatilho explícito ("AO fazer X, leia isto") + conteúdo prescritivo + referências cruzadas, UMA norma por arquivo (nunca monólito — lição da org do rule de 544 linhas), propõe a linha do lazy index no AGENTS.md sob ask (pessoal-por-design — nunca edita sem confirmação) e publica via golmet pack publish com confirmação do operador. A skill NÃO decide a norma — conteúdo é decisão do operador/org (IMP de origem); ela garante formato e fluxo. Nunca sobrescreve norma existente sem confirmação; modo de erro continue. Use quando o operador pedir "criar/editar norma da org", "nova regra para o pack" ou "documentar como a organização faz X".
+   Guardião de normas do pack (T3 — rules/) — cria e edita normas da organização em packs/<pack-ativo>/rules/ com o FORMAT canônico e o fluxo seguro: classifica o assunto (edit/append no arquivo do tema ou arquivo novo), impõe header H1 + gatilho explícito ("AO fazer X, leia isto") + conteúdo prescritivo + referências cruzadas, UMA norma por arquivo (nunca monólito — lição da org do rule de 544 linhas), propõe a linha do lazy index no AGENTS.md sob ask (pessoal-por-design — nunca edita sem confirmação) e publica via golmet pack publish com confirmação do operador. A skill NÃO decide a norma — conteúdo é decisão do operador/org (IMP de origem); ela garante formato e fluxo. Nunca sobrescreve norma existente sem confirmação; modo de erro continue. Use quando o operador pedir "criar/editar norma da org", "nova regra para o pack" ou "documentar como a organização faz X".
 requires: [file, write, edit, glob, grep, shell, ask]
 degrades: [webfetch]
 ---
@@ -9,7 +9,7 @@ degrades: [webfetch]
 # gm-rule-keeper — Guardião de Normas do Pack (T3 — rules/)
 
 Cria e edita **normas da organização** em `packs/<pack-ativo>/rules/` com o
-FORMATO canônico e o fluxo seguro de escrita e publicação. É a skill
+FORMAT canônico e o fluxo seguro de escrita e publicação. É a skill
 escritora da store T3 (o destino que `gm-knowledge-route` aponta quando o
 conteúdo é norma que muda comportamento).
 
@@ -23,7 +23,7 @@ conteúdo é norma que muda comportamento).
 
 O **conteúdo** da norma é decisão do operador/da org (o IMP ou a decisão de
 origem é do processo próprio — `gm-decision-log` quando formalizar): esta
-skill **garante o FORMATO e o fluxo seguro** — classificação de tema,
+skill **garante o FORMAT e o fluxo seguro** — classificação de tema,
 estrutura com gatilho, lazy index e publicação. Norma sem decisão de origem
 clara → pergunte quem decide antes de escrever (norma é comportamento
 obrigatório da org, não anotação).
@@ -82,7 +82,7 @@ Globe `packs/<pack-ativo>/rules/*.md` e decida:
   "cabe" num arquivo existente só por conveniência, prefira arquivo novo
   com gatilho próprio.
 
-### Passo 2 — Escrever no FORMATO canônico
+### Passo 2 — Escrever no FORMAT canônico
 
 ```markdown
 # <assunto> — <o que a norma governa>

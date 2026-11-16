@@ -34,7 +34,7 @@ convenções de **teste** do projeto vêm de skill específica (camada acima des
 
 ## Tools
 
-- Capacidade `kit.graph` (política graph-first — FORMATO §10/DR-020): com o grafo disponível e índice fresco, mapeie o repo por navegação estruturada (`get_architecture`, `search_graph`, `trace_path`) ANTES de grep/glob; grep/glob ficam para literais e para o que o grafo não resolve. Índice stale → re-indexar antes de usar. Sem grafo → degradação `grep-fallback` declarada no relatório.
+- Capacidade `kit.graph` (política graph-first — FORMAT §10/DR-020): com o grafo disponível e índice fresco, mapeie o repo por navegação estruturada (`get_architecture`, `search_graph`, `trace_path`) ANTES de grep/glob; grep/glob ficam para literais e para o que o grafo não resolve. Índice stale → re-indexar antes de usar. Sem grafo → degradação `grep-fallback` declarada no relatório.
 
 - `file`/`glob`/`grep` — inspecionar código-fonte e configs do repo (read-only)
 - `shell` — executar `ng test`, `ng lint` e `npm install` (com ask)

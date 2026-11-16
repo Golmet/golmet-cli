@@ -63,7 +63,7 @@ func ApplyOverlay(root string, files []OverlayFile, opt OverlayOptions) (*Overla
 			localLayer := hadOld && oldEntry.Layer == "local"
 			switch {
 			// Precedência local > pack: arquivo local não é sobrescrito
-			// sem --force (exceção explícita do FORMATO §2.1) — diferença
+			// sem --force (exceção explícita do FORMAT §2.1) — diferença
 			// só de EOL não é customização: cura escrevendo o LF.
 			case localLayer && !opt.Force && !sameNorm:
 				conflict = true

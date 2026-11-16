@@ -167,6 +167,24 @@ func CurrentBranch(dir string) (string, error) {
 	return branch, nil
 }
 
+// WIPFiles devolve os arquivos não-commitados do working copy (status
+// porcelain --untracked-files=all, uma linha por arquivo) — o preview do
+// publish (o que o commit criaria).
+func WIPFiles(dir string) ([]string, error) {
+	out, err := run(dir, "status", "--porcelain", "--untracked-files=all")
+	if err != nil {
+		return nil, err
+	}
+	var files []string
+	for _, line := range strings.Split(string(out), "\n") {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		files = append(files, strings.TrimSpace(line))
+	}
+	return files, nil
+}
+
 // Origin devolve a URL do remote origin (normalizada — sem espaços).
 func Origin(dir string) (string, error) {
 	out, err := run(dir, "remote", "get-url", "origin")

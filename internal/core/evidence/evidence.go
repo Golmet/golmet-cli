@@ -1,4 +1,4 @@
-// Package evidence implementa a gramática de evidência do FORMATO v1 §5:
+// Package evidence implementa a gramática de evidência do FORMAT v1 §5:
 // forma canônica [caminho:linha @hash], candidatos malformados (H7) e
 // evidência legada sem hash (S4).
 package evidence

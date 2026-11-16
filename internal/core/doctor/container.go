@@ -1,4 +1,4 @@
-// Checklist do CONTAINER de organização (FORMATO §2): hierarquia
+// Checklist do CONTAINER de organização (FORMAT §2): hierarquia
 // products ↔ disco, base canônica e artefatos org-level soltos. Substitui
 // os checks de workspace-produto na raiz de um container (índice, scan de
 // entidades, zona .golmet e capacidades vendored não se aplicam — o

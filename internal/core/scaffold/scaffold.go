@@ -1,4 +1,4 @@
-// Package scaffold implementa o `golmet init` (FORMATO §2/§3): esqueleto
+// Package scaffold implementa o `golmet init` (FORMAT §2/§3): esqueleto
 // do workspace de produto (golmet.yaml, charter, entidades, zonas) ou
 // container de organização (--org), com idempotência — arquivo existente
 // não-vazio NUNCA é sobrescrito (avisa e pula). O kit é o único escritor

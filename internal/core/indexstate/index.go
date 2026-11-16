@@ -1,4 +1,4 @@
-// Package indexstate define os structs de golmet.index.json (FORMATO §8).
+// Package indexstate define os structs de golmet.index.json (FORMAT §8).
 // Bloco 1: apenas leitura/parse para comparação prosa↔índice (H6/H8).
 // Persistência (escrita do índice) fica para o bloco 2.
 package indexstate

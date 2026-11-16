@@ -16,7 +16,7 @@ em `specs/data_model/` (INDEX.md + escopos auto-contidos; ver seção própria).
 
 ## Resolução de caminhos
 
-Os artefatos do workspace seguem o layout do FORMATO §2 (§7.7.1 para os
+Os artefatos do workspace seguem o layout do FORMAT §2 (§7.7.1 para os
 agregados de `specs/`) — a saída fica em `specs/DATA_MODEL.md` (formato
 **unitário**) ou em `specs/data_model/` (formato **quebrado**:
 `INDEX.md` obrigatório + `<escopo>.md` auto-contidos); o contexto de legado
@@ -92,7 +92,7 @@ docs: add data model for <produto>
 10. Escreva `specs/DATA_MODEL.md`
 11. **Limiar de quebra (warning L7):** se o agregado unitário passar de
     **800 linhas** (constante `DataModelSplitLines` declarada no lint —
-    FORMATO §7.7.1), proponha o **Split por micro-contexto** ao responsável
+    FORMAT §7.7.1), proponha o **Split por micro-contexto** ao responsável
     (seção abaixo). Em workspace **já quebrado**, escreva direto no formato
     quebrado seguindo o merge incremental (seção abaixo)
 12. Rode `golmet validate` (checkpoint post-write) — ou anote a pendência se o kit não estiver disponível
@@ -103,7 +103,7 @@ docs: add data model for <produto>
 
 Artefatos agregados crescem indefinidamente e quem implementa uma RN carrega
 o arquivo inteiro quando precisa de um escopo — contexto desnecessário derruba
-qualidade. O FORMATO §7.7.1 define o formato **quebrado**: `specs/data_model/`
+qualidade. O FORMAT §7.7.1 define o formato **quebrado**: `specs/data_model/`
 com `INDEX.md` OBRIGATÓRIO + `<escopo>.md` auto-contidos. Gatilhos: o unitário
 passou do limiar de **800 linhas** (warning do lint — constante
 `DataModelSplitLines`) **ou** o responsável pede o split.

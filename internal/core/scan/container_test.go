@@ -9,7 +9,7 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core"
 )
 
-// ---- contexto container (FORMATO §2.3 — M21) ----
+// ---- contexto container (FORMAT §2.3 — M21) ----
 
 func makeContainer(t *testing.T, products string) string {
 	t.Helper()

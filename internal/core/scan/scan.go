@@ -1,5 +1,5 @@
 // Package scan é o motor do validate: dado um workspace → inventário
-// de entidades (FORMATO §7) + aplicação das regras H1–H10/S1–S5 (§9).
+// de entidades (FORMAT §7) + aplicação das regras H1–H10/S1–S5 (§9).
 package scan
 
 import (

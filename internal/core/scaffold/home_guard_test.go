@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// Guarda do caso real (M22 — FORMATO §2): o init NUNCA cria na RAIZ do
+// Guarda do caso real (M22 — FORMAT §2): o init NUNCA cria na RAIZ do
 // home do operador — o ~/.golmet/ é a instalação global do kit (tools,
 // packs) e um workspace ali mistura os dois mundos (o codegraph de 333 MB
 // quase foi apagado junto). Subpastas do home são legítimas.

@@ -1,4 +1,4 @@
-// Package entities parseia as entidades do workspace (FORMATO v1 §7):
+// Package entities parseia as entidades do workspace (FORMAT v1 §7):
 // Charter/Feature via front matter §6.1; RN/PEND/CR/ADR/CAND/Task via
 // seções h2/h3 com diretivas "> estado:"; Spec via diretiva do arquivo.
 package entities
@@ -290,7 +290,7 @@ func isSeparator(s string) bool {
 // Ita converte int para string (helpers de formatação).
 func Ita(n int) string { return strconv.Itoa(n) }
 
-// defaults — estado default quando a diretiva está ausente (FORMATO §6:
+// defaults — estado default quando a diretiva está ausente (FORMAT §6:
 // "Diretiva ausente = estado default da entidade"; §7 não nomeia os
 // defaults — adota-se o primeiro estado do ciclo de vida de cada entidade).
 var defaults = map[string]string{

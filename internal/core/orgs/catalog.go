@@ -1,6 +1,6 @@
 // Package orgs — o CATÁLOGO GLOBAL de organizações (~/.golmet/
 // organizations.json, na zona global do kit — junto de skills/ e tools/).
-// O invariante (FORMATO §2): o golmet.yaml do container é a FONTE DA
+// O invariante (FORMAT §2): o golmet.yaml do container é a FONTE DA
 // VERDADE da org (estrutura + products); o registro global é o CATÁLOGO
 // para o wizard (seleção de Organizações no init) — o kit nunca cria
 // organização sem registrar, e organizações fora do kit entram no catálogo

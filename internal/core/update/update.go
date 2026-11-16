@@ -1,4 +1,4 @@
-// Package update implementa o `golmet update` (FORMATO §2, DR-008):
+// Package update implementa o `golmet update` (FORMAT §2, DR-008):
 // instala o subset BASE de skills embutido no binário em
 // <workspace>/.golmet/skills/ e grava o manifest. A zona .golmet/ é
 // kit-gerida — o kit é o ÚNICO escritor dela; re-run sobrescreve

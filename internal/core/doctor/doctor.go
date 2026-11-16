@@ -1,5 +1,5 @@
 // Package doctor implementa o `golmet doctor` — checklist de saúde do
-// workspace e do ambiente (FORMATO §9 soft: S2/S3/S5, §10 capacidades de
+// workspace e do ambiente (FORMAT §9 soft: S2/S3/S5, §10 capacidades de
 // kit, §2 zona do kit). Consulta: NUNCA escreve; exit 0 salvo workspace
 // inválido (CLI sai 2).
 package doctor
@@ -145,7 +145,7 @@ func Run(dir string, opt Options) (*Report, error) {
 	}
 	rep.add("golmet.yaml", OK, "format: 1", "")
 
-	// 1b. container de organização (FORMATO §2): o golmet.yaml declara
+	// 1b. container de organização (FORMAT §2): o golmet.yaml declara
 	// container: true — a raiz é um CONTAINER, não um workspace-produto.
 	// Roda o checklist de hierarquia próprio + ambiente de máquina e
 	// ENCERRA: os checks de workspace-produto (índice, scan de entidades,

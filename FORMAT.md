@@ -1,4 +1,4 @@
-# FORMATO v1 — Especificação Normativa do Workspace GOLMET
+# FORMAT v1 — Especificação Normativa do Workspace GOLMET
 
 > **Versão:** 1 (draft F1) · **Consumidores:** kit GOLMET (valida) · engines agênticos (executam transições) · ingestores externos futuros.
 > Este documento é **o contrato** que terceiros implementam. Vive no repo público via snapshot.
@@ -12,7 +12,7 @@
 
 ## 1. Escopo (D1 — verdade declarada vs. inferida)
 
-O FORMATO governa apenas o **estado normativo** do produto: o que foi decidido e formalizado em documento. Estado de **implementação** é inferido por análise de código — nunca afirmado pelo formato. O kit detecta **evidência stale** (hash ≠ HEAD atual); nunca declara "não implementada".
+O FORMAT governa apenas o **estado normativo** do produto: o que foi decidido e formalizado em documento. Estado de **implementação** é inferido por análise de código — nunca afirmado pelo formato. O kit detecta **evidência stale** (hash ≠ HEAD atual); nunca declara "não implementada".
 
 ## 2. Layout do workspace
 
@@ -42,7 +42,7 @@ O FORMATO governa apenas o **estado normativo** do produto: o que foi decidido e
 
 **O `golmet init` sem flags e sem `--yes` é SEMPRE interativo** (M22) —
 pergunta o que inicializar (**Organização** — termo do usuário; "container"
-permanece o termo interno do `golmet.yaml`/FORMATO — / workspace-produto em
+permanece o termo interno do `golmet.yaml`/FORMAT — / workspace-produto em
 Organização existente / workspace-produto raiz livre) e **confirma antes de
 criar** (nome/destino exibidos); nunca cria no cwd silenciosamente. A
 escolha é **wizard visual com setas quando TTY** (o mesmo padrão do wizard
@@ -91,8 +91,35 @@ não é uma Organização declarada — rode golmet init --org nela, ou informe
 outra"; golmet.yaml sem `container: true` → "essa pasta é um workspace-
 produto, não uma Organização"; `esc` cancela o wizard inteiro.
 
-**Navegação multi-step do wizard do init (M27):** o wizard navega —
-**enter avança; ← no texto VAZIO volta ao passo anterior** (o valor
+**A convenção bilingue da doc pública (M33).** O idioma base é
+**ENGLISH** (o arquivo sem sufixo — o padrão internacional, consistente com
+o README.md EN); a tradução PT-BR usa o sufixo **`.pt-br.md`**. Cada doc
+público carrega o **badge de alternância no topo**
+(`English | Português (Brasil)`) com os links cruzados (o EN linka o par
+`.pt-br.md` e vice-versa; o README raiz idem). O conteúdo das versões PT é
+PT-BR natural (não tradução de robô). O FORMAT.md e o
+`docs/ARQUITETURA_GOLMET_V2.md` são specs técnicas integrais em PT — a
+tradução EN integral é **onda própria** (a escala da spec; o
+`docs/reference/format.md` é o apontador com o mapa de seções EN enquanto
+não existe). Os cross-links internos da doc linkam o MESMO idioma (o doc
+PT linka pares `.pt-br.md`; o EN linka os bases). O sync da árvore é
+vigiado pelo teste (`internal/cli/docs_sync_test.go` — par PT↔EN + badges).
+
+**Documentação de produto — FORA da DAG (M30).** A documentação é OUTPUT
+pós-release, não requisito: a doc pública do KIT vive no repo do kit
+(README rico + `docs/concepts/`, `docs/getting-started/`,
+`docs/reference/` — o site público renderiza depois, o repo é a fonte); a
+doc de PRODUTO pós-release vive no produto (`docs/howto/` — o
+`gm-howto` roda por design quando uma feature é marcada done; modo de erro
+continue — não bloqueia). A DAG/`validate` NÃO vareja documentação: o
+que é requisito de verdade entra como RN normal (a doc que DEVE existir
+é definida em requisito, não em doc); a doc não gera findings do
+validate. O lint do KIT vigia a DOC DO KIT (L1: refs mortas; L6: `gm-*`
+citados que não existem no registry — já vigente). A referência pública é
+manual sincronizada com a registry (commands/tools), vigiada pelo lint L6
+e pelo teste de sincronismo do repo.
+
+**Navegação multi-step do wizard do init (M27):** o wizard navega —**enter avança; ← no texto VAZIO volta ao passo anterior** (o valor
 anterior do passo fica **pré-ecado e editável** — o raw editor recebe o
 initial; com conteúdo a seta é ignorada, o backspace apaga); **`n` no
 confirm volta a editar** (não cancela — ← idem); o **primeiro passo** (a
@@ -116,7 +143,7 @@ confirma como ALIAS** (compat com quem digita s); qualquer outra resposta
 edição); uninstall: a remoção é destrutiva — o default permanece NÃO
 (`s` confirma; ENTER/n/esc cancelam, declarado no hint).
 
-**Padrão único de cancelamento dos wizards do CLI (M24/25/26 — init,install, uninstall; FORMATO §2/§9):** o modo RAW (o padrão quando há TTY+VT
+**Padrão único de cancelamento dos wizards do CLI (M24/25/26 — init,install, uninstall; FORMAT §2/§9):** o modo RAW (o padrão quando há TTY+VT
 — o wizard do init INTEIRO é raw: menus e campos) entrega **ESC de
 teclado e CTRL+C como bytes** — cancelam em QUALQUER passo, o ESC nunca
 vaza como caractere no input (o console captura o ESC em modo COOKED — é
@@ -137,7 +164,7 @@ wizards).
 
 O conteúdo instalado pelo kit segue quatro camadas, da mais fraca para a mais
 forte: **L0 embedded** (BASE mínima no binário), **L1 FULL** (93 componentes
-canônicos embarcados ou, futuramente, um core externo), **L2 packs** (camadas
+canônicos embarcados — o kit é o escritor único), **L2 packs** (camadas
 de organização/comunidade) e **L3 local** (criações e customizações do
 operador). A precedência é `local > pack > full > base`.
 
@@ -150,9 +177,12 @@ operador). A precedência é `local > pack > full > base`.
   conflito; nunca é sobrescrito silenciosamente. `--force` é a exceção
   explícita para customizações locais, sem sobrescrever arquivos geridos por
   packs.
-- O core externo (`--core`) é aceito pelo CLI e pelas tools MCP; o FULL
-  embarcado continua sendo o default offline e atomicamente compatível com o
-  renderizador do kit.
+- **Evolução (M32):** o mecanismo de core externo (DR-021 — o aceite
+  `--core` de fonte Git/local pelo CLI e pelas tools MCP) foi
+  **supersedido pelo modelo de packs**: a variante de conteúdo é o **pack
+  L2 montado sobre o FULL embarcado** (a decisão data da extinção do core
+  repo — o termo "core" passou a designar só o embutido). O FULL embarcado
+  é o único caminho L1.
 
 > **NOTA (perfis do CLI):** os perfis do `golmet install` são `essencial`
 > (L0+BASE na zona `.golmet/` do workspace — kit do repositório, versionado
@@ -249,8 +279,9 @@ do container). Estrutura canônica da raiz:
 **Os 2 modelos de versionamento de organização (`versioning:` no
 golmet.yaml do container — M29):**
 
-- **`org-repo`** (a realidade da TechMinds — o TM.RDD.DOCS é um repo Git
-  e o Groom é pasta dele): a ORGANIZAÇÃO é o repo — o `.gitignore` é da
+- **`org-repo`** (a realidade de orgs que versionam tudo num repo único —
+  a org é o repo Git e os produtos são pastas dele): a ORGANIZAÇÃO é o
+  repo — o `.gitignore` é da
   raiz da org (o `init --org` o cria: `.golmet/*` + SO/editor), a zona do
   kit é da ORG (opcional — o `golmet update` essencial na raiz instala
   `.golmet/skills/` e ganha a EXCEÇÃO `!.golmet/skills/` no gitignore:
@@ -265,9 +296,16 @@ golmet.yaml do container — M29):**
   do produto herda) e o `.gitignore` é de cada produto.
 
 O `init --org` declara `versioning: org-repo` (o default do init --org —
-o caso da TechMinds) e é idempotente (golmet.yaml/.gitignore existentes
+o caso de orgs assim) e é idempotente (golmet.yaml/.gitignore existentes
 nunca são sobrescritos). O `init --into` RESPEITA o modelo declarado e
 reporta ("modelo de versionamento da organização: org-repo").
+
+**A Organização `org-repo` é o repositório de versionamento: os produtos
+versionam dentro do repo da org.** O init cria a estrutura e o
+`.gitignore` (a zona de trabalho `.golmet/*` protegida); o `git init` e os
+commits são **operação Git do operador** — o kit nunca roda git por conta
+própria (a saída do `init --org` orienta o passo; a política de
+versionamento é do CONSTITUTION de cada container).
 
 **Semântica contextual da `.golmet/`** — a mesma pasta do kit em qualquer
 contexto, com papéis distintos (M19): no **workspace-produto** é
@@ -311,7 +349,7 @@ TRABALHO do kit, não conteúdo da organização.
 ## 3. `golmet.yaml`
 
 ```yaml
-format: 1                # DEVE — versão do FORMATO suportada
+format: 1                # DEVE — versão do FORMAT suportada
 container: false         # true na raiz de container de organização
 versioning: produtos-repo # só quando container: true — org-repo | produtos-repo (§2.3/M29; ausente = produtos-repo)
 products: [MeuApp]        # só quando container: true
@@ -361,7 +399,14 @@ resolvido no manifest de conteúdo.
 (ex.: `">=X <Y"`) e outros operadores são rejeitados com erro citando o
 formato aceito, nos dois arquétipos. O pack central da organização (remoto)
 distribui o arquétipo `state` para todos os colaboradores; forks ramificam a
-partir dele.
+partir dele. **A subida é `publish` — manual por design:** o commit do WIP do
+working copy (`"publish: <mensagem>"`) + `git push origin <branch>` — o kit
+nunca publica por conta própria (o sync do `pack update` nunca sobe). O
+caminho da IA: a tool MCP **`gm_pack_publish`** (o mesmo core do
+`golmet pack publish` — sem `confirm=true` devolve o PREVIEW da subida
+proposta: working copy, WIP, commit e push alvo; o `confirm=true` do
+operador aplica — o padrão confirm das mutações `gm_update`/
+`gm_pack_update`/`gm_pack_publish`/`gm_upgrade`).
 
 ## 4. Gramática de IDs
 
@@ -416,7 +461,7 @@ Dois mecanismos, escolhidos por granularidade (D2 — sem YAML por seção, sem 
 
 ### 6.1 Subset YAML aceito (normativo — DR-018)
 
-O kit implementa **parser próprio** (zero deps). O FORMATO aceita APENAS:
+O kit implementa **parser próprio** (zero deps). O FORMAT aceita APENAS:
 
 - **Chaves:** escalares simples (`status`, `anchor`, `name`) — sem aninhamento além de 1 nível
 - **Valores:** escalares (`draft`, `true`, `42`, `RN-109`) ou **array inline de escalares em chaves de topo** (`[file, ask, kit.jev]`)
@@ -602,7 +647,7 @@ Sem check de vocabulário legado (L2 fora do escopo por decisão do operador).
 | L5 | warning | Nome estrutural fora de kebab-case ASCII (dirs/temas canônicos; nomes com extensão isentos) |
 | L6 | error/warning | Componente fantasma: `gm-*` citado que não existe no registry — **error** em `coredata/sources` (contrato vivo), **warning** em docs/AGENTS.md (histórico) |
 | L7 | error | Estrutura fora do padrão canônico (declarado abaixo) |
-| L7-size | warning | Aviso de tamanho de agregado unitário do workspace: DATA_MODEL acima do limiar de quebra (gramática §7.7.1 declarada — split do gm-datamodel) e os 4 candidatos precoces (DECISIONS 800 · ERROR_CATALOG 600 · KNOWN_ERRORS 400 · GLOSSARY 300 linhas) acima do limiar de aviso — **detecção sem gramática**: o aviso só recomenda planejar a quebra com o gm-doc; a gramática quebrada de cada artefato será declarada no FORMATO quando o volume justificar |
+| L7-size | warning | Aviso de tamanho de agregado unitário do workspace: DATA_MODEL acima do limiar de quebra (gramática §7.7.1 declarada — split do gm-datamodel) e os 4 candidatos precoces (DECISIONS 800 · ERROR_CATALOG 600 · KNOWN_ERRORS 400 · GLOSSARY 300 linhas) acima do limiar de aviso — **detecção sem gramática**: o aviso só recomenda planejar a quebra com o gm-doc; a gramática quebrada de cada artefato será declarada no FORMAT quando o volume justificar |
 | L8 | warning | Conformidade estrutural definitivo ↔ template: o definitivo (AGENTS.md, perfis) perdeu o MÍNIMO estrutural declarado (blocos marcadores/seções/campos). Conteúdo extra = OK (evolução); definitivo ausente = skip; template depositado no config = L7 warning |
 | L9 | error | Schema do registry de stack-templates — o materializado do kit (`profile/stack-templates.yaml`) E os registries da org in-place nos packs (`packs/*/rules/stack-templates.yaml` — M15 pack-first, mesma regra, contrato §2.2): YAML parseável, `boilerplate_org` presente (placeholder `<...>` aceito), cada template com `detect` não-vazio, chave `boilerplate` presente (`null` aceito) e `description` presente quando `boilerplate` é não-null. Arquivo ausente = skip silencioso (o install materializa o do kit; pack sem registry é estado legítimo). Check separado do L7 de propósito: L7 é estrutura de diretórios; L9 é schema de conteúdo — o by_check diagnostica com precisão |
 | L10 | error/warning | Estado interno dos state packs em `packs/<id>/` (M20 — o lint aponta, o escritor canônico corrige): `rules/*.md` sem gatilho explícito no topo (warning/arquivo — formato `gm-rule-keeper`: H1 + "> Gatilho: AO …", uma norma por arquivo); `accumulation/patterns/<tipo>/` fora da taxonomia EN `process\|architecture\|code\|ui\|test\|data` (warning/dir — `gm-pattern-extractor` define a taxonomia; era PT até a uniformização); `domains/` sem INDEX.md ou `domains/<domínio>/` sem KNOWLEDGE.md (warning — `gm-domain-research`); working copy com `.git` sem `pack.yaml` (**error** — a fonte da verdade do pack sumiu). Dir sem pack.yaml e sem `.git` não é working copy — fica para os checks existentes, sem duplicar |
@@ -669,7 +714,7 @@ obriga); só a PERDA/ausência do mínimo declarado flaga.
   (400, fallback raiz) e `GLOSSARY.md` (300) disparam o aviso ANTES de
   existir gramática quebrada para eles — o warning não aponta layout
   nenhum: recomenda PLANEJAR a quebra com o gm-doc, e a gramática de cada
-  artefato entra no FORMATO quando o volume justificar (nenhum workspace é
+  artefato entra no FORMAT quando o volume justificar (nenhum workspace é
   obrigado a quebrar).
 
 **Heurísticas anti-falso-positivo (declaradas):** URLs/âncoras/`<placeholders>`/

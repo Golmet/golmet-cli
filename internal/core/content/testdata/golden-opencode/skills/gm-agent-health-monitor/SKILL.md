@@ -36,7 +36,7 @@ Os artefatos do módulo seguem a estrutura com subpastas:
 - **`support/`:** LEGACY_CONTEXT.md, KNOWN_ERRORS.md, MIGRATION.md, CHANGE_REQUESTS.md
 - **`glossaries/`:** DEV_GLOSSARY.md, BUSINESS_GLOSSARY.md, USER_GLOSSARY.md, GLOSSARY.md
 - **`docs/`:** howto/*.md e documentos auxiliares
-- **`meetings/`, `contracts/`:** checkpoints (workspace-produto mantém `meetings/`; container de organização grava na zona de trabalho do kit — `.golmet/meetings/`, FORMATO §2.3/M19)
+- **`meetings/`, `contracts/`:** checkpoints (workspace-produto mantém `meetings/`; container de organização grava na zona de trabalho do kit — `.golmet/meetings/`, FORMAT §2.3/M19)
 
 **Regra de fallback (transição):** ao **LER** um artefato, verifique primeiro
 o caminho novo; se não existir, use o caminho legado na raiz do módulo. Ao
@@ -166,7 +166,7 @@ Use `glob` para encontrar diretórios com `PROJECT_CHARTER.md`.
    outro artefato (usando `grep`).
 3. Artefatos não referenciados por ninguém são "órfãos".
 4. **Temporários da zona `.golmet/` do container (válvula de escape —
-   FORMATO §2.3):** arquivo em `.golmet/` com sinais de função ganha
+   FORMAT §2.3):** arquivo em `.golmet/` com sinais de função ganha
    (conteúdo estruturado, nome estável, citado por outros artefatos) →
    sugira ao operador a **promoção à estrutura canônica** via o escritor
    canônico correspondente (`gm-datamodel` specs · `gm-rule-keeper`

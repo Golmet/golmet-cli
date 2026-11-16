@@ -6,7 +6,7 @@ import (
 )
 
 // S2 — Hash de evidência ≠ HEAD do repo → worklist de refresh
-// (FORMATO §5/§9). Requer git disponível e repos no charter §1.
+// (FORMAT §5/§9). Requer git disponível e repos no charter §1.
 func S2(ctx *Context) []core.GolmetError {
 	if ctx.Git == nil || !ctx.Git.Available() || len(ctx.Repos) == 0 {
 		return nil

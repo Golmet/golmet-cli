@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-// ---- o padrão ÚNICO de cancelamento (FORMATO §2/§9 — wizard_read.go) ----
+// ---- o padrão ÚNICO de cancelamento (FORMAT §2/§9 — wizard_read.go) ----
 
 func TestReadWizardLineEscKeyAndLiteral(t *testing.T) {
 	// ESC de teclado: a linha \x1b (ESC sozinho vaza como byte em alguns

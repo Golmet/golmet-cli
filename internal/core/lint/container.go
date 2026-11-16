@@ -1,4 +1,4 @@
-// Checks do CONTAINER de organização (FORMATO §2) — consumidos pelo Run
+// Checks do CONTAINER de organização (FORMAT §2) — consumidos pelo Run
 // quando o golmet.yaml declara container: true. Fonte da estrutura
 // canônica: internal/core/container (compartilhada com o doctor). O
 // workspace-produto (golmet.yaml sem container) segue pelos checks

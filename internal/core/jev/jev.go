@@ -1,5 +1,5 @@
 // Package jev é o cliente do classificador calibrado Typesafe/Jev
-// (FORMATO §10 — kit.jev, DR-015): POST para a API com texto + critérios
+// (FORMAT §10 — kit.jev, DR-015): POST para a API com texto + critérios
 // TypeSafe. SEM degradação silenciosa: key ausente ou API indisponível
 // devolve resposta ESTRUTURADA com Offline=true e motivo declarado.
 package jev

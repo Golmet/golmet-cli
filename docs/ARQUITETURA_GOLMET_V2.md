@@ -32,7 +32,7 @@ Três camadas divididas **por natureza** (cada uma com cadência de mudança e c
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│ 1. FORMATO — spec versionada                             │
+│ 1. FORMAT — spec versionada                             │
 │    layout do workspace · schemas dos artefatos ·         │
 │    transições de estado · gramática de evidência         │
 ├──────────────────────────────────────────────────────────┤
@@ -50,11 +50,11 @@ Três camadas divididas **por natureza** (cada uma com cadência de mudança e c
 
 - **Julgamento no engine** — elicitar, extrair regra, redigir spec, generalizar contribuição: sempre camada agêntica.
 - **Determinismo no kit** — IDs, transições legais, invariâncias, staleness, scaffold, neutralidade mecânica: sempre CLI/MCP, centralizadamente atualizável, nunca copiado.
-- **Verdade no formato** — os artefatos sobrevivem a engines, kits e releases; qualquer consumidor futuro ingere o FORMATO.
+- **Verdade no formato** — os artefatos sobrevivem a engines, kits e releases; qualquer consumidor futuro ingere o FORMAT.
 
 **Regra de ouro da degradação:** degrada ergonomia, nunca invariância do formato.
 
-## 3. FORMATO v1
+## 3. FORMAT v1
 
 ### 3.1 Entidades e máquina de estados
 
@@ -95,7 +95,7 @@ NÃO entra: lifecycle do produto · severidade como estado (fica label) · assig
 | Comando | O que faz | Absorve (hoje é skill) |
 |---|---|---|
 | `golmet init` | scaffolding do workspace (ou `--org` para container; `--into` para adicionar workspace a container existente; `adopt` envolve estrutura existente) | — |
-| `golmet validate` | conformidade ao FORMATO: front matters, gramática de ID, unicidade/sequência, transições legais, gramática de evidência, invariâncias hard. Exit code ≠ 0 → CI-block | skills da geração anterior de validação + mecânica de wiki-lint e decision-audit |
+| `golmet validate` | conformidade ao FORMAT: front matters, gramática de ID, unicidade/sequência, transições legais, gramática de evidência, invariâncias hard. Exit code ≠ 0 → CI-block | skills da geração anterior de validação + mecânica de wiki-lint e decision-audit |
 | `golmet status` | dashboard: estados por entidade, PENDs, CRs, propagação devedora, versão de formato | skills da geração anterior de progresso e tasks pendentes |
 | `golmet doctor` | freshness de evidência vs HEAD; capacidade do engine vs `requires` das skills; versões. Detecta — nunca reescreve verdade | novo |
 | `golmet update` | atualiza subset embarcado com manifest SHA-256 preservando arquivos modificados; migra formato | novo |
@@ -132,6 +132,28 @@ Quatro modos de integração:
 Erros do kit são estruturados (`--json`: arquivo, entidade, regra, correção sugerida) — consumíveis pelo agente no loop.
 
 ## 5. RUNTIME
+
+### 5.0 Distribuição (M31 — a via npm)
+
+O binário chega ao público por 3 vias, na ordem de preferência:
+
+- **npm (a via principal)**: `npm install -g golmet-cli` — o `bin/golmet.js`
+  (launcher, Node ≥14, sem dependências) detecta `process.platform/arch`,
+  resolve o binário nativo do sub-pacote `@golmet/cli-<os>-<arch>`
+  (optionalDependencies do principal) e o despacha com stdio inherit — o
+  exit code propaga. Pacote ausente → erro claro com os 2 caminhos de
+  recuperação. O release workflow **monta os 5 pacotes de plataforma**
+  (`npm/<os>-<arch>/` com o binário cross-compilado, versão fixada pela
+  tag) e publica via `npm publish` — **os 5 de plataforma ANTES do
+  principal** (o npm resolve os opcionais na instalação do principal);
+  publish tolerante a falha (o release nunca quebra por npm — decisão M4).
+- **Go**: `go install …/cmd/golmet@latest` (a via do desenvolvedor Go).
+- **GitHub Releases**: os binários cross-compilados + checksums SHA-256
+  (a via manual).
+
+O `golmet upgrade` (self-update) serve as vias Go/binary; sob gestão npm
+(o path do binário contém `node_modules`) ele NÃO substitui o arquivo —
+orienta `npm update -g golmet-cli`.
 
 ### 5.1 Modelo de capacidades
 
@@ -176,7 +198,7 @@ Escadas de degradação explícitas por capacidade (`ask`: nativo → chat+stop 
 
 ## 6. Distribuição e Instalação
 
-- **Canal:** pacote npm (`npx golmet-cli golmet` até o appeal do unscoped `golmet`). **Fonte de desenvolvimento = repo público `Golmet/golmet-cli` desde a F1 (DR-019):** kit (Go) + FORMATO + `gm-*` BASE, abertos. Cores privados de adotantes mantêm workflows FULL próprios até a migração — realidade de mantenedor, não requisito da arquitetura (DR-006).
+- **Canal:** pacote npm (`npx golmet-cli golmet` até o appeal do unscoped `golmet`). **Fonte de desenvolvimento = repo público `Golmet/golmet-cli` desde a F1 (DR-019):** kit (Go) + FORMAT + `gm-*` BASE, abertos. Cores privados de adotantes mantêm workflows FULL próprios até a migração — realidade de mantenedor, não requisito da arquitetura (DR-006).
 - **`init` instala por perfil, em dois lugares:**
   - subset **BASE** → dentro do **workspace** (portátil — é o que torna o workspace multi-engine);
   - perfil **FULL** → estrutura do runtime de referência (OpenCode: agents/skills).
@@ -260,7 +282,7 @@ Mapa de substantivos final do usuário/org: **kit · workspace · container · p
 | Fase | Conteúdo | Observação |
 |---|---|---|
 | **F0 — Cirurgia de camadas** (prep, no core atual) | auditar as 78 skills marcando deps de tool (grep `question`/`task`/opencode); classificar inventário conforme §11 | barato; serve mesmo sem portar |
-| **F1 — FORMATO + KIT v0** | spec do FORMATO v1; kit com `init/validate/status/doctor/update`; extrair subset BASE (~12 skills); front matter de capacidades nas skills | semanas, não meses; subtrai manutenção de ~6-8 skills |
+| **F1 — FORMAT + KIT v0** | spec do FORMAT v1; kit com `init/validate/status/doctor/update`; extrair subset BASE (~12 skills); front matter de capacidades nas skills | semanas, não meses; subtrai manutenção de ~6-8 skills |
 | **F2 — Prova de adoção externa** | publicar npm; demo-assassina (legado → specs rastreáveis); case dogfooding; docs EN + landing | **KPI: adoção externa real dos artefatos** — não estrelas |
 | **F3 — FULL via npm + contribuição** | `install --profile full` no runtime de referência; `golmet contribute`; evals × engine no CI upstream | |
 | **F4 — Container/pack na org** | `--org`, `adopt`, pack sync/link/pin no container; multi-dev | |
@@ -275,21 +297,21 @@ Ordem deliberada: **prova antes de expansão** — nenhuma fase além de F2 depe
 | DR-002 | Sem fork de runtime | distro/plugins primeiro; fork só com gatilhos objetivos (PMF + financiamento + primitivo impossível via plugin/MCP) |
 | DR-003 | Unidade = workspace de produto | nunca pasta de config por repo nem instância global; repos de código referenciados no charter, nunca invadidos |
 | DR-004 | KIT determinístico sem LLM | kit escreve só o que recomputa; agente escreve prosa; humano confirma gates |
-| DR-005 | FORMATO v1 (D1–D3) | verdade declarada ≠ inferida; índice gerado pelo kit; enforcement hard/soft |
+| DR-005 | FORMAT v1 (D1–D3) | verdade declarada ≠ inferida; índice gerado pelo kit; enforcement hard/soft |
 | DR-006 | npm como canal; core privado sai do camado de adoção | core privado = só realidade de mantenedor (opcional até para eles) |
 | DR-007 | Pack = deltas com pin no container | conteúdo gitignored; repo do pack é a SóT; nunca vendorado (exceto export opt-in) |
 | DR-008 | Skills BASE vendored no workspace | idênticas para todos; update = bump commitado via PR |
 | DR-009 | Builder/improver agênticos, sem /feedback passivo | melhorias nascem em sessão de IA; editam fonte versionável (pack/fork), nunca instalação viva |
 | DR-010 | `golmet contribute` | neutralidade mecânica (gate existente) + mecânica de PR; generalização é julgamento agêntico |
 | DR-011 | Identidade via git config | nada pessoal no repo de docs; config de cliente = `local.yaml` gitignored |
-| DR-012 | Produtos irmãos da organização fora do escopo desta arquitetura | consumidores futuros potenciais do FORMATO; nenhuma dependência no desenho |
+| DR-012 | Produtos irmãos da organização fora do escopo desta arquitetura | consumidores futuros potenciais do FORMAT; nenhuma dependência no desenho |
 | DR-013 | **Batismo: o workflow passa a se chamar GOLMET** | **GOLEM + EMET** (אמת, "verdade" — a palavra inscrita que anima o golem): o nome performa o mito do produto — o T da verdade que não pode faltar. Escolhido após 8 rodadas de naming com ~52 nomes verificados (npm/GitHub/marcas); reservas de canais públicos executadas na data — ver §17 |
 | DR-014 | Prefixo padrão de skills/agents = `gm-*` | iniciais de GolMet (Gol+Met); curto, sem colisão de namespace; skills BASE nascem `gm-*`, legadas migram na F3 |
 | DR-015 | **Transporte do Jev migra para o kit** | `golmet mcp` expõe `gm_jev_classify` (POST HTTPS mecânico — mesma entrada, mesma chamada); key via env `TYPESAFE_API_KEY`; o transporte triplo atual (plugin MCP do runtime + task para subagent + curl na skill) colapsa em 1 caminho e o plugin `jev-tool.js` deixa de ser necessário; skills mantêm o julgamento (o que classificar, com quais critérios) e encolhem o transporte; degradação heurística declarada no front matter (padrão do prompt-gate vira lei) |
 | DR-016 | **MCPs opcionais ficam na RUNTIME layer; codegraph é a exceção nativa** | MCPs de serviço (playwright, postgres, sqlite, figma, hostinger) continuam gerenciados pelo runtime (skills de setup como hoje); **codebase-memory (grafo de código) entra no kit**: download com verificação supply-chain em código de produto (SHA-256/attestation testável), `golmet index` torna a ingestão em grafo nativa do bootstrap (`init --repo` já indexa), tools do grafo expostas via `golmet mcp` — engine-agnostic; skill de setup do codegraph absorvida |
 | DR-017 | **`golmet eval` (v0.5)** | runner determinístico de evals (fixtures + criteria + relatório) vira comando do kit; CI do core e o gate de promoção de packs (§10) o invocam — skill-eval encolhe para wrapper |
-| DR-018 | **Stack do kit: Go nativo, zero-dep** | binário único por plataforma (decisão do operador 08/11 — substitui a linha Node/TS do §4.1); npm = **instalador fino** (modelo esbuild: `optionalDependencies` por plataforma, Node só no bootstrap do wrapper; `npx golmet-cli golmet` até o appeal do unscoped); SDK MCP **oficial go-sdk**; parser de front matter = **subset YAML próprio** normatizado no FORMATO §6.1; arquitetura **core-lib** (`internal/core` puro, adapters injetados — CLI, MCP server, GitHub Action e testes consomem a mesma lógica); motor de scan **portado do scanner da geração anterior** (testes como âncora de paridade); bin `golmet` (`gm` descartado — colide com GraphicsMagick). Rust permanece para onde performance real importa (grafo, produtos irmãos) |
-| DR-019 | **Casa canônica do kit: repo público desde a F1** | kit (Go) + **FORMATO.md (spec canônica)** + skills BASE `gm-*` (tier community) desenvolvem-se **abertos** em `Golmet/golmet-cli`; cores privados de adotantes mantêm workflows FULL próprios até a migração. Histórico público desde o primeiro commit (credibilidade F2, contribuição F3 trivial). FORMATO.md migra para o repo do kit no início da implementação |
+| DR-018 | **Stack do kit: Go nativo, zero-dep** | binário único por plataforma (decisão do operador 08/11 — substitui a linha Node/TS do §4.1); npm = **instalador fino** (modelo esbuild: `optionalDependencies` por plataforma, Node só no bootstrap do wrapper; `npx golmet-cli golmet` até o appeal do unscoped); SDK MCP **oficial go-sdk**; parser de front matter = **subset YAML próprio** normatizado no FORMAT §6.1; arquitetura **core-lib** (`internal/core` puro, adapters injetados — CLI, MCP server, GitHub Action e testes consomem a mesma lógica); motor de scan **portado do scanner da geração anterior** (testes como âncora de paridade); bin `golmet` (`gm` descartado — colide com GraphicsMagick). Rust permanece para onde performance real importa (grafo, produtos irmãos) |
+| DR-019 | **Casa canônica do kit: repo público desde a F1** | kit (Go) + **FORMAT.md (spec canônica)** + skills BASE `gm-*` (tier community) desenvolvem-se **abertos** em `Golmet/golmet-cli`; cores privados de adotantes mantêm workflows FULL próprios até a migração. Histórico público desde o primeiro commit (credibilidade F2, contribuição F3 trivial). FORMAT.md migra para o repo do kit no início da implementação |
 | DR-020 | **Política graph-first para o grafo de código** | obriga a **disciplina**, não a infra: com `kit.graph` presente e índice fresco, navegação estruturada (`get_architecture`/`search_graph`/`trace_path`) é a primeira instância — grep/glob ficam para literais e para o que o grafo não resolve (ex.: atributos ASP.NET `[HttpGet]`). Índice stale responde com confiança errada (pior que grep) → re-indexar antes de usar. Sem grafo → degradação `grep-fallback` declarada no relatório (`navegação: graph \| grep-fallback`) — observável, nunca silenciosa, nunca bloqueante. Motivação: elevar a qualidade do workflow permanentemente sem fragilidade de pré-condição dura (decisão do operador 11/11). Aplicada em: gm-dev-backend/frontend (de "complemento opcional" → graph-first), gm-reverse/gm-reverse-orchestrator (mineração de fatia começa pelo estrutural) e playbooks de stack (rust/dotnet/java/angular) |
 | DR-021 | **FULL embarcado + camadas de conteúdo com overlay seguro** | o CLI embarca o FULL (89 componentes) como L1 default offline; `golmet install --full` e `update --full` renderizam o registry em Go e materializam agents/skills no engine. Camadas: L0 BASE embedded → L1 FULL → L2 packs (organização/comunidade) → L3 local; precedência `local > pack > full > base`. Manifest registra origem/layer/SHA por arquivo. Update usa detecção 3-way: customização local divergente é preservada e reportada como conflito; só `--force` substitui. O core externo é a variante opt-in detalhada na DR-022. Decisão do operador 12/11: conteúdo FULL junto ao CLI, sem acoplar o usuário a clone/rede no bootstrap; packs continuam a unidade futura de compartilhamento comunitário. |
 | DR-022 | **Core externo e packs usam o mesmo transporte Git/cache** | `golmet update --full --core <url-ou-diretório> --engine <id>` sincroniza o core externo em `~/.golmet/sources/core`, fixa o SHA e reutiliza o mesmo parser/render/overlay do FULL embarcado. `golmet pack add <url-ou-diretório> --engine <id>` sincroniza um pack L2 em `~/.golmet/packs`, valida `pack.yaml` (`id`, `version`, `provides`, `no-override`) e aplica apenas `agents/`/`skills/`; conflitos locais são preservados. Isso deixa a comunidade compartilhar packs sem acoplar o binário e reserva um índice de descoberta para evolução posterior. |
@@ -298,7 +320,7 @@ Ordem deliberada: **prova antes de expansão** — nenhuma fase além de F2 depe
 
 ## 15. Fora de Escopo (explícito)
 
-- **Produtos irmãos da organização**: não integram esta arquitetura; permanecem potenciais consumidores do FORMATO no futuro.
+- **Produtos irmãos da organização**: não integram esta arquitetura; permanecem potenciais consumidores do FORMAT no futuro.
 - **TOP 1 por adoção geral**: meta substituída — liderança no nicho brownfield/documentação com prova.
 - **Fork de runtime / CLI gerador estilo Spec Kit**: rejeitados para o horizonte atual (ver DR-002).
 

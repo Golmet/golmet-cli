@@ -1,5 +1,5 @@
-// Package rules implementa o enforcement do FORMATO v1 §9 — uma regra =
-// um arquivo/função com nome mapeado ao FORMATO (H1..H10 hard, S1..S5 soft).
+// Package rules implementa o enforcement do FORMAT v1 §9 — uma regra =
+// um arquivo/função com nome mapeado ao FORMAT (H1..H10 hard, S1..S5 soft).
 package rules
 
 import (
@@ -43,7 +43,7 @@ func (c *Context) Resolver() *hashResolver {
 	return c.resolver
 }
 
-// Rule é uma regra §9 com nome mapeado ao FORMATO.
+// Rule é uma regra §9 com nome mapeado ao FORMAT.
 type Rule struct {
 	ID   string
 	Name string

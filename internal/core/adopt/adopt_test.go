@@ -85,7 +85,7 @@ const charterLegacy = `# Charter — Legado
 | ../Legado-API | main | a1b2c3d |
 `
 
-// legacyWorkspace monta um workspace pré-FORMATO com todos os achados de
+// legacyWorkspace monta um workspace pré-FORMAT com todos os achados de
 // julgamento do enunciado: charter sem FM, evidência sem hash, RN active
 // sem evidência, ID duplicado, H7 (hash sem repo), layouts legados.
 func legacyWorkspace(t *testing.T) string {
@@ -97,7 +97,7 @@ func legacyWorkspace(t *testing.T) string {
 	writeFile(t, ws, "delivery/2026-11/RN-001 — Pedidos/RN-001 — Pedidos - Feature.md", "# Feature legada\n")
 	writeFile(t, ws, "delivery/2026-11/RN-001 — Pedidos/RN-001 — Analise-Tecnica.md", "# Análise legada\n")
 	writeFile(t, ws, "delivery/RN-009 — Avulso - Feature.md", "# feature na raiz do delivery\n")
-	writeFile(t, ws, "docs/projects/Legado/ANTIGO.md", "# doc pré-FORMATO\n")
+	writeFile(t, ws, "docs/projects/Legado/ANTIGO.md", "# doc pré-FORMAT\n")
 	return ws
 }
 

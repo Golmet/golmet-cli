@@ -1,5 +1,5 @@
 // Package status implementa o `golmet status` — dashboard SOMENTE-LEITURA
-// do workspace (FORMATO §7/§8): entidades por estado, PENDs abertas, CRs
+// do workspace (FORMAT §7/§8): entidades por estado, PENDs abertas, CRs
 // não-implementados, Features em andamento com tasks pendentes, specs
 // stale (propagação devedora — S1) e versão do formato. NUNCA escreve.
 package status

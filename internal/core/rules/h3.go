@@ -7,7 +7,7 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core/entities"
 )
 
-// H3 — Feature ready/done exige anchor RN active (FORMATO §7.5/§9);
+// H3 — Feature ready/done exige anchor RN active (FORMAT §7.5/§9);
 // done exige, além disso, todas as Tasks done.
 func H3(ctx *Context) []core.GolmetError {
 	var out []core.GolmetError

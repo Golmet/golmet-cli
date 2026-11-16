@@ -12,12 +12,12 @@ a partir do modelo de dados e das regras de negócio.
 
 ## Referências
 
-- Entidade RN (seções `## RN-NNN — <título>`): FORMATO §7.2
-- Layout do workspace (pasta `specs/`): FORMATO §2
+- Entidade RN (seções `## RN-NNN — <título>`): FORMAT §7.2
+- Layout do workspace (pasta `specs/`): FORMAT §2
 
 ## Resolução de caminhos
 
-Os artefatos do workspace seguem o layout do FORMATO §2 — a saída fica em
+Os artefatos do workspace seguem o layout do FORMAT §2 — a saída fica em
 `specs/API_CONTRACTS.md` e `specs/ERROR_CATALOG.md`.
 
 **Regra de fallback (transição):** ao **LER** um artefato, verifique primeiro
@@ -75,7 +75,7 @@ docs: add api contracts and error catalog for <produto>
 
 Antes de modelar endpoints, identifique **qual é o projeto de API correto** onde os endpoints serão implementados:
 
-1. Leia `PROJECT_CHARTER.md` §1.1 — repos do produto com branch e HEAD (FORMATO §7.1)
+1. Leia `PROJECT_CHARTER.md` §1.1 — repos do produto com branch e HEAD (FORMAT §7.1)
 2. Procure no sistema de arquivos por projetos de API relacionados aos repos registrados:
    - Busque em diretórios vizinhos pelo repo de API do produto (ex.: `<nome>-API/`)
    - Busque por marcadores da stack (arquivos de configuração de aplicação, definições de rota/route) para entender o padrão de URL

@@ -17,8 +17,8 @@ derivados das regras de negócio no formato Dado-Quando-Então (Gherkin).
 
 ## Referências
 
-- Entidade RN (seções `## RN-NNN — <título>`): FORMATO §7.2
-- IDs RN-XXX: FORMATO §4
+- Entidade RN (seções `## RN-NNN — <título>`): FORMAT §7.2
+- IDs RN-XXX: FORMAT §4
 
 ## Lê (upstream)
 

@@ -1,9 +1,9 @@
 // init_wizard.go — o wizard interativo do `golmet init` SEM flags (M22 —
-// FORMATO §2): pergunta o que inicializar ANTES de criar — nunca mais cria
+// FORMAT §2): pergunta o que inicializar ANTES de criar — nunca mais cria
 // no cwd silenciosamente (o caso real: init bare no HOME misturou workspace
 // com a instalação global do kit). Terms de usuário: "Organização" é o
 // conceito do operador; "container" permanece o termo interno do
-// golmet.yaml/FORMATO.
+// golmet.yaml/FORMAT.
 //
 // Escada de degradação (o padrão do install):
 //   - TTY + VT → wizard VISUAL com setas (raw mode — o MESMO padrão do

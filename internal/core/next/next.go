@@ -1,5 +1,5 @@
 // Package next implementa o `golmet next` — recomendação determinística
-// da próxima ação sobre o workspace (FORMATO §7/§8/§9). Consulta pura:
+// da próxima ação sobre o workspace (FORMAT §7/§8/§9). Consulta pura:
 // lê prosa + índice + manifest e produz lista ORDENADA por prioridade
 // (p1 = mais urgente); nunca escreve.
 package next

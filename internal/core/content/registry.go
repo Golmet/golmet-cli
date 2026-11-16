@@ -1,5 +1,5 @@
 // Package content implementa a camada L1 do modelo de conteúdo (DR-021):
-// parse do registry canônico (subset YAML do FORMATO) e render por engine.
+// parse do registry canônico (subset YAML do FORMAT) e render por engine.
 // O registry guarda a FONTE (itens + ponteiros para corpos); o kit renderiza
 // para o formato de cada engine — um renderizador, N engines (D2: o kit é o
 // escritor único dos artefatos de conteúdo no config).

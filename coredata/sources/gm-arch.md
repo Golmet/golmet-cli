@@ -19,12 +19,12 @@ com as decisões arquiteturais e análise de segurança do sistema.
 
 ## Referências
 
-- ADR (decisões arquiteturais registradas): FORMATO §7.8
-- Layout do workspace (pasta `specs/`): FORMATO §2
+- ADR (decisões arquiteturais registradas): FORMAT §7.8
+- Layout do workspace (pasta `specs/`): FORMAT §2
 
 ## Resolução de caminhos
 
-Os artefatos do workspace seguem o layout do FORMATO §2 — a saída fica em
+Os artefatos do workspace seguem o layout do FORMAT §2 — a saída fica em
 `specs/ARCHITECTURE.md` e `specs/SECURITY.md`.
 
 **Regra de fallback (transição):** ao **LER** um artefato, verifique primeiro
