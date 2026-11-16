@@ -95,3 +95,35 @@ tocado). Veja [init.md](init.pt-br.md).
 
 Cada doc público vem em **inglês** + **português (Brasil)** com o badge de
 alternância no topo — incluindo esta página.
+
+## O design em um diagrama
+
+A tese sobre a qual a plataforma inteira se sustenta:
+
+> **O workflow é uma máquina de estados documental do produto.** O formato é
+> o contrato; o kit é o motor determinístico; o runtime é a camada agêntica
+> que executa por capacidades.
+
+Três camadas divididas **por natureza** (cada uma com cadência de mudança e
+canal de distribuição próprios — não por tier de cliente):
+
+```
+┌─────────────────────────────────────────────┐
+│ 1. FORMAT — spec versionada                 │
+│    layout do workspace · schemas dos        │
+│    artefatos · transições de estado ·       │
+│    gramática de evidência                   │
+├─────────────────────────────────────────────┤
+│ 2. KIT — CLI determinístico (sem LLM)       │
+│    init · validate · doctor · pack · mcp ·  │
+│    upgrade · uninstall · template           │
+├─────────────────────────────────────────────┤
+│ 3. RUNTIME — camada agêntica, por           │
+│    capacidades: perfil essencial (qualquer  │
+│    engine) · FULL (runtime de referência:   │
+│    OpenCode)                                │
+└─────────────────────────────────────────────┘
+```
+
+O contrato normativo vive em [docs/FORMAT.md](../FORMAT.md); tudo que esta
+página lista é enforcementado pelos validadores do item 6.

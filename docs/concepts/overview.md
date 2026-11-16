@@ -97,3 +97,33 @@ working copy is deselected; the remote repo is never touched). See
 
 Every public doc ships in **English** + **Português (Brasil)** with an
 alternation badge on top — including this page.
+
+## The design in one diagram
+
+The thesis the whole platform stands on:
+
+> **The workflow is a documentary state machine of the product.** The
+> format is the contract; the kit is the deterministic engine; the runtime
+> is the agentic layer executing by capabilities.
+
+Three layers split **by nature** (each with its own change cadence and
+distribution channel — not by customer tier):
+
+```
+┌─────────────────────────────────────────────┐
+│ 1. FORMAT — versioned spec                  │
+│    workspace layout · artifact schemas ·    │
+│    state transitions · evidence grammar     │
+├─────────────────────────────────────────────┤
+│ 2. KIT — deterministic CLI (no LLM)         │
+│    init · validate · doctor · pack · mcp ·  │
+│    upgrade · uninstall · template           │
+├─────────────────────────────────────────────┤
+│ 3. RUNTIME — agentic layer, by capabilities │
+│    essential profile (any engine) · FULL    │
+│    (reference runtime: OpenCode)            │
+└─────────────────────────────────────────────┘
+```
+
+The normative contract lives in [docs/FORMAT.md](../FORMAT.md); everything
+this page lists is enforced by the validators of item 6.
