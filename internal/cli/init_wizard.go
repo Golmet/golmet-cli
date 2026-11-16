@@ -40,18 +40,21 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core/install"
 	"github.com/Golmet/golmet-cli/internal/core/orgs"
 	"github.com/Golmet/golmet-cli/internal/core/scaffold"
-	"golang.org/x/term"
 )
 
 // initWizard — prompts de linha lendo stdin (padrão do installWizard,
 // sem os.Exit: erros voltam ao caller para o CLI decidir o exit). tty é o
 // contexto do wizard (isTTY na entrada) — define o comportamento do
-// cancelamento (o padrão único de wizard_read.go).
+// cancelamento cooked (o padrão único de wizard_read.go). raw = TTY+VT:
+// os campos de texto vão pelo EDITOR RAW (wizard_rawedit.go) — em cooked
+// o console do Windows captura o ESC antes do programa; em raw mode o
+// editor entrega o contrato completo.
 type initWizard struct {
 	out io.Writer
 	in  *bufio.Reader
 	cwd string // cwd absoluto — base de todas as sugestões
 	tty bool
+	raw bool // TTY+VT → campos em raw mode
 }
 
 // userHomeFn injetável (testes) — o catálogo global de organizações vive
@@ -78,6 +81,12 @@ var initChoiceOptions = []pickItem{
 }
 
 func (w *initWizard) prompt(question string) (string, error) {
+	if w.raw {
+		// editor raw (o padrão da M26 revisada): em cooked o console do
+		// Windows captura o ESC — em raw mode o editor entrega ESC/CTRL+C
+		// como cancelamento e o texto com UTF-8/backspace/setas-ignoradas
+		return rawEditLine(question)
+	}
 	fmt.Fprint(w.out, question)
 	line, cancelled, serr := readWizardLine(w.in, w.tty,
 		"rode com --org ou --into <container> e --yes")
@@ -195,30 +204,31 @@ func pickApply(cur, n int, key string) (newCur, selection int, cancelled bool) {
 
 // runPickTTY roda a seleção VISUAL em raw mode — o MESMO padrão do
 // runInteractiveTTY do install (entra e sai SEMPRE com o terminal
-// restaurado; codepage UTF-8 para os glifos). Retorna (1..len(items),
-// false) selecionado, (0, true) cancelado.
+// restaurado; codepage UTF-8 para os glifos; as dependências de raw mode
+// são as injetáveis de wizard_rawedit.go — rawEnter/rawStdin/rawEcho).
+// Retorna (1..len(items), false) selecionado, (0, true) cancelado.
 func runPickTTY(header, hint string, items []pickItem, note string) (int, bool, error) {
-	oldCP := setOutputCodepage()
-	defer restoreCodepage(oldCP)
-	state, err := term.MakeRaw(int(os.Stdin.Fd()))
+	restore, err := rawEnter()
 	if err != nil {
 		return 0, false, fmt.Errorf("falha ao entrar em raw mode: %w", err)
 	}
-	defer term.Restore(int(os.Stdin.Fd()), state)
-	w := &rawWriter{out: os.Stdout, c: newTTYColors(true)}
+	defer restore()
+	oldCP := setOutputCodepage()
+	defer restoreCodepage(oldCP)
+	w := &rawWriter{alt: rawEcho, c: newTTYColors(true)}
 
 	cur := 0
 	drawPick(w, header, hint, items, cur, w.c, terminalWidth(), note)
 	single := make([]byte, 1)
 	for {
-		if _, rerr := os.Stdin.Read(single); rerr != nil {
+		if _, rerr := rawStdin.Read(single); rerr != nil {
 			return 0, true, nil
 		}
 		key := parseKey(single)
 		// setas chegam como sequência: lê o resto do frame ESC [ X
 		if single[0] == 27 {
 			next := make([]byte, 2)
-			if n2, _ := os.Stdin.Read(next); n2 == 2 && next[0] == '[' {
+			if n2, _ := rawStdin.Read(next); n2 == 2 && next[0] == '[' {
 				switch next[1] {
 				case 'A', 'H':
 					key = keyUp

@@ -52,7 +52,7 @@ func newInitCmd() *cobra.Command {
 				if isTTY() && !visual {
 					fmt.Fprintln(out, "ℹ️ terminal sem suporte a VT — modo numerado (use Windows Terminal para o wizard visual)")
 				}
-				w := &initWizard{out: out, in: stdinReader(), cwd: base, tty: isTTY()}
+				w := &initWizard{out: out, in: stdinReader(), cwd: base, tty: isTTY(), raw: visual}
 				opt, baseDir, wname, werr := runInitWizard(w, yes, visual)
 				if werr != nil {
 					if errors.Is(werr, errWizardCancelled) {
