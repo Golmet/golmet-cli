@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/Golmet/golmet-cli/internal/core/container"
 	"github.com/Golmet/golmet-cli/internal/core/frontmatter"
 	"github.com/Golmet/golmet-cli/internal/core/indexstate"
 )
@@ -47,6 +48,8 @@ type Report struct {
 	Created, Skipped  int
 	ContainerUpdated  bool   // products: do container ganhou o produto (--into)
 	ContainerProducts string // lista products após a atualização (exibição)
+	VersioningModel   string // o modelo do container (--into — M29: org-repo | produtos-repo)
+	ProductZoneSaved  bool   // M29: org-repo → o produto nasce SEM .golmet/ própria (a zona do kit é a da ORG)
 }
 
 // Run executa o scaffold. baseDir é onde criar (cwd normalmente); name
@@ -60,21 +63,33 @@ func Run(baseDir, name string, opt Options) (*Report, error) {
 		return nil, fmt.Errorf("caminho inválido: %w", err)
 	}
 	root := base
+	var versioningModel string // M29 — o modelo do container (--into)
+	var productZoneSaved bool  // M29 — org-repo → produto sem .golmet/ própria
 	if opt.Into != "" {
 		if name == "" {
 			return nil, fmt.Errorf("--into exige o nome do produto: golmet init <produto> --into <container>")
 		}
-		container, cerr := filepath.Abs(opt.Into)
+		containerDir, cerr := filepath.Abs(opt.Into)
 		if cerr != nil {
 			return nil, fmt.Errorf("container inválido: %w", cerr)
 		}
-		if st, serr := os.Stat(container); serr != nil || !st.IsDir() {
-			return nil, fmt.Errorf("container não encontrado: %s", container)
+		if st, serr := os.Stat(containerDir); serr != nil || !st.IsDir() {
+			return nil, fmt.Errorf("container não encontrado: %s", containerDir)
 		}
-		if err := requireContainer(container); err != nil {
+		if err := requireContainer(containerDir); err != nil {
 			return nil, err
 		}
-		root = filepath.Join(container, name)
+		// M29 — o modelo de versionamento do container manda: org-repo →
+		// o produto nasce SEM .golmet/ própria (a zona do kit é a da ORG)
+		// e SEM .gitignore próprio (o da raiz da org vale); produtos-repo
+		// (o default retroativo) → como hoje.
+		cfields, _, cerr := container.Config(containerDir)
+		if cerr != nil {
+			return nil, cerr
+		}
+		versioningModel = container.VersioningOf(cfields)
+		productZoneSaved = versioningModel == container.VersioningOrgRepo
+		root = filepath.Join(containerDir, name)
 	} else if name != "" {
 		root = filepath.Join(base, name)
 	}
@@ -90,7 +105,7 @@ func Run(baseDir, name string, opt Options) (*Report, error) {
 	}
 	wsName := filepath.Base(root)
 
-	rep := &Report{Root: root, Name: wsName}
+	rep := &Report{Root: root, Name: wsName, VersioningModel: versioningModel, ProductZoneSaved: productZoneSaved}
 	write := func(rel, content string) {
 		fr := FileResult{Path: filepath.ToSlash(rel)}
 		fail := func(note string) {
@@ -123,9 +138,14 @@ func Run(baseDir, name string, opt Options) (*Report, error) {
 	}
 
 	if opt.Org {
-		write("golmet.yaml", "format: 1\ncontainer: true\nproducts: []\n")
+		// M29 — o default do init --org é org-repo (a ORG é o repo — o
+		// caso da TechMinds); o .gitignore da organização nasce com o
+		// init (a zona de trabalho gitignored + SO/editor; a exceção da
+		// zona de kit entra quando o update essencial roda na raiz)
+		write("golmet.yaml", "format: 1\ncontainer: true\nversioning: org-repo\nproducts: []\n")
 		write("CONSTITUTION.md", "# Constituição — "+wsName+"\n\nPrincípios da organização (edite este stub).\n")
 		write("INDEX.md", "# Índice — "+wsName+"\n\nProjetos e documentos do container (edite este stub).\n")
+		write(".gitignore", container.OrgGitignore())
 		return rep, nil
 	}
 
@@ -142,8 +162,13 @@ func Run(baseDir, name string, opt Options) (*Report, error) {
 	write("specs/README.md", "# specs — downstream técnico (DATA_MODEL, API_CONTRACTS, UI_SPEC…)\n")
 	mkdir("analysis")
 	mkdir("delivery")
-	mkdir(".golmet/skills")
-	write(".golmet/manifest.json", manifestTemplate())
+	if !rep.ProductZoneSaved {
+		// M29 — org-repo: SEM .golmet/ própria (a zona do kit é a da ORG —
+		// o versionamento da org já cobre; o produto continua com o
+		// golmet.index.json — o índice é do workspace, não da zona)
+		mkdir(".golmet/skills")
+		write(".golmet/manifest.json", manifestTemplate())
+	}
 
 	// baseline do índice (§8) — workspace vazio, sem história; charter
 	// status alinhado ao template para o primeiro validate não reescrever
@@ -157,8 +182,8 @@ func Run(baseDir, name string, opt Options) (*Report, error) {
 	}
 
 	if opt.Into != "" {
-		container := filepath.Dir(root)
-		products, err := addToContainer(container, wsName)
+		containerDir := filepath.Dir(root)
+		products, err := addToContainer(containerDir, wsName)
 		if err != nil {
 			return rep, err
 		}

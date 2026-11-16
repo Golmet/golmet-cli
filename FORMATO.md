@@ -232,15 +232,42 @@ do container). Estrutura canônica da raiz:
 
 ```
 <Container>/
-├── golmet.yaml            # format: 1 · container: true · products: [<Produto>, …]
+├── golmet.yaml            # format: 1 · container: true · versioning: org-repo | produtos-repo · products: [<Produto>, …]
 ├── CONSTITUTION.md        # princípios da organização
 ├── INDEX.md               # navegação do container (IMP-012) — índice dos produtos
+├── .gitignore             # a ORG (M29): .golmet/* (zona de trabalho) + SO/editor
 ├── .golmet/               # ZONA DE TRABALHO do kit na org — GITIGNORED (M19):
 │   ├── meetings/          #   checkpoints transversais da org
-│   └── migrations/        #   histórico de processo da org (pilotos, auditorias, planos)
-├── <Produto>/…            # workspaces filhos — cada um com o layout §2
+│   ├── migrations/        #   histórico de processo da org (pilotos, auditorias, planos)
+│   └── skills/            #   OPCIONAL (org-repo): a zona de KIT da org — o essencial org
+│                          #   instala as skills BASE aqui e ganha a exceção !.golmet/skills/
+│                          #   no .gitignore (a equipe da org herda tudo ao clonar)
+├── <Produto>/…            # workspaces filhos — o layout §2 varia POR MODELO (abaixo)
 └── .git/                  # meta (ocultos/ferramentais ficam fora do contrato)
 ```
+
+**Os 2 modelos de versionamento de organização (`versioning:` no
+golmet.yaml do container — M29):**
+
+- **`org-repo`** (a realidade da TechMinds — o TM.RDD.DOCS é um repo Git
+  e o Groom é pasta dele): a ORGANIZAÇÃO é o repo — o `.gitignore` é da
+  raiz da org (o `init --org` o cria: `.golmet/*` + SO/editor), a zona do
+  kit é da ORG (opcional — o `golmet update` essencial na raiz instala
+  `.golmet/skills/` e ganha a EXCEÇÃO `!.golmet/skills/` no gitignore:
+  `.golmet/*` ignora o CONTEÚDO para a negação funcionar; sem update, a
+  org fica sem zona de kit) e o **workspace-produto nasce SEM `.golmet/`
+  própria** (golmet.yaml + charter + entidades + reverse/ + specs/ +
+  golmet.index.json — o versionamento da org já cobre; `.gitignore`
+  próprio do produto NÃO é criado).
+- **`produtos-repo`** (o modelo DR-008 clássico — o default retroativo
+  dos containers sem o campo): cada produto é repo próprio — a
+  `.golmet/` de cada produto é o kit do repo DELE (versionada, a equipe
+  do produto herda) e o `.gitignore` é de cada produto.
+
+O `init --org` declara `versioning: org-repo` (o default do init --org —
+o caso da TechMinds) e é idempotente (golmet.yaml/.gitignore existentes
+nunca são sobrescritos). O `init --into` RESPEITA o modelo declarado e
+reporta ("modelo de versionamento da organização: org-repo").
 
 **Semântica contextual da `.golmet/`** — a mesma pasta do kit em qualquer
 contexto, com papéis distintos (M19): no **workspace-produto** é
@@ -286,6 +313,7 @@ TRABALHO do kit, não conteúdo da organização.
 ```yaml
 format: 1                # DEVE — versão do FORMATO suportada
 container: false         # true na raiz de container de organização
+versioning: produtos-repo # só quando container: true — org-repo | produtos-repo (§2.3/M29; ausente = produtos-repo)
 products: [MeuApp]        # só quando container: true
 packs: []                # [{id, repo, pin}] — overlays da organização (§Pack)
 ```

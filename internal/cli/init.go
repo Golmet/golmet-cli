@@ -182,4 +182,10 @@ func printScaffold(cmd *cobra.Command, rep *scaffold.Report) {
 	if rep.ContainerUpdated {
 		fmt.Fprintf(out, "container atualizado: products: [%s]\n", rep.ContainerProducts)
 	}
+	if rep.VersioningModel != "" {
+		fmt.Fprintf(out, "modelo de versionamento da organização: %s\n", rep.VersioningModel)
+		if rep.ProductZoneSaved {
+			fmt.Fprintf(out, "produto SEM .golmet/ própria — a zona do kit é a da organização (org-repo)\n")
+		}
+	}
 }
