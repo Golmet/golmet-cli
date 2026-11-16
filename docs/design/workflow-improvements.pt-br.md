@@ -1,3 +1,5 @@
+<p align="center"><a href="workflow-improvements.md">English</a> | <a href="../../README.pt-br.md">Português (Brasil)</a></p>
+
 # WORKFLOW_IMPROVEMENTS.md
 
 > Registro de melhorias aplicadas no workflow Golmet.

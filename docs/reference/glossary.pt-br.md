@@ -1,3 +1,5 @@
+<p align="center"><a href="glossary.md">English</a> | <a href="../../README.pt-br.md">Português (Brasil)</a></p>
+
 # GLOSSARY — Glossário do Workflow Golmet
 
 Glossário dos termos específicos usados no workflow Golmet.

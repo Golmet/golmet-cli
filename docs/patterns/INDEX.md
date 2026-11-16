@@ -1,3 +1,5 @@
+<p align="center"><a href="../reference/glossary.md">English</a> | <a href="../../README.pt-br.md">Português (Brasil)</a></p>
+
 # Índice do Hub de Patterns
 
 Hub público de patlets cross-empresa do Golmet open core — padrões

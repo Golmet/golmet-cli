@@ -1,3 +1,5 @@
+<p align="center"><a href="migration.md">English</a> | <a href="../../README.pt-br.md">Português (Brasil)</a></p>
+
 # MIGRATION — Migração para a arquitetura open core
 
 Guia para operadores que usavam a abordagem antiga e precisam migrar para o modelo **CORE / PACK / PROFILE** (ver `README.md` §Arquitetura open core e `PACK_SCHEMA.md`).

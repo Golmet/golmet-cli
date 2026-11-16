@@ -1,3 +1,5 @@
+<p align="center"><a href="decisions.md">English</a> | <a href="../../README.pt-br.md">Português (Brasil)</a></p>
+
 # DECISIONS — ADRs do Workflow Golmet
 
 Registro de Decisões Arquiteturais (Architecture Decision Records) do workflow Golmet.

@@ -70,10 +70,10 @@ find evals -type f \
   -not -path 'evals/run-evals.sh' \
   2>/dev/null >> "$LIST" || true
 # docs/ do repo do kit (M32 — o gate cobre os docs vivos). Exclusão
-# declarada: docs/workflow/ é snapshot arqueológico do processo (mesma
+# declarada: docs/ é snapshot arqueológico do processo (mesma
 # política do migrations/ da org — histórico, não doc pública)
 find docs -type f -name '*.md' \
-  -not -path 'docs/workflow/*' \
+  -not -path 'docs/*' \
   2>/dev/null >> "$LIST" || true
 
 # Fora do escopo por construção (nunca entram na lista): rules/packs/ e packs/

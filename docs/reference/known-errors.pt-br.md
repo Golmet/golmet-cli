@@ -1,3 +1,5 @@
+<p align="center"><a href="known-errors.md">English</a> | <a href="../../README.pt-br.md">Português (Brasil)</a></p>
+
 # KNOWN_ERRORS — erros conhecidos do workflow Golmet
 
 > Reativo: entradas nascem de incidentes reais de suporte/operação. Formato: sintoma, causa, workaround, status. Nunca proativo.
