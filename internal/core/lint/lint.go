@@ -295,10 +295,16 @@ func Run(opt Options) (*Report, error) {
 		kitMDs = append(kitMDs, mdFilesUnder(ws, "")...)
 	}
 
-	// ---- L1 — referências mortas (error) ----
+	// ---- L1 - referências mortas (error) ----
 	if kitMode {
 		ids := validGm
 		for _, rel := range kitMDs {
+			// o doc de migração DESCREVE o modelo antigo por natureza
+			// (paths mortos, componentes extintos citados como passado) —
+			// L1/L6 não se aplicam a ele (exceção declarada no FORMAT §9.1)
+			if strings.HasPrefix(rel, "docs/migration") {
+				continue
+			}
 			fpath := filepath.Join(ws, filepath.FromSlash(rel))
 			roots := []string{filepath.Dir(fpath), ws}
 			if configRoot != "" {
@@ -825,6 +831,11 @@ func lintL6(rep *Report, ws string, kitMode bool, configRoot string, kitMDs []st
 	// kit: sources/rules = error (contrato vivo); docs/raiz = warning (histórico)
 	if kitMode {
 		for _, rel := range kitMDs {
+			// o doc de migração descreve o modelo antigo por natureza
+			// (componentes extintos citados como passado) — skip (L6)
+			if strings.HasPrefix(rel, "docs/migration") {
+				continue
+			}
 			sev := "warning"
 			if strings.HasPrefix(rel, "coredata/sources/") || strings.HasPrefix(rel, "coredata/rules/") {
 				sev = "error"
