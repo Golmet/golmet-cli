@@ -91,6 +91,7 @@ A doc pública é escrita como uma **jornada** — comece por ela:
 | Doc | O que é |
 | --- | --- |
 | [Primeiros passos (os tutoriais em PT)](docs/getting-started/00-por-que-golmet.pt-br.md) | **Comece aqui.** Por que o Golmet existe, e a jornada: a Organização, o projeto, o trabalho com IA, o ciclo de uma feature, o que sobra no fim |
+| [docs/concepts/overview.pt-br.md](docs/concepts/overview.pt-br.md) | **O que o Golmet entrega** — tudo, camada por camada, em uma página (comece por aqui) |
 | [docs/concepts/artefatos.pt-br.md](docs/concepts/artefatos.pt-br.md) | A arquitetura de artefatos: para que serve cada documento, o que o alimenta, o que ele alimenta |
 | [docs/recommended.pt-br.md](docs/recommended.pt-br.md) | O modo recomendado (Organização + FULL + Opencode) — e o que você perde sem ele |
 | [docs/concepts/](docs/concepts/) | Os conceitos em profundidade: organização e versionamento, camadas de conteúdo, profile, conhecimento, self-governing |
