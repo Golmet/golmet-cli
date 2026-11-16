@@ -10,11 +10,11 @@
 
 ## The problem Golmet solves
 
-Your requirements live in a Word file nobody re-reads. The specs became a
+Your requirements live in a document that nobody re-reads. The specs became a
 diagram drawn at the start of the project and never updated again. The code
 ships however it can, and when someone asks "why did this feature ship like
-this?", the answer is "ask the operator, they decided — I think". Three months
-later, even the operator doesn't remember.
+this?", the answer is "ask the analyst, they decided — I think". Three months
+later, even the analyst doesn't remember.
 
 The worst part isn't losing the requirement. It's that **nobody trusts the
 documentation anymore** — it's always stale, always incomplete, always
@@ -27,7 +27,7 @@ actually does, on every validation, before any merge.
 
 ## What Golmet does, in practice
 
-A real journey, from zero to delivery. The operator opens the company folder and
+A real journey, from zero to delivery. The analyst opens the company folder and
 runs `golmet init`: the **Organization** is born — the `golmet.yaml` that
 declares the products, the constitution, the index. Inside it he creates
 the product's project, and the project is born with the right documents
@@ -100,19 +100,19 @@ golmet status     # the entity-state dashboard
 
 The public docs are written as a **journey** — start there:
 
-| Doc | What |
-| --- | --- |
-| [docs/getting-started/](docs/getting-started/) | **Start here.** Why Golmet exists, and the journey: the Organization, the project, working with AI, the cycle of one feature, what remains at the end |
-| [docs/concepts/overview.md](docs/concepts/overview.md) | **What GOLMET delivers** — the full map in one page: everything, layer by layer (the tutorials show the journey; this is the map) |
-| [docs/concepts/artefatos.md](docs/concepts/artefatos.md) | The artifact architecture: what each document is for, what feeds it, what it feeds |
-| [docs/recommended.md](docs/recommended.md) | The recommended mode (Organization + FULL + Opencode) — and what you lose without it |
-| [docs/concepts/](docs/concepts/) | The concepts in depth: organization and versioning, content layers, profile, knowledge, self-governing |
-| [docs/FORMAT.md](docs/FORMAT.md) | The normative spec (v1) — the contract every check enforces |
-| [docs/reference/compatibility.md](docs/reference/compatibility.md) | The real MCP x engine compatibility matrix - verified cell by cell, locked by tests (honest "unverified" marks) |
-| [docs/reference/](docs/reference/) | Reference: the 18 commands, the 14 MCP tools |
-| [docs/reference/lint.md](docs/reference/lint.md) | The lint layers in depth: what each check (L1-L13) validates, why it exists, its finding example and the test that locks it |
-| [CHANGELOG.md](CHANGELOG.md) | Wave by wave, with the real-world motivation |
-| [LICENSE](LICENSE) | MIT |
+| Doc                                                                | What                                                                                                                                                  |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [docs/getting-started/](docs/getting-started/)                     | **Start here.** Why Golmet exists, and the journey: the Organization, the project, working with AI, the cycle of one feature, what remains at the end |
+| [docs/concepts/overview.md](docs/concepts/overview.md)             | **What GOLMET delivers** — the full map in one page: everything, layer by layer (the tutorials show the journey; this is the map)                     |
+| [docs/concepts/artefatos.md](docs/concepts/artefatos.md)           | The artifact architecture: what each document is for, what feeds it, what it feeds                                                                    |
+| [docs/recommended.md](docs/recommended.md)                         | The recommended mode (Organization + FULL + Opencode) — and what you lose without it                                                                  |
+| [docs/concepts/](docs/concepts/)                                   | The concepts in depth: organization and versioning, content layers, profile, knowledge, self-governing                                                |
+| [docs/FORMAT.md](docs/FORMAT.md)                                   | The normative spec (v1) — the contract every check enforces                                                                                           |
+| [docs/reference/compatibility.md](docs/reference/compatibility.md) | The real MCP x engine compatibility matrix - verified cell by cell, locked by tests (honest "unverified" marks)                                       |
+| [docs/reference/](docs/reference/)                                 | Reference: the 18 commands, the 14 MCP tools                                                                                                          |
+| [docs/reference/lint.md](docs/reference/lint.md)                   | The lint layers in depth: what each check (L1-L13) validates, why it exists, its finding example and the test that locks it                           |
+| [CHANGELOG.md](CHANGELOG.md)                                       | Wave by wave, with the real-world motivation                                                                                                          |
+| [LICENSE](LICENSE)                                                 | MIT                                                                                                                                                   |
 
 The public site renders this documentation tree after the
 release — the repo is the source, the site is a render.
@@ -145,11 +145,3 @@ The milestone plan lives in [ROADMAP.md](ROADMAP.md) (F1 = this release; F2
 = the docs site; F3 = the contribute flow and workspace migration).
 Contributing: [CONTRIBUTING.md](CONTRIBUTING.md) — table-driven tests and
 `gofmt` are mandatory. License [MIT](LICENSE).
-
-## The GOLMET family
-
-| Name       | Layer                                 |
-| ---------- | ------------------------------------- |
-| **GOLMET** | the platform                          |
-| **Arki**   | the guardian (official mascot, above) |
-| **gm-\***  | the namespace of skills and agents    |

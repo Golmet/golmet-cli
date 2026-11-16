@@ -10,11 +10,11 @@
 
 ## O problema que o Golmet resolve
 
-Seus requisitos ficam num Word que ninguém relê. Os specs viram um diagrama
+Seus requisitos ficam num documento que ninguém relê. Os specs viram um diagrama
 desenhado no começo do projeto e nunca mais atualizado. O código sai do jeito
 que dá, e quando alguém pergunta "por que essa feature saiu assim?", a
-resposta é "pergunta pro operador, ele que decidiu — acho". Três meses depois,
-nem o operador lembra.
+resposta é "pergunta pro analista, ele que decidiu — acho". Três meses depois,
+nem o analista lembra.
 
 O pior não é perder o requisito. É que **ninguém confia mais na documentação**
 — ela está sempre velha, sempre incompleta, sempre em outro lugar. Então o
@@ -26,7 +26,7 @@ o código realmente faz, a cada validação, antes de qualquer merge.
 
 ## O que o Golmet faz, na prática
 
-Uma jornada real, do zero à entrega. O operador abre a pasta da empresa e roda
+Uma jornada real, do zero à entrega. O analista abre a pasta da empresa e roda
 `golmet init`: nasce a **Organização** — o `golmet.yaml` que declara os
 produtos, a constituição, o índice. Dentro dela ele cria o projeto do
 produto, e o projeto nasce com os documentos certos já no lugar: o
@@ -97,19 +97,19 @@ golmet status     # o dashboard dos estados das entidades
 
 A doc pública é escrita como uma **jornada** — comece por ela:
 
-| Doc | O que é |
-| --- | --- |
+| Doc                                                                                      | O que é                                                                                                                                        |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | [Primeiros passos (os tutoriais em PT)](docs/getting-started/00-por-que-golmet.pt-br.md) | **Comece aqui.** Por que o Golmet existe, e a jornada: a Organização, o projeto, o trabalho com IA, o ciclo de uma feature, o que sobra no fim |
-| [docs/concepts/overview.pt-br.md](docs/concepts/overview.pt-br.md) | **O que o Golmet entrega** — o mapa completo em uma página: tudo, camada por camada (os tutoriais mostram a jornada; este é o mapa) |
-| [docs/concepts/artefatos.pt-br.md](docs/concepts/artefatos.pt-br.md) | A arquitetura de artefatos: para que serve cada documento, o que o alimenta, o que ele alimenta |
-| [docs/recommended.pt-br.md](docs/recommended.pt-br.md) | O modo recomendado (Organização + FULL + Opencode) — e o que você perde sem ele |
-| [docs/concepts/](docs/concepts/) | Os conceitos em profundidade: organização e versionamento, camadas de conteúdo, profile, conhecimento, self-governing |
-| [docs/FORMAT.md](docs/FORMAT.pt-br.md) | A spec normativa (v1) — o contrato que todo check enforça |
-| [docs/reference/compatibility.md](docs/reference/compatibility.pt-br.md) | A matriz real MCP x engine - verificada celula a celula, travada por testes (marcas honestas de "nao verificado") |
-| [docs/reference/](docs/reference/) | Referência: os 18 commands, as 14 tools MCP |
-| [docs/reference/lint.pt-br.md](docs/reference/lint.pt-br.md) | As camadas do lint em profundidade: o que cada check (L1-L13) valida, por que existe, exemplo de finding e o teste que trava |
-| [CHANGELOG.md](CHANGELOG.md) | Onda por onda, com a motivação real |
-| [LICENSE](LICENSE) | MIT |
+| [docs/concepts/overview.pt-br.md](docs/concepts/overview.pt-br.md)                       | **O que o Golmet entrega** — o mapa completo em uma página: tudo, camada por camada (os tutoriais mostram a jornada; este é o mapa)            |
+| [docs/concepts/artefatos.pt-br.md](docs/concepts/artefatos.pt-br.md)                     | A arquitetura de artefatos: para que serve cada documento, o que o alimenta, o que ele alimenta                                                |
+| [docs/recommended.pt-br.md](docs/recommended.pt-br.md)                                   | O modo recomendado (Organização + FULL + Opencode) — e o que você perde sem ele                                                                |
+| [docs/concepts/](docs/concepts/)                                                         | Os conceitos em profundidade: organização e versionamento, camadas de conteúdo, profile, conhecimento, self-governing                          |
+| [docs/FORMAT.md](docs/FORMAT.pt-br.md)                                                   | A spec normativa (v1) — o contrato que todo check enforça                                                                                      |
+| [docs/reference/compatibility.md](docs/reference/compatibility.pt-br.md)                 | A matriz real MCP x engine - verificada celula a celula, travada por testes (marcas honestas de "nao verificado")                              |
+| [docs/reference/](docs/reference/)                                                       | Referência: os 18 commands, as 14 tools MCP                                                                                                    |
+| [docs/reference/lint.pt-br.md](docs/reference/lint.pt-br.md)                             | As camadas do lint em profundidade: o que cada check (L1-L13) valida, por que existe, exemplo de finding e o teste que trava                   |
+| [CHANGELOG.md](CHANGELOG.md)                                                             | Onda por onda, com a motivação real                                                                                                            |
+| [LICENSE](LICENSE)                                                                       | MIT                                                                                                                                            |
 
 O site público renderiza esta árvore depois do release — o repo
 é a fonte, o site é um render.
@@ -142,11 +142,3 @@ O plano de marcos vive no [ROADMAP.md](ROADMAP.pt-br.md) (F1 = este release; F2 
 o site de docs; F3 = fluxo de contribuição e migração de workspace).
 Contribuições: [CONTRIBUTING.md](CONTRIBUTING.md) — testes table-driven e
 `gofmt` são obrigatórios. Licença [MIT](LICENSE).
-
-## A família GOLMET
-
-| Nome       | Camada                                |
-| ---------- | ------------------------------------- |
-| **GOLMET** | a plataforma                          |
-| **Arki**   | o guardião (mascote oficial, acima)   |
-| **gm-\***  | o namespace de skills e agents        |
