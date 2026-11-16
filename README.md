@@ -79,7 +79,7 @@ golmet init
 
 # the first commands, in order
 golmet validate   # the workspace against FORMAT v1 — exit ≠ 0 blocks CI
-golmet lint       # the deterministic structural sweep (L1–L10)
+golmet lint       # the deterministic structural sweep (L1-L11)
 golmet doctor     # environment health (S1–S5, machine checks)
 golmet status     # the entity-state dashboard
 ```
