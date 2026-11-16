@@ -1,4 +1,4 @@
-﻿---
+---
 name: gm-compliance
 description: Checklist de proteção de dados (implementação de referência LGPD) para produtos que tratam dado pessoal — gera specs/COMPLIANCE.md com os 10 eixos do checklist.
 requires: [file, ask]
@@ -22,7 +22,7 @@ a estrutura dos 10 eixos vale para qualquer regime.
 
 - LGPD (Lei 13.709/2018) — artigos de base legal (Art. 7), sensíveis (Art. 11),
   direitos do titular (Art. 18), segurança (Art. 46), relatório de impacto (Art. 38)
-- Campo opcional `compliance` do charter (gatilho): FORMATO §7.1
+- Campo opcional `compliance` do charter (gatilho): FORMAT §7.1
 
 ## Resolução de caminhos
 

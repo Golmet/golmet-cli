@@ -12,11 +12,11 @@ audiência diferente. Faz merge incremental com termos existentes.
 
 ## Referências
 
-- Layout do workspace (pasta `glossaries/`): FORMATO §2
+- Layout do workspace (pasta `glossaries/`): FORMAT §2
 
 ## Resolução de caminhos
 
-Os artefatos do workspace seguem o layout do FORMATO §2:
+Os artefatos do workspace seguem o layout do FORMAT §2:
 
 - **Raiz do workspace:** PROJECT_CHARTER.md, REQUIREMENTS.md, DECISIONS.md, CHANGE_REQUESTS.md
 - **`specs/`:** DATA_MODEL.md, API_CONTRACTS.md, ERROR_CATALOG.md, UI_SPEC.md, ARCHITECTURE.md, SECURITY.md, ACCEPTANCE_CRITERIA.md, COMPLIANCE.md

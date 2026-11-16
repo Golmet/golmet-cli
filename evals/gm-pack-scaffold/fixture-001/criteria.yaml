@@ -1,8 +1,8 @@
 ---
-name: "Scaffold do pack meuapp — contrato FORMATO §3.1, repo privado e topic golmet-pack"
+name: "Scaffold do pack meuapp — contrato FORMAT §3.1, repo privado e topic golmet-pack"
 description: >
   gm-pack-scaffold sobre o brief neutro do MeuApp: cria o esqueleto
-  `packs/meuapp/` (pack.yaml v0.1.0 conforme FORMATO §3.1, README com
+  `packs/meuapp/` (pack.yaml v0.1.0 conforme FORMAT §3.1, README com
   instrução de instalação e convenção do topic `golmet-pack`, skill de
   exemplo em `skills/`, accumulation com README). O pack.yaml é o artefato
   congelado da baseline autorada.

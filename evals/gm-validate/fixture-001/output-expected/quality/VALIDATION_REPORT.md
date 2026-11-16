@@ -2,7 +2,7 @@
 
 > **Gerado por:** gm-validate (pré-scan determinístico do kit: `golmet validate <workspace> --json`)
 > **Data:** 2026-01-01
-> **Escopo:** workspace inteiro contra o FORMATO v1 (regras H1–H10/S1–S5)
+> **Escopo:** workspace inteiro contra o FORMAT v1 (regras H1–H10/S1–S5)
 > **Modo:** strict (leitura pura — a skill reporta, NUNCA corrige a prosa)
 
 ## 1. Resumo
@@ -40,5 +40,5 @@ Resumo do pré-scan: `4 erro(s), 0 aviso(s) — 5 arquivo(s), RN 1, PEND 1, CR 0
 ## 5. Próximos passos
 
 1. Corrigir as 4 violações acima (correção é do agente/dono — kit só valida).
-2. Rodar `golmet validate` de novo — esperado: `ok — workspace conforme (FORMATO v1)`.
+2. Rodar `golmet validate` de novo — esperado: `ok — workspace conforme (FORMAT v1)`.
 3. Re-gerar este relatório com contagens zeradas.

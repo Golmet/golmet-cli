@@ -1,4 +1,4 @@
-﻿---
+---
 name: gm-charter
 description: Cria PROJECT_CHARTER.md a partir da primeira conversa com o cliente — modos completo (novo) e simplificado (projeto existente), com campos legado/sistema_existente/compliance.
 requires: [file, ask]
@@ -14,8 +14,8 @@ primeira conversa com o cliente.
 
 ## Referências
 
-- Contrato do Charter (estados, pré-condições): FORMATO §7.1
-- Layout do workspace: FORMATO §2
+- Contrato do Charter (estados, pré-condições): FORMAT §7.1
+- Layout do workspace: FORMAT §2
 
 ## Lê (upstream)
 
@@ -181,7 +181,7 @@ Se o usuário informar repositório existente ou que o workspace documenta algo
 já implementado (sistema vivo/em produção):
 
 1. **Registre TODOS os repositórios na §1 do charter** — tabela
-   `| Repo | Branch | HEAD |` (FORMATO §7.1: cada repo do produto com path,
+   `| Repo | Branch | HEAD |` (FORMAT §7.1: cada repo do produto com path,
    branch e HEAD; o HEAD é congelado na confirmação do charter)
 2. **Marque na §5** a opção **Documentação de sistema existente** (não
    greenfield puro)
@@ -245,7 +245,7 @@ Skill: cria MeuApp/PROJECT_CHARTER.md com a §1 listando MeuApp-API e MeuApp-FE
 ```yaml
 ---
 status: draft
-# campos opcionais conforme respostas (FORMATO §7.1):
+# campos opcionais conforme respostas (FORMAT §7.1):
 # legado: true
 # sistema_existente: true
 # compliance: true
@@ -270,7 +270,7 @@ status: draft
 | Repositórios | \`repo1\`, \`repo2\` — listar todos os repos do produto |
 | Data de início | DD/MM/AAAA |
 
-### §1.1 Repos (FORMATO §7.1 — HEAD congelado no `confirmed`)
+### §1.1 Repos (FORMAT §7.1 — HEAD congelado no `confirmed`)
 
 | Repo | Branch | HEAD |
 |---|---|---|
@@ -379,7 +379,7 @@ ask:
 |---------|---------------------|
 | Diretório é pasta-mãe de produtos | `<pasta-de-produtos>/<Produto>/` |
 | Diretório é repo de código (ex: `MeuApp-API/`) | `<pasta-de-produtos>/<Produto>/` (unificar com outros repos do mesmo produto) |
-| Diretório já é workspace de produto (tem `golmet.yaml`) | `<Produto>/` (raiz — charter na raiz do workspace, FORMATO §2) |
+| Diretório já é workspace de produto (tem `golmet.yaml`) | `<Produto>/` (raiz — charter na raiz do workspace, FORMAT §2) |
 
 > **Lembrete:** A unidade é o **produto**, não a camada. Se o diretório é `MeuApp-API/` mas existe `MeuApp-FE`, crie o workspace `MeuApp/`.
 

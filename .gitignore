@@ -8,6 +8,10 @@ PUBLISH.md
 /dist/
 *.exe
 
+# M31 — os binários nativos dos pacotes npm de plataforma (entram no build do release)
+npm/*/golmet
+npm/*/golmet.exe
+
 # config local de editor
 .vscode/
 

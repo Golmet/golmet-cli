@@ -1,4 +1,4 @@
-﻿---
+---
 name: gm-clientreq
 description: Gera ou sincroniza delivery/CLIENT_REQUIREMENTS.md a partir do REQUIREMENTS.md — vista de negócio para o cliente, sem identificadores técnicos nem pendências internas.
 requires: [file]
@@ -22,7 +22,7 @@ existe changelog interno em nenhum dos dois arquivos.
 
 ## Resolução de caminhos
 
-Os artefatos do workspace seguem o layout do FORMATO §2 — a saída fica em
+Os artefatos do workspace seguem o layout do FORMAT §2 — a saída fica em
 `delivery/CLIENT_REQUIREMENTS.md`.
 
 **Regra de fallback (transição):** ao **LER** um artefato, verifique primeiro

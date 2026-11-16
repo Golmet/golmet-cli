@@ -3,11 +3,14 @@
 #
 # Scanner determinístico: falha se conteúdo identificado de organização/cliente
 # aparecer na base aberta do workflow (agents/, skills/, registry, templates,
-# evals/). Determinístico: mesma árvore => mesma saída.
+# evals/) E nos docs vivos do kit (docs/ — M32: o vazamento em doc pública é
+# finding; a jornada narrativa usa os placeholders neutros do kit).
 #
 # Escopo (a partir da raiz do repo, resolvida relativa a este script):
 #   agents/Golmet-*.md, skills/**/* (qualquer arquivo), registry.yaml,
-#   rules/stack-templates.yaml, AGENTS.template.md, evals/ (recursivo).
+#   rules/stack-templates.yaml, AGENTS.template.md, evals/ (recursivo),
+#   docs/**.md (M32 — os docs vivos do kit entram no gate; a jornada usa os
+#   placeholders neutros).
 #
 # Exclusões explícitas (motivo entre parênteses):
 #   evals/reports/     (histórico de execuções — não é base)
@@ -65,6 +68,12 @@ find evals -type f \
   -not -path 'evals/golden-human/*' \
   -not -path 'evals/neutrality/*' \
   -not -path 'evals/run-evals.sh' \
+  2>/dev/null >> "$LIST" || true
+# docs/ do repo do kit (M32 — o gate cobre os docs vivos). Exclusão
+# declarada: docs/workflow/ é snapshot arqueológico do processo (mesma
+# política do migrations/ da org — histórico, não doc pública)
+find docs -type f -name '*.md' \
+  -not -path 'docs/workflow/*' \
   2>/dev/null >> "$LIST" || true
 
 # Fora do escopo por construção (nunca entram na lista): rules/packs/ e packs/

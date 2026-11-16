@@ -1,4 +1,4 @@
-﻿---
+---
 name: gm-scope
 description: Gera delivery/SCOPE_AGREEMENT.md — acordo de escopo com o cliente em linguagem de negócio, unificando escopo, RNs confirmadas, mudanças e status de aprovação.
 requires: [file]
@@ -13,12 +13,12 @@ a equipe técnica e o cliente.
 
 ## Referências
 
-- Entidades RN/CR/PEND (fonte do conteúdo): FORMATO §7.2/§7.4/§7.3
-- Layout do workspace (pasta `delivery/`): FORMATO §2
+- Entidades RN/CR/PEND (fonte do conteúdo): FORMAT §7.2/§7.4/§7.3
+- Layout do workspace (pasta `delivery/`): FORMAT §2
 
 ## Resolução de caminhos
 
-Os artefatos do workspace seguem o layout do FORMATO §2 — a saída fica em
+Os artefatos do workspace seguem o layout do FORMAT §2 — a saída fica em
 `delivery/SCOPE_AGREEMENT.md`.
 
 **Regra de fallback (transição):** ao **LER** um artefato, verifique primeiro

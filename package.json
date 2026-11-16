@@ -1,7 +1,7 @@
 {
   "name": "golmet-cli",
-  "version": "1.0.0",
-  "description": "Installable CLI for GOLMET — the workflow platform that keeps your product's documented truth alive. Placeholder release; full CLI ships at milestone F1.",
+  "version": "0.3.0",
+  "description": "The stone guardian of your product's documented truth — the installable CLI for GOLMET, the spec-driven workflow platform. Native binaries per platform via optionalDependencies.",
   "bin": {
     "golmet": "./bin/golmet.js"
   },
@@ -21,10 +21,17 @@
     "url": "git+https://github.com/Golmet/golmet-cli.git"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=14"
   },
   "files": [
     "bin/",
     "README.md"
-  ]
+  ],
+  "optionalDependencies": {
+    "@golmet/cli-win32-x64": "0.3.0",
+    "@golmet/cli-linux-x64": "0.3.0",
+    "@golmet/cli-linux-arm64": "0.3.0",
+    "@golmet/cli-darwin-x64": "0.3.0",
+    "@golmet/cli-darwin-arm64": "0.3.0"
+  }
 }

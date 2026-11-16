@@ -71,5 +71,5 @@ flowchart LR
 
 ## Convenções
 
-IDs no padrão FORMATO (RN-NNN, PEND-NNN, IMP-NNN). Diagramas mermaid
+IDs no padrão FORMAT (RN-NNN, PEND-NNN, IMP-NNN). Diagramas mermaid
 regenerados a cada render — colisão de ID de nó nunca é emitida.

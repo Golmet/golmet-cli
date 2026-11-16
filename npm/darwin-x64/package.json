@@ -1,0 +1,13 @@
+{
+  "name": "@golmet/cli-darwin-x64",
+  "version": "0.3.0",
+  "description": "The golmet native binary for darwin/x64 — the stone guardian of your product's documented truth (GOLMET).",
+  "os": ["darwin"],
+  "cpu": ["x64"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Golmet/golmet-cli.git"
+  },
+  "files": ["golmet"]
+}

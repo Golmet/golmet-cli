@@ -1,9 +1,11 @@
 # Release do golmet — disparado por tag v*: build cross-compile das 5
-# plataformas alvo (actions oficiais apenas, sem GoReleaser), checksums
-# SHA-256 e GitHub Release com os assets + notas do CHANGELOG.
-# Publicação npm NÃO faz parte deste workflow — o package.json atual é um
-# placeholder (bin/golmet.js só imprime aviso; não despacha o binário Go).
-# Revisitar quando o launcher JS por plataforma existir.
+# plataformas alvo (actions oficiais, sem GoReleaser), checksums SHA-256 e
+# GitHub Release com os assets + notas do CHANGELOG. M31: além dos assets,
+# o workflow MONTA os 5 pacotes npm de plataforma (npm/<os>-<arch>/ com o
+# binário) e publica via `npm publish` — **os 5 de plataforma ANTES do
+# pacote principal** (o npm resolve as optionalDependencies na instalação
+# do principal). O publish é TOLERANTE A FALHA (decisão da M4): o release
+# nunca quebra por npm — cada passo leva continue-on-error.
 name: release
 
 on:
@@ -98,3 +100,56 @@ jobs:
             --title "golmet ${GITHUB_REF_NAME}" \
             --notes-file "${NOTES_FILE}" \
             dist/*
+
+      - name: Mount platform npm packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          # os dirs npm/<os>-<arch>/ (o package.json esqueleto é versionado
+          # no repo — o shape validado por teste); o binário cross-compilado
+          # entra como o file declarado e a versão é fixada pela tag
+          mount_pkg() {
+            local goos="$1" goarch="$2" pkgos="$3" pkgarch="$4" ext="$5"
+            local dir="npm/${pkgos}-${pkgarch}"
+            cp "dist/golmet_${goos}_${goarch}" "${dir}/golmet${ext}"
+            if [ "${goos}" != "windows" ]; then chmod 755 "${dir}/golmet${ext}"; fi
+            node -e "
+              const fs = require('fs');
+              const p = JSON.parse(fs.readFileSync('${dir}/package.json', 'utf8'));
+              p.version = '${VERSION}';
+              fs.writeFileSync('${dir}/package.json', JSON.stringify(p, null, 2) + '\n');
+            "
+          }
+          mount_pkg windows amd64 win32 x64 .exe
+          mount_pkg linux amd64 linux x64 ""
+          mount_pkg linux arm64 linux arm64 ""
+          mount_pkg darwin amd64 darwin x64 ""
+          mount_pkg darwin arm64 darwin arm64 ""
+
+      - name: Publish platform npm packages (tolerante a falha — M4)
+        continue-on-error: true
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # a autenticação npm via ~/.npmrc (o secret NPM_TOKEN)
+          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > ~/.npmrc
+          # OS 5 DE PLATAFORMA PRIMEIRO — o npm resolve as
+          # optionalDependencies na instalação do pacote principal
+          for d in npm/win32-x64 npm/linux-x64 npm/linux-arm64 npm/darwin-x64 npm/darwin-arm64; do
+            (cd "$d" && npm publish --access public) \
+              || echo "aviso: npm publish falhou para $d — o release segue (npm é tolerante a falha, M4)"
+          done
+
+      - name: Publish main npm package (por ÚLTIMO — tolerante a falha)
+        continue-on-error: true
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > ~/.npmrc
+          npm publish --access public \
+            || echo "aviso: npm publish do principal falhou — o release segue (npm é tolerante a falha, M4); os binários ficam nos assets da release"
