@@ -70,7 +70,7 @@ A partir daí a jornada segue sozinha — e é o próximo tutorial:
 feature inteira (requisito → spec → task → código → validação → entrega)
 com cada documento aparecendo no momento em que ele é criado. O mapa
 completo de quem nasce de quem está em
-[docs/concepts/artefatos.md](../concepts/artefatos.md).
+[docs/concepts/artefatos.md](../concepts/artefatos.pt-br.md).
 
 O que importa aqui: **a IA não inventa o processo — ela o executa**. As
 skills têm contrato (FORMAT §10): elas sabem o que podem escrever, o que

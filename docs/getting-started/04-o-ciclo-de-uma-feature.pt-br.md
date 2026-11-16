@@ -8,7 +8,7 @@ vaga do MeuApp (RN-001) — com cada documento aparecendo no momento em que
 ele nasce. É a melhor forma de entender a arquitetura de artefatos do
 Golmet: não como um diagrama, mas como uma sequência de trabalho. (O mapa
 de referência, com a tabela completa de quem alimenta quem, está em
-[docs/concepts/artefatos.md](../concepts/artefatos.md).)
+[docs/concepts/artefatos.md](../concepts/artefatos.pt-br.md).)
 
 ## 1. O requisito já está no REQUIREMENTS
 
@@ -68,7 +68,7 @@ as referências da doc resolvem, os nomes estão no padrão, nada órfão.
 Se algo estivesse divergindo — uma evidência stale, um spec sem a razão de
 mudança — o validate apontaria **com a remediação**: o que corrigir, e qual
 skill é a responsável. A IA corrige o que o lint aponta; o lint carrega o
-estado. ([docs/concepts/self-governing.md](../concepts/self-governing.md))
+estado. ([docs/concepts/self-governing.md](../concepts/self-governing.pt-br.md))
 
 ## 6. A entrega
 

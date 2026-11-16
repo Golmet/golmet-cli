@@ -125,5 +125,5 @@ canal de distribuição próprios — não por tier de cliente):
 └─────────────────────────────────────────────┘
 ```
 
-O contrato normativo vive em [docs/FORMAT.md](../FORMAT.md); tudo que esta
+O contrato normativo vive em [docs/FORMAT.md](../FORMAT.pt-br.md); tudo que esta
 página lista é enforcementado pelos validadores do item 6.

@@ -13,4 +13,4 @@ onda (`M*`) documenta o que saiu e por quê. A escada de marcos:
 
 O contrato normativo é o [docs/FORMAT.pt-br.md](docs/FORMAT.pt-br.md); a
 arquitetura da plataforma está documentada em
-[docs/concepts/overview.md](docs/concepts/overview.md).
+[docs/concepts/overview.md](docs/concepts/overview.pt-br.md).

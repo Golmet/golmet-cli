@@ -76,10 +76,10 @@ entrega, termina virando ativo da organização.
 
 ## As regras que sustentam a cadeia
 
-A cadeia só vale se for verificada. O [FORMAT v1](../../docs/FORMAT.md) define os
+A cadeia só vale se for verificada. O [FORMAT v1](../../docs/FORMAT.pt-br.md) define os
 checks que a impedem de apodrecer: H1 (PEND nunca ancora Feature), H3
 (Feature pronta exige RN ativa), H4 (RN ativa exige evidência), H7 (a
 evidência resolve no código), H10 (as referências cruzadas resolvem), H8 (o
 estado no índice é a história — ADR aceito não muda). O soft (S1–S5) e o
 lint (L1–L10) vigiam o resto — a disciplina completa em
-[FORMAT §9](../../docs/FORMAT.md).
+[FORMAT §9](../../docs/FORMAT.pt-br.md).

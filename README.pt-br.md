@@ -95,8 +95,8 @@ A doc pública é escrita como uma **jornada** — comece por ela:
 | [docs/concepts/artefatos.pt-br.md](docs/concepts/artefatos.pt-br.md) | A arquitetura de artefatos: para que serve cada documento, o que o alimenta, o que ele alimenta |
 | [docs/recommended.pt-br.md](docs/recommended.pt-br.md) | O modo recomendado (Organização + FULL + Opencode) — e o que você perde sem ele |
 | [docs/concepts/](docs/concepts/) | Os conceitos em profundidade: organização e versionamento, camadas de conteúdo, profile, conhecimento, self-governing |
-| [docs/FORMAT.md](docs/FORMAT.md) | A spec normativa (v1) — o contrato que todo check enforça |
-| [docs/ARQUITETURA_GOLMET_V2.md](docs/ARQUITETURA_GOLMET_V2.md) | A arquitetura da plataforma (camadas, decision records DR-001..022) |
+| [docs/FORMAT.md](docs/FORMAT.pt-br.md) | A spec normativa (v1) — o contrato que todo check enforça |
+| [docs/reference/compatibility.md](docs/reference/compatibility.pt-br.md) | A matriz real MCP x engine - verificada celula a celula, travada por testes (marcas honestas de "nao verificado") |
 | [docs/reference/](docs/reference/) | Referência: os 18 commands, as 14 tools MCP |
 | [CHANGELOG.md](CHANGELOG.md) | Onda por onda, com a motivação real |
 | [LICENSE](LICENSE) | MIT |
@@ -128,7 +128,7 @@ go vet ./... && gofmt -l . # obrigatórios antes de commitar
 
 ## Roadmap · Contributing · Licença
 
-O plano de marcos vive no [ROADMAP.md](ROADMAP.md) (F1 = este release; F2 =
+O plano de marcos vive no [ROADMAP.md](ROADMAP.pt-br.md) (F1 = este release; F2 =
 o site de docs; F3 = fluxo de contribuição e migração de workspace).
 Contribuições: [CONTRIBUTING.md](CONTRIBUTING.md) — testes table-driven e
 `gofmt` são obrigatórios. Licença [MIT](LICENSE).
