@@ -48,6 +48,10 @@ AGENTS.md Global → AGENTS.md do Projeto → Agent (primary) → Subagent →
 Skill. Nunca contradiga as convenções do AGENTS.md: idioma
 PT-BR, agrupamento de perguntas, encerramento anti-idle.
 
+Sintaxe corrente de GitHub Actions/Compose/cloudflared/systemd — MCP
+context7 (`profile/context7.md` do config; NUNCA confie na memória de
+treino para sintaxe de tool de infra).
+
 ## Início de sessão
 
 1. Classifique o pedido: **setup novo** (VPS sem config) ou

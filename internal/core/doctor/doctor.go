@@ -1,24 +1,24 @@
 // Package doctor implementa o `golmet doctor` — checklist de saúde do
-// workspace e do ambiente (FORMATO §9 soft: S2/S3/S5, §10 capacidades de
+// workspace e do ambiente (FORMAT §9 soft: S2/S3/S5, §10 capacidades de
 // kit, §2 zona do kit). Consulta: NUNCA escreve; exit 0 salvo workspace
 // inválido (CLI sai 2).
 package doctor
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/Golmet/golmet-cli/internal/adapters/fsutil"
+	"github.com/Golmet/golmet-cli/internal/core/container"
 	"github.com/Golmet/golmet-cli/internal/core/frontmatter"
 	"github.com/Golmet/golmet-cli/internal/core/indexstate"
-	"github.com/Golmet/golmet-cli/internal/core/jev"
 	"github.com/Golmet/golmet-cli/internal/core/rules"
 	"github.com/Golmet/golmet-cli/internal/core/scan"
 	"github.com/Golmet/golmet-cli/internal/core/tools"
@@ -56,7 +56,11 @@ type Options struct {
 
 // Report agrega o checklist.
 type Report struct {
-	Workspace    string               `json:"workspace"`
+	Workspace string `json:"workspace"`
+	// Contexto do relatório (M21): o doctor é contexto-aware — o modo
+	// detectado orienta quais checks se aplicam (ver ContextEngineConfig
+	// e irmãs).
+	Context      string               `json:"context"`
 	Version      string               `json:"version"` // versão do kit servindo — diagnóstico instantâneo de binário velho (MCP/CLI --json)
 	Checks       []Check              `json:"checks"`
 	OKs          int                  `json:"ok"`
@@ -77,10 +81,22 @@ func (r *Report) add(item string, st Status, detail, fix string) {
 	}
 }
 
+// Contextos do doctor (M21): workspace-produto (checks S1-S5 + índice +
+// manifest + capacidades + máquina), container de organização (checklist
+// de hierarquia §2.3 + máquina) e engine-config (o dir dado É o config
+// root do engine — estado INTEGRAL do config como corpo principal + só os
+// checks de máquina; o config não é workspace, os checks de produto não se
+// aplicam).
+const (
+	ContextEngineConfig     = "engine-config"
+	ContextContainer        = "container"
+	ContextWorkspaceProduct = "workspace-produto"
+)
+
 // Run executa o checklist. Erro de retorno = workspace inválido (CLI 2);
 // os checks já coletados voltam no Report para exibição.
 func Run(dir string, opt Options) (*Report, error) {
-	rep := &Report{Version: indexstate.KitVersion}
+	rep := &Report{Version: indexstate.KitVersion, Context: ContextWorkspaceProduct}
 	root, err := filepath.Abs(dir)
 	if err != nil {
 		rep.add("golmet.yaml", Fail, "caminho inválido: "+err.Error(), "informe um caminho válido")
@@ -88,6 +104,12 @@ func Run(dir string, opt Options) (*Report, error) {
 	}
 	rep.Workspace = filepath.Base(root)
 	if st, serr := os.Stat(root); serr != nil || !st.IsDir() {
+		// dir inexistente pode ser o config root do engine apontado antes
+		// do primeiro install — o contexto engine-config trata com mensagem
+		// própria ("raiz inexistente — nada gerido, nada a perder")
+		if opt.EngineConfigRoot != "" && samePath(root, opt.EngineConfigRoot) {
+			return rep.runEngineConfigContext(root, opt)
+		}
 		rep.add("golmet.yaml", Fail, "workspace não encontrado: "+root, "informe um workspace existente")
 		return rep, fmt.Errorf("workspace não encontrado: %s", root)
 	}
@@ -96,6 +118,14 @@ func Run(dir string, opt Options) (*Report, error) {
 	cfgPath := filepath.Join(root, "golmet.yaml")
 	cfgData, err := os.ReadFile(cfgPath)
 	if err != nil {
+		// M21 — contexto engine-config: o dir dado É o config root do
+		// engine (sem golmet.yaml por natureza) — relatório COMPLETO do
+		// estado do config; os checks de workspace-produto não se aplicam
+		// (o config não é workspace — a falha inválida "0 ok, 1 falha"
+		// some).
+		if opt.EngineConfigRoot != "" && samePath(root, opt.EngineConfigRoot) {
+			return rep.runEngineConfigContext(root, opt)
+		}
 		rep.add("golmet.yaml", Fail, "ausente em "+root, "rode 'golmet init'")
 		return rep, fmt.Errorf("golmet.yaml ausente em %s — workspace não inicializado (rode 'golmet init')", root)
 	}
@@ -114,6 +144,22 @@ func Run(dir string, opt Options) (*Report, error) {
 		return rep, fmt.Errorf("formato %s não suportado — este kit suporta format: 1 (§12)", fv.Str)
 	}
 	rep.add("golmet.yaml", OK, "format: 1", "")
+
+	// 1b. container de organização (FORMAT §2): o golmet.yaml declara
+	// container: true — a raiz é um CONTAINER, não um workspace-produto.
+	// Roda o checklist de hierarquia próprio + ambiente de máquina e
+	// ENCERRA: os checks de workspace-produto (índice, scan de entidades,
+	// zona .golmet, capacidades vendored) não se aplicam ao container —
+	// ele não roda o pipeline de RNs.
+	isContainer := fields["container"].Str == "true"
+	gitOK := exec.Command("git", "--version").Run() == nil
+	if isContainer {
+		rep.Context = ContextContainer
+		rep.runContainerChecks(root, container.Products(fields))
+		rep.addMachineChecks(opt, gitOK, nil)
+		return rep, nil
+	}
+	rep.Context = ContextWorkspaceProduct
 
 	// 2. índice — presente/parseável/idade vs prosa (§8)
 	idxPath := filepath.Join(root, "golmet.index.json")
@@ -147,7 +193,6 @@ func Run(dir string, opt Options) (*Report, error) {
 	res, rerr := scan.Run(dir, scan.Options{Tolerant: true})
 
 	// 3. worklist S2 — hash de evidência ≠ HEAD (requer git + repos)
-	gitOK := exec.Command("git", "--version").Run() == nil
 	repos := 0
 	if res != nil && res.Inventory != nil && res.Inventory.Charter != nil {
 		repos = len(res.Inventory.Charter.Repos)
@@ -347,68 +392,9 @@ func Run(dir string, opt Options) (*Report, error) {
 		rep.add("capacidades", OK, detail, "")
 	}
 
-	// 6. kit.jev — TYPESAFE_API_KEY: key presente → smoke POR DEFAULT (1
-	// POST pequeno — o aprendizado REAL da sessão: "key presente" enganou
-	// o operador por semanas com o endpoint errado; o doctor checa se o Jev
-	// FUNCIONA, não só se a key existe). Resultado é ⚠️ NUNCA ❌ (health é
-	// soft). --no-network pula o smoke (CI/offline); --network é alias de
-	// compatibilidade (o smoke já é default — sem efeito extra).
-	jevRequired := false
-	for _, sk := range skills {
-		if sk.RequiresKit("jev") {
-			jevRequired = true
-		}
-	}
-	key := os.Getenv("TYPESAFE_API_KEY")
-	switch {
-	case key == "" && jevRequired:
-		rep.add("kit.jev", Warn, "TYPESAFE_API_KEY ausente — skill requer kit.jev", "configure o runtime Typesafe/Jev (DR-015)")
-	case key == "":
-		rep.add("kit.jev", OK, "offline (não requerido por nenhuma skill)", "")
-	case opt.NoNetwork:
-		rep.add("kit.jev", OK, "TYPESAFE_API_KEY presente (smoke não executado — --no-network)", "verifique a key em console.typesafe.ai/keys")
-	default:
-		switch s, smoke := jev.SmokeHealth(context.Background()); s {
-		case jev.SmokeOK:
-			rep.add("kit.jev", OK, smoke+" — key presente e runtime operacional", "")
-		case jev.SmokeRejected:
-			rep.add("kit.jev", Warn, "key presente mas REJEITADA pelo runtime — "+smoke, "verifique a key em console.typesafe.ai/keys e o endpoint")
-		default:
-			rep.add("kit.jev", Warn, "key presente mas o runtime não respondeu — verifique o endpoint ("+smoke+")", "verifique a key em console.typesafe.ai/keys")
-		}
-	}
-
-	// 7. kit.graph — binário DeusData em ~/.golmet/tools/codegraph/ (bloco 3 instala)
-	graphRequired := false
-	for _, sk := range skills {
-		if sk.RequiresKit("graph") {
-			graphRequired = true
-		}
-	}
-	graphInstalled := detectCodeGraph()
-	switch {
-	case !graphInstalled && graphRequired:
-		rep.add("kit.graph", Warn, "binário DeusData ausente em ~/.golmet/tools/codegraph/ — skill requer kit.graph", "instale o grafo de código do kit (DR-016)")
-	case !graphInstalled:
-		rep.add("kit.graph", OK, "não instalado (não requerido por nenhuma skill)", "")
-	default:
-		rep.add("kit.graph", OK, "binário detectado em ~/.golmet/tools/codegraph/", "")
-	}
-
-	// 8. git disponível
-	if gitOK {
-		rep.add("git", OK, "git disponível", "")
-	} else {
-		rep.add("git", Warn, "git indisponível — H7/S2 degradam", "instale o git no PATH")
-	}
-
-	// 9. estado do engine-config — cache reconstrutível vs dado do usuário
-	// (customização em gerido, sem proveniência, layer local removida).
-	// Roda contra o CONFIG ROOT do engine, não contra o workspace; vazio =
-	// check não roda (compatibilidade total com chamadas workspace-only).
-	if opt.EngineConfigRoot != "" {
-		rep.runEngineConfig(opt.EngineConfigRoot)
-	}
+	// 6-9. ambiente de máquina (kit.jev, kit.graph, git, engine-config) —
+	// comum a workspace-produto e container.
+	rep.addMachineChecks(opt, gitOK, skills)
 
 	return rep, nil
 }
@@ -469,15 +455,42 @@ func detectCodeGraph() bool {
 	return tools.DetectCodegraph()
 }
 
+// samePath compara dois caminhos com tolerância do SO (Windows é case-
+// insensitive; o config root resolvido do engine e o arg do usuário podem
+// diferir em case/barras).
+func samePath(a, b string) bool {
+	a, b = filepath.Clean(a), filepath.Clean(b)
+	if runtime.GOOS == "windows" {
+		return strings.EqualFold(a, b)
+	}
+	return a == b
+}
+
 // Human renderiza o checklist ✅/⚠️/❌ (CLI sem --json). A primeira linha
-// carrega a versão do kit — diagnóstico instantâneo de binário velho servindo
-// MCP (o processo do servidor sobrevive a `go install` até reiniciar o cliente).
+// carrega a versão do kit e o CONTEXTO detectado — diagnóstico instantâneo
+// de binário velho servindo MCP (o processo do servidor sobrevive a `go
+// install` até reiniciar o cliente) e de modo errado de uso.
 func (r *Report) Human() string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "workspace: %s — golmet %s\n", r.Workspace, indexstate.KitVersion)
+	ctx := r.Context
+	if ctx == "" {
+		ctx = ContextWorkspaceProduct
+	}
+	fmt.Fprintf(&b, "workspace: %s — golmet %s — contexto: %s\n", r.Workspace, indexstate.KitVersion, ctx)
 	mark := map[Status]string{OK: "✅", Warn: "⚠️ ", Fail: "❌"}
 	for _, c := range r.Checks {
 		fmt.Fprintf(&b, "%s %-14s %s\n", mark[c.Status], c.Item, c.Detail)
+		// findings do engine-config: paths/resumo logo abaixo da linha do
+		// check (o fix comum já vem na linha seguinte, estilo existente).
+		// No contexto engine-config o check É o corpo principal — cabeçalho
+		// do relatório completo + camadas dos geridos (diferença do modo
+		// compacto do workspace-produto).
+		if c.Item == "engine-config" && r.EngineConfig != nil {
+			if ctx == ContextEngineConfig {
+				fmt.Fprintln(&b, "     relatório completo do engine-config:")
+			}
+			r.EngineConfig.renderLines(&b, ctx == ContextEngineConfig)
+		}
 		// fix: só faz sentido quando há o que corrigir — status OK não carrega hint.
 		if c.Fix != "" && c.Status != OK {
 			fmt.Fprintf(&b, "     fix: %s\n", c.Fix)

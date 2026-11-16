@@ -2,72 +2,72 @@
 name: "Fundação de conhecimento — domínio event-sourcing (T1)"
 description: >
   PEDIDO.md com domínio event-sourcing e escopo (event sourcing em
-  Postgres) + knowledge/INDEX.md pré-existente com code-quality. Verifica
+  Postgres) + packs/org-pack/domains/INDEX.md pré-existente com code-quality. Verifica
   KNOWLEDGE.md no template fixo (front matter com fontes url+acessado_em,
   Princípios, Checklist, Anti-patterns, Classificação) e o INDEX.md com
   merge incremental (entrada existente preservada + nova entrada).
-inputs_required: [PEDIDO.md, knowledge/INDEX.md]
+inputs_required: [PEDIDO.md, packs/org-pack/domains/INDEX.md]
 
 checks:
   - type: file_exists
-    path: "knowledge/event-sourcing/KNOWLEDGE.md"
+    path: "packs/org-pack/domains/event-sourcing/KNOWLEDGE.md"
     severity: error
 
   - type: frontmatter_valid
-    path: "knowledge/event-sourcing/KNOWLEDGE.md"
+    path: "packs/org-pack/domains/event-sourcing/KNOWLEDGE.md"
     severity: error
 
   # fonte com URL oficial + data de acesso (sem URL+data não entra na base)
   - type: contains
-    path: "knowledge/event-sourcing/KNOWLEDGE.md"
+    path: "packs/org-pack/domains/event-sourcing/KNOWLEDGE.md"
     pattern: "url: https://www.postgresql.org/docs/current/"
     severity: error
 
   - type: contains
-    path: "knowledge/event-sourcing/KNOWLEDGE.md"
+    path: "packs/org-pack/domains/event-sourcing/KNOWLEDGE.md"
     pattern: "acessado_em: 2026-11-12"
     severity: error
 
   - type: section_exists
-    path: "knowledge/event-sourcing/KNOWLEDGE.md"
+    path: "packs/org-pack/domains/event-sourcing/KNOWLEDGE.md"
     section: "## Princípios"
     severity: error
 
   - type: section_exists
-    path: "knowledge/event-sourcing/KNOWLEDGE.md"
+    path: "packs/org-pack/domains/event-sourcing/KNOWLEDGE.md"
     section: "## Anti-patterns"
     severity: error
 
   - type: section_exists
-    path: "knowledge/event-sourcing/KNOWLEDGE.md"
+    path: "packs/org-pack/domains/event-sourcing/KNOWLEDGE.md"
     section: "## Referências"
     severity: error
 
   # princípios numerados no padrão P-NN
   - type: id_sequence
-    path: "knowledge/event-sourcing/KNOWLEDGE.md"
+    path: "packs/org-pack/domains/event-sourcing/KNOWLEDGE.md"
     pattern: "P-(\\d+)"
     allow_gaps: true
     severity: error
 
   - type: table_has_columns
-    path: "knowledge/event-sourcing/KNOWLEDGE.md"
+    path: "packs/org-pack/domains/event-sourcing/KNOWLEDGE.md"
     columns: ["Nível", "Critério", "Ação na triagem"]
     severity: error
 
   # INDEX: nova entrada criada
   - type: contains
-    path: "knowledge/INDEX.md"
+    path: "packs/org-pack/domains/INDEX.md"
     pattern: "### event-sourcing"
     severity: error
 
   # INDEX: merge incremental — entrada existente preservada
   - type: contains
-    path: "knowledge/INDEX.md"
+    path: "packs/org-pack/domains/INDEX.md"
     pattern: "### code-quality"
     severity: error
 
   - type: reference_match
-    path: "knowledge/event-sourcing/KNOWLEDGE.md"
-    expected: "output-expected/knowledge/event-sourcing/KNOWLEDGE.md"
+    path: "packs/org-pack/domains/event-sourcing/KNOWLEDGE.md"
+    expected: "output-expected/packs/org-pack/domains/event-sourcing/KNOWLEDGE.md"
     severity: error

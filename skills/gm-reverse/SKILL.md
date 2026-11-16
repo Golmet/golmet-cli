@@ -13,8 +13,8 @@ documentado como está** (sistema vivo/em produção).
 
 ## Referências
 
-- Campos opcionais do charter `legado` / `sistema_existente`: FORMATO §7.1
-- Pasta `reverse/` do workspace: FORMATO §2
+- Campos opcionais do charter `legado` / `sistema_existente`: FORMAT §7.1
+- Pasta `reverse/` do workspace: FORMAT §2
 
 ## Lê (upstream)
 
@@ -34,7 +34,7 @@ documentado como está** (sistema vivo/em produção).
 
 - `file` — ler o charter e escrever LEGACY_CONTEXT.md
 - `shell` — inspecionar código-fonte, schemas de banco e APIs existentes (grep/glob/buscas)
-- `kit.graph` (opcional — FORMATO §10): com o grafo de código disponível, use navegação estruturada (arquitetura, símbolos, caminhos de chamada); **sem kit.graph, use grep/glob no código legado** — degradação `grep-fallback` declarada e nunca bloqueante
+- `kit.graph` (opcional — FORMAT §10): com o grafo de código disponível, use navegação estruturada (arquitetura, símbolos, caminhos de chamada); **sem kit.graph, use grep/glob no código legado** — degradação `grep-fallback` declarada e nunca bloqueante
 - Pergunte ao usuário no chat (ou via `ask`, se disponível) sobre pontos não encontrados na análise — nunca adivinhe
 
 ## Modo de erro

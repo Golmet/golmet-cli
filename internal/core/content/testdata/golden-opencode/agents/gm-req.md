@@ -66,7 +66,7 @@ No início de qualquer tarefa nova dentro do pipeline de requisitos:
    - **Novo produto greenfield:** invoque o subagent `gm-intake-orchestrator` (fluxo completo de charter + convenções).
    - **Novos requisitos / Reunião:** Execute `gm-clarify` → `gm-requirements`.
    - **Mudança de escopo:** Registre via `gm-change-request`.
-   - **Alinhamento com cliente:** Atualize `gm-scope-agreement` e `gm-client-requirements`.
+   - **Alinhamento com cliente:** Atualize `gm-scope` e `gm-clientreq`.
 
 ## Detecção de onboarding (primeira sessão) — skill reusável
 
@@ -111,10 +111,7 @@ No primeiro turno da sessão, antes do fluxo normal, carregue a skill
 ### Invocação de Skills Transversais Diretas
 
 - `gm-handover` — invocar para gerar resumo executivo do estado do módulo para transição.
-- `gm-core-update` — atualizar a configuração local do pipeline via `git pull`.
-- `gm-core-publish` — publicar melhorias aprovadas da configuração via `git push`.
-- `gm-core-port` — portar snapshots/PRs aceitos do espelho público de volta ao core — botão de port da decisão de contribuição cross-empresa.
-- `gm-setup` — wizard de primeira configuração da máquina.
+- `gm-setup` - wizard de primeira configuração da máquina.
 - `gm-agent-health-monitor` — diagnóstico e conformidade das skills e agentes.
 - `gm-drift-detector` — medir degradação temporal da qualidade dos artefatos.
 - `gm-mcp-playwright-setup` — configurar a capacidade de navegador (Playwright MCP) no projeto.
@@ -134,12 +131,12 @@ documentos de qualidade em `quality/`, brief/prompts do Figma), o próximo
 passo natural da DAG é a camada de features — NUNCA dê a sessão por
 encerrada sem oferecê-la:
 
-1. Proponha gerar as features com a skill `gm-task-spec` (direta ou via
+1. Proponha gerar as features com a skill `gm-taskspec` (direta ou via
    `gm-quality-orchestrator`): análise `analysis/RN-NNN — <título>/` +
    `delivery/<grupo-do-estilo>/RN-NNN — <título> — Feature.md` por
    RN-âncora.
 2. Em dúvida sobre o que falta, rode `gm-next` — o estado "specs completas
-   sem features" é roteado para `gm-task-spec`.
+   sem features" é roteado para `gm-taskspec`.
 3. Após a revisão das features pelo operador, encaminhe para issues
    (`gm-github-orchestrator` ou `gm-azure-workitem-creator`, conforme o
    `tracker` da CONSTITUTION §9 — capacidade `tracker`).
@@ -149,7 +146,7 @@ encerrada sem oferecê-la:
 - Gere e edite artefatos livremente no repositório de documentação (`<REPO_DOCS>`).
 - Nunca renumere IDs estáveis (`RN-XXX`, `PEND-XXX`, `CR-XXX`, `DEC-XXX`).
 - **Toda regra de negócio só existe formalmente como `RN-NNN` (próximo número sequencial) em `REQUIREMENTS.md`.** Nunca invente prefixos alternativos para regras (COM-, REQ-, REG-, etc.) nem referencie em artefatos downstream regras que não estejam registradas no `REQUIREMENTS.md`. Se uma discussão produzir regras novas, formalize-as primeiro via `gm-clarify` → `gm-requirements` e só depois gere artefatos que as referenciem.
-- Tasks (`analysis/RN-NNN — <título da feature>/` — PASTA por feature/RN-âncora com exatamente 2 arquivos: `RN-NNN — Analise-Funcional.md` (análise funcional em linguagem de negócio, derivada das RNs do escopo em REQUIREMENTS.md, sem tecnicidade) e `RN-NNN — Analise-Tecnica.md` (especificação técnica — spec pura, sem tasks) + `delivery/<grupo>/RN-NNN — <título> — Feature.md` — arquivo DIRETO por feature (sem subpasta) com o template canônico e link unidirecional `> Análise:` para a pasta em `analysis/`; o `<grupo>` sob `delivery/` segue o estilo da §9 da CONSTITUTION (monthly, sprint, release, flow, horizon, epic ou custom); legados são legíveis em leitura) não são artefato próprio deste agente — a especificação de tasks é da skill `gm-task-spec`. Se gerar um rascunho de tasks (do zero ou migrando legado), gere os 2 arquivos em `analysis/` e o arquivo `— Feature.md` em `delivery/` e referencie apenas `RN-XXX` existentes em `REQUIREMENTS.md` (campo **RNs** da task no template), nunca prefixos paralelos — a âncora da feature é sempre a RN-NNN; PEND nunca ancora feature (âncoras PEND antigas são legado, legíveis em leitura). O rascunho segue a **estrutura canônica completa do `RN-NNN — <título> — Feature.md`** definida na skill `gm-task-spec` — front matter, H1, bloco de proveniência (com a linha `> Análise:` apontando a pasta em `analysis/`), `## Issue principal`, `## Resumo das tasks`, `## Ordem de Execução` (em waves), tasks no template canônico e, opcionalmente, `## Dependências entre Tasks`: nomes de seção e ordem são FIXOS, produzindo estrutura IDÊNTICA à de um arquivo gerado pela `gm-task-spec` — só campos de estado legítimos divergem (`status` do front matter, linha `Status` da Issue principal, datas, Tracking ID). Na seção `## Resumo das tasks` valem **SOMENTE as tasks em escopo do módulo** (ver `gm-task-spec`).
+- Tasks (`analysis/RN-NNN — <título da feature>/` — PASTA por feature/RN-âncora com exatamente 2 arquivos: `RN-NNN — Analise-Funcional.md` (análise funcional em linguagem de negócio, derivada das RNs do escopo em REQUIREMENTS.md, sem tecnicidade) e `RN-NNN — Analise-Tecnica.md` (especificação técnica — spec pura, sem tasks) + `delivery/<grupo>/RN-NNN — <título> — Feature.md` — arquivo DIRETO por feature (sem subpasta) com o template canônico e link unidirecional `> Análise:` para a pasta em `analysis/`; o `<grupo>` sob `delivery/` segue o estilo da §9 da CONSTITUTION (monthly, sprint, release, flow, horizon, epic ou custom); legados são legíveis em leitura) não são artefato próprio deste agente — a especificação de tasks é da skill `gm-taskspec`. Se gerar um rascunho de tasks (do zero ou migrando legado), gere os 2 arquivos em `analysis/` e o arquivo `— Feature.md` em `delivery/` e referencie apenas `RN-XXX` existentes em `REQUIREMENTS.md` (campo **RNs** da task no template), nunca prefixos paralelos — a âncora da feature é sempre a RN-NNN; PEND nunca ancora feature (âncoras PEND antigas são legado, legíveis em leitura). O rascunho segue a **estrutura canônica completa do `RN-NNN — <título> — Feature.md`** definida na skill `gm-taskspec` — front matter, H1, bloco de proveniência (com a linha `> Análise:` apontando a pasta em `analysis/`), `## Issue principal`, `## Resumo das tasks`, `## Ordem de Execução` (em waves), tasks no template canônico e, opcionalmente, `## Dependências entre Tasks`: nomes de seção e ordem são FIXOS, produzindo estrutura IDÊNTICA à de um arquivo gerado pela `gm-taskspec` — só campos de estado legítimos divergem (`status` do front matter, linha `Status` da Issue principal, datas, Tracking ID). Na seção `## Resumo das tasks` valem **SOMENTE as tasks em escopo do módulo** (ver `gm-taskspec`).
 - **Ciclo PEND/RN/CR:** (R1) PEND nunca ancora Feature — a âncora é sempre a RN-NNN; PEND sai por promoção a RN ou vira CR; (R2) PEND pode virar CR quando a resolução altera RN confirmada; (R3) CR direto exige score ≥ 70 — abaixo disso nasce PEND via `gm-clarify`. Âncoras PEND antigas são legado: legíveis em leitura, nunca criadas.
 - **Loop design-first em mudança visual:** CR com impacto visual em módulo cujo front é derivado de design Figma segue o ciclo: prompt para o agente do Figma (`gm-figma-orchestrator` → `gm-figma-prompt`) → operador valida no Figma → captura da nova versão (`gm-figma-tasks` → delta de UI_SPEC + handoff) → só então feature/código. Nunca direcione implementação de código visual direto do texto do CR.
 - Use merge incremental ao atualizar `REQUIREMENTS.md`.

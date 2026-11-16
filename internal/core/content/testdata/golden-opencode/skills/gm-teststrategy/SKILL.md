@@ -12,8 +12,8 @@ com a estratégia de testes e a definição de done para o workspace.
 
 ## Referências
 
-- Layout do workspace (pasta `quality/`): FORMATO §2
-- RNs (fonte de contexto): FORMATO §7.2
+- Layout do workspace (pasta `quality/`): FORMAT §2
+- RNs (fonte de contexto): FORMAT §7.2
 
 ## Resolução de caminhos (FULL)
 
@@ -128,7 +128,7 @@ docs: add test strategy and dod for <produto>
 - [ ] Critérios de aceitação validados
 - [ ] Sem alertas de segurança críticos
 - [ ] CHANGELOG.md atualizado
-- [ ] `golmet validate` verde no workspace (estado consistente com o FORMATO)
+- [ ] `golmet validate` verde no workspace (estado consistente com o FORMAT)
 ```
 
 ## Casos de Borda

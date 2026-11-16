@@ -7,7 +7,7 @@ import (
 )
 
 // S3 — requires de skill não satisfeitas pelo engine detectado
-// (FORMATO §10/§9). Capacidades kit.* ficam no S5.
+// (FORMAT §10/§9). Capacidades kit.* ficam no S5.
 func S3(ctx *Context) []core.GolmetError {
 	skills := readSkills(ctx.Root)
 	if len(skills) == 0 {

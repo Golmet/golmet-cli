@@ -1,5 +1,5 @@
 // Package core define os tipos compartilhados do kit — em especial o
-// erro estruturado consumível por agentes (FORMATO v1 §11).
+// erro estruturado consumível por agentes (FORMAT v1 §11).
 package core
 
 // Severity classifica um finding: hard (bloqueia) ou soft (aviso).
@@ -10,7 +10,7 @@ const (
 	SeverityWarning Severity = "warning"
 )
 
-// GolmetError é o erro estruturado do FORMATO v1 §11. Os campos file,
+// GolmetError é o erro estruturado do FORMAT v1 §11. Os campos file,
 // entity, id, rule, message e fix são o contrato §11; line e severity
 // são extensões v0 (aditivas) para saída human e degradação --tolerant.
 type GolmetError struct {

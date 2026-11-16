@@ -125,12 +125,17 @@ func TestDoctorCmdJSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("doctor: %v\n%s", err, out)
 	}
-	var checks []map[string]any
-	if err := json.Unmarshal([]byte(out), &checks); err != nil {
+	// --json devolve o relatório COMPLETO (checks + seção engine_config
+	// quando o check roda) — mesma forma do payload do gm_doctor no MCP.
+	var rep struct {
+		Checks       []map[string]any `json:"checks"`
+		EngineConfig *map[string]any  `json:"engine_config"`
+	}
+	if err := json.Unmarshal([]byte(out), &rep); err != nil {
 		t.Fatalf("doctor --json inválido: %v\n%s", err, out)
 	}
 	items := map[string]bool{}
-	for _, c := range checks {
+	for _, c := range rep.Checks {
 		if s, ok := c["item"].(string); ok {
 			items[s] = true
 		}
@@ -139,6 +144,49 @@ func TestDoctorCmdJSON(t *testing.T) {
 		if !items[want] {
 			t.Errorf("check %q ausente do doctor --json", want)
 		}
+	}
+	if rep.EngineConfig == nil {
+		t.Errorf("engine_config ausente — o default --engine opencode sempre roda o check: %s", out)
+	}
+}
+
+// --engine resolve a raiz do config para o check de estado; engine
+// workspace-scoped (vscode-copilot) não roda o check com nota informada;
+// engine desconhecido sai 2 com a lista de disponíveis.
+func TestDoctorCmdEngineFlag(t *testing.T) {
+	ws := scaffoldWs(t)
+
+	out, err := runCmd(t, "doctor", ws, "--engine", "vscode-copilot", "--json")
+	if err != nil {
+		t.Fatalf("doctor --engine vscode-copilot: %v\n%s", err, out)
+	}
+	if !strings.Contains(out, "workspace-scoped") {
+		t.Errorf("nota de workspace-scoped ausente:\n%s", out)
+	}
+	// o relatório não pode conter o check nem a seção — a nota é a única saída
+	repJSON := out[strings.IndexByte(out, '{'):]
+	var rep struct {
+		Checks       []map[string]any `json:"checks"`
+		EngineConfig *map[string]any  `json:"engine_config"`
+	}
+	if err := json.Unmarshal([]byte(repJSON), &rep); err != nil {
+		t.Fatalf("doctor --json inválido: %v\n%s", err, out)
+	}
+	for _, c := range rep.Checks {
+		if c["item"] == "engine-config" {
+			t.Errorf("check de engine-config não deveria rodar para workspace-scoped: %s", out)
+		}
+	}
+	if rep.EngineConfig != nil {
+		t.Errorf("seção engine_config presente para workspace-scoped: %s", out)
+	}
+
+	out2, err := runCmd(t, "doctor", ws, "--engine", "nao-existe")
+	if code, ok := ExitCodeOf(err); !ok || code != 2 {
+		t.Errorf("exit code = %d (ok=%v), want 2", code, ok)
+	}
+	if !strings.Contains(out2, "não existe") {
+		t.Errorf("erro sem a lista de engines disponíveis:\n%s", out2)
 	}
 }
 
@@ -264,7 +312,7 @@ func TestToolsCmdList(t *testing.T) {
 }
 
 func TestAdoptCmdDryRunJSONAndExclusives(t *testing.T) {
-	// workspace pré-FORMATO mínimo
+	// workspace pré-FORMAT mínimo
 	base := inTempDir(t)
 	ws := filepath.Join(base, "ws")
 	os.MkdirAll(ws, 0o755)

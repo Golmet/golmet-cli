@@ -5,7 +5,7 @@ compartilhar entre workspaces de qualquer engine com skills nativas.
 
 ## Contrato
 
-`pack.yaml` conforme FORMATO §3.1 — `provides` somente em `agents/` e
+`pack.yaml` conforme FORMAT §3.1 — `provides` somente em `agents/` e
 `skills/`; `no-override: true` nunca sobrescreve componente canônico (L1)
 nem arquivo gerido por outro pack; `requires-core: ">=0.3"`.
 

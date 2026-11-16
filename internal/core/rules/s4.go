@@ -5,7 +5,7 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core/evidence"
 )
 
-// S4 — Evidência legada sem hash (FORMATO §5/§9) — AVISO permanente
+// S4 — Evidência legada sem hash (FORMAT §5/§9) — AVISO permanente
 // até o refresh para a forma canônica [caminho:linha @hash].
 func S4(ctx *Context) []core.GolmetError {
 	var out []core.GolmetError

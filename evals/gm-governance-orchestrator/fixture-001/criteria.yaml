@@ -1,0 +1,33 @@
+---
+name: "gm-governance-orchestrator — reestruturação + revisão de governança"
+description: >
+  Projeto antigo na estrutura legada docs/projects/ a migrar para o módulo
+  atual (gm-restructure) + CONSTITUTION/PRODUCT_GOAL desatualizados
+  (gm-governance — baixa frequência, só quando os princípios precisam
+  atualizar). Roteia, não executa. Artefato: delegacao.md.
+inputs_required: ["input/cenario.md"]
+
+checks:
+  - type: file_exists
+    path: "delegacao.md"
+    severity: error
+
+  - type: section_exists
+    path: "delegacao.md"
+    section: "## Delegação"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-restructure"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-governance"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "Roteia"
+    severity: error

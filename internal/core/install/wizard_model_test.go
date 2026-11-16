@@ -167,10 +167,10 @@ func TestWizardPlanAndCancel(t *testing.T) {
 	if plan.Engine != "claude-code" || plan.Profile != ProfileEssencial {
 		t.Errorf("plan header = %+v", plan)
 	}
-	// toggle-all marca os 11 não-obrigatórios + golmet (12 selecionados);
+	// toggle-all marca os 12 não-obrigatórios + golmet (13 selecionados);
 	// azure-devops entra no plano SEM valor (pendência classificada no Run)
-	if len(plan.MCPs) != 12 {
-		t.Errorf("plan mcps = %d, want 12 (golmet + toggle-all)", len(plan.MCPs))
+	if len(plan.MCPs) != 13 {
+		t.Errorf("plan mcps = %d, want 13 (golmet + toggle-all)", len(plan.MCPs))
 	}
 	if plan.Version == "" || plan.SkillsDir == "" || !plan.SkillsSupported {
 		t.Errorf("plan incompleto: %+v", plan)
@@ -221,7 +221,7 @@ func TestWizardActiveDescription(t *testing.T) {
 		t.Fatalf("perfil sob o cursor sem o blurb: %q", p0)
 	}
 	m.ProfileMove(1)
-	if p1 := m.ActiveDescription(); p1 == p0 || !strings.Contains(p1, "93 componentes") {
+	if p1 := m.ActiveDescription(); p1 == p0 || !strings.Contains(p1, "126 componentes") {
 		t.Errorf("blurb do perfil deveria mudar ao navegar: %q", p1)
 	}
 	// passo engine: descrição do engine sob o cursor

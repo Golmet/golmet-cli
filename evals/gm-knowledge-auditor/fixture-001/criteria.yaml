@@ -10,7 +10,7 @@ description: >
   como N/A (sem dados) — nunca zero fingido, nenhum percentual em
   relatório sem dados. Relatório sem dados NUNCA faz merge no
   METRICS.md — a declaração PROXY (heurística de globs) é obrigatória.
-inputs_required: [knowledge/INDEX.md, accumulation/patterns/INDEX.md, rules/stack-playbook.md, PROJECT_CHARTER.md]
+inputs_required: [packs/org-pack/domains/INDEX.md, accumulation/patterns/INDEX.md, rules/stack-playbook.md, PROJECT_CHARTER.md]
 
 checks:
   - type: file_exists

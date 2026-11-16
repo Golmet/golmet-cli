@@ -37,7 +37,7 @@ de acúmulo (`<!-- gm-pack-accumulation -->`) do AGENTS.md global:
 - Retrospectivas de projetos (`RETROSPECTIVE.md` de cada projeto documentado) — fonte de padrões
 - `accumulation/patterns/INDEX.md` do pack ativo — índice atual de padrões
 - `accumulation/patterns/<tipo>/*/PATTERN.md` — padrões existentes (para merge)
-- Fundação do domínio (T1): `knowledge/knowledge-management/KNOWLEDGE.md` — (MP-03: staleness é atributo do ITEM, não da store)
+- Fundação do domínio (T1): `packs/<pack-ativo>/domains/knowledge-management/KNOWLEDGE.md` - (MP-03: staleness é atributo do ITEM, não da store)
 
 ## Gera (downstream)
 
@@ -66,7 +66,10 @@ Para cada retrospectiva, extraia a seção "Padrões extraídos".
 ### Passo 2 — Identificar padrões novos vs existentes
 
 Para cada padrão extraído:
-1. Classifique o **Tipo**: `processo | arquitetura | codigo | ui | teste | dados`
+1. Classifique o **Tipo**: `process | architecture | code | ui | test | data`
+   (taxonomia EN canônica — a constante `patternTypes` do lint cita a MESMA
+   lista e o check **L10** vige a regressão PT no pack: `processo`,
+   `arquitetura`, `codigo`, `teste`, `dados` não são tipos válidos)
 2. Normalizar o nome (slug: `kebab-case`)
 3. Verificar se `accumulation/patterns/<tipo>/<slug>/PATTERN.md` do pack ativo já existe
 4. **Detecção de conflito (P-05/MP-13 — invalidação por contradição):** se o
@@ -88,7 +91,7 @@ Para cada padrão extraído:
 # <Nome do Padrão>
 
 **Categoria:** <autenticação | paginação | erros | validação | multi-tenancy | data-model | api-design | testes | deployment | outros>
-**Tipo:** <processo | arquitetura | codigo | ui | teste | dados>
+**Tipo:** <process | architecture | code | ui | test | data>
 **Projetos que usaram:** <lista com datas>
 **Stacks aplicáveis:** <dotnet | java | rust | angular | all>
 **Maturidade:** <novo | validado | consolidado>
@@ -99,7 +102,7 @@ Para cada padrão extraído:
 
 ## Cenário
 
-<para Tipo codigo/ui/teste: o cenário específico que dispara o padrão ("quando o endpoint precisa ser idempotente...") — para Tipo processo, funde com a Descrição>
+<para Tipo code/ui/test: o cenário específico que dispara o padrão ("quando o endpoint precisa ser idempotente...") — para Tipo processo, funde com a Descrição>
 
 ## Descrição
 
@@ -107,7 +110,7 @@ Para cada padrão extraído:
 
 ## Implementação
 
-<para Tipo codigo/ui/teste: código compilável por stack — OBRIGATÓRIO ao menos na stack principal onde surgiu>
+<para Tipo code/ui/test: código compilável por stack — OBRIGATÓRIO ao menos na stack principal onde surgiu>
 
 ### <Stack 1> (ex: .NET C#)
 
@@ -176,21 +179,21 @@ Gere/atualize `accumulation/patterns/INDEX.md` do pack ativo:
 
 | Padrão | Tipo | Categoria | Projetos | Maturidade | data_ultima_revisao | status |
 |--------|------|-----------|----------|------------|---------------------|--------|
-| [jwt-auth](codigo/jwt-auth/PATTERN.md) | codigo | autenticação | AppIrmao, MeuApp | consolidado | 2026-01-15 | ativo |
-| [api-pagination](codigo/api-pagination/PATTERN.md) | codigo | api-design | AppIrmao | novo | 2026-02-01 | ativo |
-| [adaptacao-produto-irmao](processo/adaptacao-produto-irmao/PATTERN.md) | processo | outros | MeuApp | novo | 2026-02-10 | ativo |
+| [jwt-auth](code/jwt-auth/PATTERN.md) | code | autenticação | AppIrmao, MeuApp | consolidado | 2026-01-15 | ativo |
+| [api-pagination](code/api-pagination/PATTERN.md) | code | api-design | AppIrmao | novo | 2026-02-01 | ativo |
+| [sibling-product-adaptation](process/sibling-product-adaptation/PATTERN.md) | process | outros | MeuApp | novo | 2026-02-10 | ativo |
 
 ## Por Tipo
 
-### Processo
-- [adaptacao-produto-irmao](processo/adaptacao-produto-irmao/PATTERN.md) — reaproveitar design de produto-irmão (revisão: 2026-02-10)
+### Process
+- [sibling-product-adaptation](process/sibling-product-adaptation/PATTERN.md) — reaproveitar design de produto-irmão (revisão: 2026-02-10)
 - <padrão invalidado> — <descrição> (revisão: AAAA-MM-DD) [superado por <novo-padrão>]
 
-### Arquitetura
+### Architecture
 - <padrão> — <descrição> (revisão: AAAA-MM-DD)
 
-### Código
-- [jwt-auth](codigo/jwt-auth/PATTERN.md) — JWT com refresh token (revisão: 2026-01-15)
+### Code
+- [jwt-auth](code/jwt-auth/PATTERN.md) — JWT com refresh token (revisão: 2026-01-15)
 
 ### UI
 - <padrão> — <descrição> (revisão: AAAA-MM-DD)
@@ -199,7 +202,7 @@ Gere/atualize `accumulation/patterns/INDEX.md` do pack ativo:
 - <padrão> — <descrição> (revisão: AAAA-MM-DD)
 
 ### Dados
-- [api-pagination](codigo/api-pagination/PATTERN.md) — Paginação offset/cursor (revisão: 2026-02-01)
+- [api-pagination](code/api-pagination/PATTERN.md) — Paginação offset/cursor (revisão: 2026-02-01)
 ```
 
 Convenção de invalidação no INDEX: a coluna `status` da tabela principal

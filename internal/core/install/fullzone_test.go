@@ -61,7 +61,7 @@ func TestFullWorkspaceZoneCoexistsWithBaseManifest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FULL após BASE: %v", err)
 	}
-	if res == nil || res.Total != 93 {
+	if res == nil || res.Total != 129 {
 		t.Fatalf("FULL na zona: total=%v", res)
 	}
 	// manifest BASE intocado pelo FULL
@@ -72,7 +72,7 @@ func TestFullWorkspaceZoneCoexistsWithBaseManifest(t *testing.T) {
 	if err != nil || mf == nil || len(mf.Skills) != 16 {
 		t.Fatalf("manifest BASE ilegível após FULL: %v (%+v)", err, mf)
 	}
-	// manifest de conteúdo separado, schema próprio, 93 arquivos
+	// manifest de conteúdo separado, schema próprio, 126 arquivos
 	var cm struct {
 		Version string `json:"version"`
 		Files   []struct {
@@ -84,8 +84,8 @@ func TestFullWorkspaceZoneCoexistsWithBaseManifest(t *testing.T) {
 	if err := json.Unmarshal([]byte(raw), &cm); err != nil {
 		t.Fatalf("manifest-content.json inválido: %v", err)
 	}
-	if len(cm.Files) != 93 {
-		t.Errorf("manifest-content com %d arquivos, want 93", len(cm.Files))
+	if len(cm.Files) != 126 {
+		t.Errorf("manifest-content com %d arquivos, want 126", len(cm.Files))
 	}
 	if _, err := os.Stat(filepath.Join(ws, ".golmet", "agents", "gm-dev.md")); err != nil {
 		t.Errorf("agents do FULL ausente da zona: %v", err)
@@ -108,7 +108,7 @@ func TestFullWorkspaceZoneCoexistsWithBaseManifest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FULL re-run: %v", err)
 	}
-	if res2.Total != 93 {
+	if res2.Total != 129 {
 		t.Fatalf("re-run total=%d", res2.Total)
 	}
 	for _, c := range res2.Conflicts {
@@ -130,7 +130,8 @@ func TestFullFallbackDryRunWritesNothing(t *testing.T) {
 	if place == nil || place.Zone != FullZoneWorkspace {
 		t.Fatalf("zona do dry-run = %+v, want workspace-zone", place)
 	}
-	if len(rep.Written) != rep.Total || rep.Total == 0 {
+	// dry-run: 3 templates não-depositáveis saem do plano de escrita
+	if len(rep.Written) != rep.Total-3 || rep.Total == 0 {
 		t.Fatalf("plano dry-run: total=%d written=%d", rep.Total, len(rep.Written))
 	}
 	if _, err := os.Stat(filepath.Join(ws, ".golmet")); !os.IsNotExist(err) {

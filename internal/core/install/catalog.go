@@ -32,6 +32,11 @@ type MCPDef struct {
 	Command     string   `json:"command,omitempty"`
 	Args        []string `json:"args,omitempty"`
 	EnvRequired []string `json:"env_required,omitempty"`
+	// EnvOptional: env que MELHORA o serviço (rate limits, quota) mas não
+	// bloqueia o registro — contrário de EnvRequired, cuja ausência vira
+	// pendência (config quebrada nunca). O install registra igual sem a
+	// env; a orientação de cadastro fica na skill de setup do MCP.
+	EnvOptional []string `json:"env_optional,omitempty"`
 	URL         string   `json:"url,omitempty"`
 	Param       string   `json:"param,omitempty"` // parâmetro obrigatório (token <Param> no Command/Args)
 	Required    bool     `json:"required"`        // golmet — sempre registrado
@@ -76,6 +81,12 @@ type MCPDef struct {
 //     absoluto; ausente → pendência citando as releases do rusq/mcp-sqlite
 //     (o kit NÃO instala esse no v0.1 — instalador próprio, diferente do
 //     codegraph).
+//   - context7 (remote): context7.com/docs (revisado 11/2026) —
+//     https://mcp.context7.com/mcp, Streamable HTTP que funciona SEM
+//     credenciais (initialize + tools/list OK; rate limits baixos).
+//     CONTEXT7_API_KEY é OPCIONAL e recomendada (grátis no dashboard,
+//     keys prefixo ctx7sk; header Authorization Bearer) — por isso fica
+//     em EnvOptional, NUNCA em EnvRequired (registro funciona sem key).
 func Catalog() []MCPDef {
 	return []MCPDef{
 		{
@@ -162,6 +173,13 @@ func Catalog() []MCPDef {
 			Description: "Conecta o agente à Hostinger: servidores VPS, hospedagem e domínios da sua conta",
 			Type:        MCPTypeRemote,
 			URL:         "https://mcp.hostinger.com",
+		},
+		{
+			Name:        "context7",
+			Description: "O agente consulta documentação atualizada de bibliotecas e frameworks antes de responder",
+			Type:        MCPTypeRemote,
+			URL:         "https://mcp.context7.com/mcp",
+			EnvOptional: []string{"CONTEXT7_API_KEY"},
 		},
 	}
 }

@@ -20,7 +20,7 @@ Primary Agent → Subagent → Skill. Nunca contradiga as convenções do workfl
 
 ## Princípios
 
-- **Roteia, não executa** — quem preenche o checklist é a skill `gm-compliance-check`.
+- **Roteia, não executa** — quem preenche o checklist é a skill `gm-compliance`.
 - **Não é assessoria jurídica** — a skill checklist operacionaliza a lei;
   base legal ambígua → `❓ A decidir` com recomendação de DPO/jurídico do
   cliente. Nunca decida base legal sozinho.
@@ -54,7 +54,7 @@ Primary Agent → Subagent → Skill. Nunca contradiga as convenções do workfl
 
 | Skill | Quando invocar |
 |-------|----------------|
-| `gm-compliance-check` | Gerar/atualizar `specs/COMPLIANCE.md` (checklist LGPD de 10 eixos) |
+| `gm-compliance` | Gerar/atualizar `specs/COMPLIANCE.md` (checklist LGPD de 10 eixos) |
 
 ## Ganchos fora do domínio (cite, não duplique)
 
@@ -71,7 +71,7 @@ Primary Agent → Subagent → Skill. Nunca contradiga as convenções do workfl
 === gm-compliance-orchestrator — resumo ===
 Pedido: <o que foi solicitado>
 Pré-condições: OK | falha (<qual>)
-Skill executada: gm-compliance-check | nenhuma (roteamento)
+Skill executada: gm-compliance | nenhuma (roteamento)
 Artefato: specs/COMPLIANCE.md (novo | atualizado | já existente)
 Lacunas: <N abertas / M resolvidas | nenhuma>
 Próximos passos: <RN/CR candidato | reavaliação | nenhuma>

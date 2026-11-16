@@ -1,0 +1,44 @@
+---
+name: "gm-incident-postmortem — incidente com input completo (migration dessincronizada)"
+description: >
+  Incidente real com input completo (timeline, causa raiz, ações corretivas
+  no input): deploy v1.4.2 com migration dessincronizada do código, 2h05min
+  de downtime em POST /agendamentos. A skill gera o post-mortem documentado
+  (timeline, causa raiz, ações corretivas, follow-ups). Input completo —
+  substitui a f-001 not-executable. Artefato: INCIDENT_api-produto.md.
+inputs_required: ["input/incidente.md"]
+
+checks:
+  - type: file_exists
+    path: "INCIDENT_api-produto_2026-11-11.md"
+    severity: error
+
+  - type: contains
+    path: "INCIDENT_api-produto_2026-11-11.md"
+    pattern: "14:20"
+    severity: error
+
+  - type: contains
+    path: "INCIDENT_api-produto_2026-11-11.md"
+    pattern: "dessincroniz"
+    severity: error
+
+  - type: contains
+    path: "INCIDENT_api-produto_2026-11-11.md"
+    pattern: "janela_fim"
+    severity: error
+
+  - type: contains
+    path: "INCIDENT_api-produto_2026-11-11.md"
+    pattern: "v1.4.3"
+    severity: error
+
+  - type: contains
+    path: "INCIDENT_api-produto_2026-11-11.md"
+    pattern: "Ações corretivas"
+    severity: error
+
+  - type: contains
+    path: "INCIDENT_api-produto_2026-11-11.md"
+    pattern: "Causa raiz"
+    severity: error

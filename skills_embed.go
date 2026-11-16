@@ -1,5 +1,5 @@
 // Package golmet expõe os assets do kit embutidos no binário — o subset
-// BASE de skills (FORMATO §2: zona .golmet/ é vendored pelo `golmet
+// BASE de skills (FORMAT §2: zona .golmet/ é vendored pelo `golmet
 // update`). Package na raiz do módulo porque go:embed não sobe
 // diretórios: a pasta skills/ vive na raiz.
 package golmet

@@ -17,8 +17,8 @@ derivada das regras de negócio e casos de uso.
 
 ## Referências
 
-- Entidade RN (seções `## RN-NNN — <título>`): FORMATO §7.2
-- Layout do workspace (pasta `specs/`): FORMATO §2
+- Entidade RN (seções `## RN-NNN — <título>`): FORMAT §7.2
+- Layout do workspace (pasta `specs/`): FORMAT §2
 
 ## Lê (upstream)
 

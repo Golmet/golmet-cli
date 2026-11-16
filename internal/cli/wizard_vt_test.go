@@ -87,7 +87,7 @@ func TestInstallDispatchVTFallbackPlainAuto(t *testing.T) {
 	if idxPerfil < 0 || idxEngine < 0 || idxPerfil > idxEngine {
 		t.Errorf("perfil deveria vir antes do engine no modo numerado (perfil=%d engine=%d):\n%s", idxPerfil, idxEngine, out)
 	}
-	if !strings.Contains(out, "install cancelado — nada foi escrito") {
+	if !strings.Contains(out, "cancelado — nada foi aplicado") {
 		t.Errorf("cancelamento do modo numerado ausente:\n%s", out)
 	}
 	if strings.Contains(out, "◆") && strings.Contains(out, "Plano") {

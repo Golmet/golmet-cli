@@ -1,0 +1,53 @@
+---
+name: "gm-devops — roteamento de VPS nova + pipeline + observabilidade"
+description: >
+  Operador solicita VPS nova do zero, pipeline de deploy do repo e
+  monitoramento. O primary roteia: gm-vps-setup (12 fases, tunnel strict),
+  gm-cicd-workflow (deploy.yml em dry-run com confirmação), gm-observability
+  (KISS). Sintomas pós-deploy vão ao gm-vps-troubleshoot. Artefato: delegacao.md.
+inputs_required: ["input/cenario.md"]
+
+checks:
+  - type: file_exists
+    path: "delegacao.md"
+    severity: error
+
+  - type: section_exists
+    path: "delegacao.md"
+    section: "## Delegação"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-vps-setup"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "12 fases"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "strict"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-cicd-workflow"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "dry-run"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-observability"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-vps-troubleshoot"
+    severity: error

@@ -1,0 +1,43 @@
+﻿---
+name: "gm-quality-orchestrator — camada de qualidade antes das features"
+description: >
+  Specs completas: o orchestrator roteia a camada de qualidade antes da
+  geração de features — gm-test-strategy (TEST_STRATEGY + DoD), gm-traceability
+  (matriz RN → artefatos), gm-validate (integridade da DAG + VALIDATION_REPORT)
+  e gm-wiki-lint antes de entregar. Roteia, não executa. Artefato: delegacao.md.
+inputs_required: ["input/cenario.md"]
+
+checks:
+  - type: file_exists
+    path: "delegacao.md"
+    severity: error
+
+  - type: section_exists
+    path: "delegacao.md"
+    section: "## Delegação"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-test-strategy"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-traceability"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-validate"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-wiki-lint"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "Roteia"
+    severity: error

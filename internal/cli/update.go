@@ -8,7 +8,6 @@ import (
 
 	"github.com/Golmet/golmet-cli/internal/core/content"
 	coreinstall "github.com/Golmet/golmet-cli/internal/core/install"
-	"github.com/Golmet/golmet-cli/internal/core/source"
 	"github.com/Golmet/golmet-cli/internal/core/update"
 	"github.com/spf13/cobra"
 )
@@ -18,16 +17,13 @@ import (
 // compara embutido vs instalado com --check (consulta, sem escrita).
 func newUpdateCmd() *cobra.Command {
 	var check, jsonOut, full, force bool
-	var engineID, coreSource, workspace string
+	var engineID, workspace string
 	cmd := &cobra.Command{
 		Use:   "update [workspace]",
 		Short: "Instala o subset BASE de skills na zona .golmet/ (DR-008)",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := cmd.OutOrStdout()
-			if coreSource != "" && !full {
-				return fmt.Errorf("--core exige --full; use 'golmet update --full --core <source> --engine %s'", engineID)
-			}
 			if full {
 				if check {
 					return fmt.Errorf("--check --full ainda não é suportado; use 'golmet update --full --engine %s' para materializar", engineID)
@@ -50,14 +46,9 @@ func newUpdateCmd() *cobra.Command {
 					ws = "."
 				}
 				var rep *content.MaterializeReport
-				var syncReport *source.SyncReport
-				if coreSource != "" {
-					rep, syncReport, err = coreinstall.MaterializeExternalCore(home, engineID, coreSource, force)
-				} else {
-					// a zona (FullPlacement) é comportamento interno do
-					// pipeline — via CLI o destino é sempre o config nativo
-					rep, _, err = coreinstall.MaterializeFull(home, engineID, ws, force)
-				}
+				// a zona (FullPlacement) é comportamento interno do
+				// pipeline — via CLI o destino é sempre o config nativo
+				rep, _, err = coreinstall.MaterializeFull(home, engineID, ws, force)
 				if err != nil {
 					fmt.Fprintln(cmd.ErrOrStderr(), "golmet:", err)
 					return exitError(2)
@@ -65,11 +56,7 @@ func newUpdateCmd() *cobra.Command {
 				if jsonOut {
 					return encodeJSON(cmd, rep)
 				}
-				if syncReport != nil {
-					fmt.Fprintf(out, "core externo %s @ %s — %d arquivo(s) escrito(s), %d conflito(s) preservado(s)\n", syncReport.Source, syncReport.SHA, len(rep.Written), len(rep.Conflicts))
-				} else {
-					fmt.Fprintf(out, "FULL embarcado %s — %d arquivo(s) escrito(s), %d conflito(s) preservado(s)\n", engineID, len(rep.Written), len(rep.Conflicts))
-				}
+				fmt.Fprintf(out, "FULL embarcado %s — %d arquivo(s) escrito(s), %d conflito(s) preservado(s)\n", engineID, len(rep.Written), len(rep.Conflicts))
 				for _, p := range rep.Conflicts {
 					fmt.Fprintf(out, "  conflito preservado (customização local): %s\n", p)
 				}
@@ -112,7 +99,6 @@ func newUpdateCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&full, "full", false, "atualiza/materializa o workflow FULL no config do engine (perfil completo — exige skills nativas)")
 	cmd.Flags().StringVar(&engineID, "engine", "", "engine do FULL (perfil completo — compatíveis: opencode | claude-code)")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "workspace do kit (contexto da materialização; default: atual)")
-	cmd.Flags().StringVar(&coreSource, "core", "", "fonte Git ou diretório local do core externo (substitui o FULL embarcado)")
 	cmd.Flags().BoolVar(&force, "force", false, "sobrescreve customizações locais no FULL")
 	return cmd
 }

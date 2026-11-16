@@ -15,7 +15,7 @@ reporta `db-introspect: não disponível` e as métricas ficam `N/A (sem
 dados)` — cláusula de fallback padrão (IMP-080), nunca números inventados.
 
 Mede o **PAR de métricas** do princípio P-09 da base de conhecimento
-(`knowledge/knowledge-management/KNOWLEDGE.md` v1.5.0 — Lê upstream): **(1)
+(`packs/<pack-ativo>/domains/knowledge-management/KNOWLEDGE.md` v1.5.0 — Lê upstream): **(1)
 hit rate** — fração de tarefas que de fato carregaram conhecimento
 relevante — e **(2) tokens de conhecimento por tarefa** — quanto custa
 acertar. Instrumentação barata PRECEDE decisão de infraestrutura (D8 do
@@ -79,7 +79,7 @@ inventar números.
 | Conceito | Proxy (glob) | Limite declarado |
 |----------|--------------|------------------|
 | Sessão que **precisava** de conhecimento | ≥ 1 tool call de leitura (read/grep/glob, status `completed`) com path em artefato T4 de engenharia: segmento `specs/`, `analysis/`, `delivery/` ou arquivo `REQUIREMENTS.md` (qualquer módulo sob o diretório de projetos) | Necessidade real de conhecimento não é observável — é inferência de atividade |
-| **Hit** de conhecimento | tool call de leitura com path em `knowledge/**` (T1), `patterns/INDEX.md` ou `**/PATTERN.md` (T2), `rules/**.md` (T3) | Acionamento do bloco `knowledge-routing` em prosa NÃO é observável no db; `rules/*.yaml` e invocações da tool `skill` não contam |
+| **Hit** de conhecimento | tool call de leitura com path em `knowledge/**` (T1), `patterns/INDEX.md` ou `**/PATTERN.md` (T2), `profile/**` (T3 config) ou `packs/**/rules/**` (T3 pack) | Acionamento do bloco `knowledge-routing` em prosa NÃO é observável no db; `profile/*.yaml` e invocações da tool `skill` não contam |
 | **Tokens de conhecimento por tarefa** | soma aproximada (bytes/4, ASCII) dos arquivos de conhecimento LIDOS (tool `read`) por sessão ÷ sessões que precisavam | Tamanho no disco HOJE (não no momento da leitura); leitura parcial (offset/limit) conta como arquivo inteiro; 1ª leitura por sessão+arquivo |
 
 Regras de contagem:
@@ -103,11 +103,11 @@ Regras de contagem:
 ## Lê (upstream)
 
 - Banco SQLite do runtime (read-only — via `node:sqlite`; capacidade `db-introspect` FULL-only)
-- `knowledge/knowledge-management/KNOWLEDGE.md` — **base de fundação do
+- `packs/<pack-ativo>/domains/knowledge-management/KNOWLEDGE.md` — **base de fundação do
   domínio (T1)** (v1.5.0): P-09 (par de métricas), P-10 (granularidade), P-11
   (hit rate por modelo), AP-11 (biblioteca morta), AP-13 (gatilho otimista)
   — fonte canônica de critérios de interpretação
-- `packs/<pack-ativo>/accumulation/knowledge/plano-arquitetura-conhecimento.md`
+- `packs/<pack-ativo>/accumulation/nuances/plano-arquitetura-conhecimento.md`
   — plano v5 (D8/D12/D15/D17/D18, §6 spec desta skill)
 - `packs/<pack-ativo>/accumulation/metrics/METRICS.md` — alvo do merge incremental
 - `gm-perf-auditor` — precedente do padrão de acesso ao db

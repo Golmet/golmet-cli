@@ -122,7 +122,7 @@ sessão. Se alguma informação faltar, pergunte via `ask`. Contexto mínimo:
 
 | Campo | Exemplo |
 |-------|---------|
-| Skill/agente executado | `gm-data-model` |
+| Skill/agente executado | `gm-datamodel` |
 | O que foi pedido | "Gerar DATA_MODEL.md do módulo bloqueios" |
 | O que foi gerado | "DATA_MODEL.md sem as FKs de PRJ_BLOQUEIO" |
 | O que está errado / faltando | "Relacionamentos não documentados" |
@@ -204,6 +204,15 @@ atualize `evals/<skill>/fixture-*/output-expected/`. **Nunca atualize
 baseline para fazer teste passar sem o usuário ver o diff** — isso anularia
 o golden set. Registre a atualização de baseline na entrada do IMP (Passo 6).
 
+### Passo 5.6 — Gate de verificação estrutural (`gm_lint`)
+
+Se a correção tocou estrutura do workflow (renomear/mover/apagar componentes,
+arquivos ou referências cruzadas), rode `gm_lint` (ou CLI `golmet lint --workspace .`)
+para CONFIRMAR que a correção não introduziu inconsistência estrutural —
+refs mortas (L1), fantasmas (L6), estrutura canônica (L7), definitivo↔template
+(L8). Findings novos = a correção ficou incompleta: ajuste antes de registrar
+o IMP (Passo 6). Zero findings = gate verde, anote no IMP.
+
 ### Passo 6 — Registrar em WORKFLOW_IMPROVEMENTS.md
 
 Adicione uma entrada no log com o template abaixo. Faça merge incremental
@@ -249,13 +258,13 @@ Resumo final no formato:
 ```text
 ═══ gm-workflow-improver — diagnóstico ═══
 
-Alvo: gm-data-model (SKILL.md)
+Alvo: gm-datamodel (SKILL.md)
 Problema: FKs de PRJ_BLOQUEIO não documentadas no DATA_MODEL.md
 Causa raiz: Instrução ausente — passo 5 não menciona documentar FKs de
 tabelas reaproveitadas
 Correção aplicada: adicionado sub-passo 5.1 "Documentar FKs de tabelas
 reaproveitadas a partir de LEGACY_CONTEXT.md"
-🧪 Evals: gm-data-model — 2 fixtures, 8/8 PASS ✅
+🧪 Evals: gm-datamodel — 2 fixtures, 8/8 PASS ✅
 🧪 Health check (F.10-13): arquivos editados — 0 findings ✅
 Registro: IMP-001 em WORKFLOW_IMPROVEMENTS.md
 

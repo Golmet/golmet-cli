@@ -32,24 +32,41 @@ func TestRenderGoldenOpencodeByteEquality(t *testing.T) {
 		t.Fatalf("registry.yaml ilegível: %v", err)
 	}
 	reg := ParseRegistry(string(regData))
-	if len(reg.Items) != 93 {
-		t.Fatalf("registry: esperados 93 itens, got %d", len(reg.Items))
+	if len(reg.Items) != 124 {
+		t.Fatalf("registry: esperados 124 itens, got %d", len(reg.Items))
 	}
 	rendered, missing := Render(coreFS(t), reg, "opencode")
 	if len(missing) != 0 {
 		t.Fatalf("itens sem corpo: %v", missing)
 	}
-	if len(rendered) != 93 {
-		t.Fatalf("renderizados: esperados 93, got %d", len(rendered))
+	if len(rendered) != 129 {
+		t.Fatalf("renderizados: esperados 129 (124 itens + rules/templates), got %d", len(rendered))
 	}
 
 	goldenRoot := filepath.Join("testdata", "golden-opencode")
+
+	// Regeneração de goldens: GOLMET_UPDATE_GOLDEN=1 sobrescreve os goldens
+	// com o render corrente (use após editar coredata/sources e rever o diff).
+	if os.Getenv("GOLMET_UPDATE_GOLDEN") == "1" {
+		for _, r := range rendered {
+			dst := filepath.Join(goldenRoot, filepath.FromSlash(r.Rel))
+			if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+				t.Fatalf("mkdir %s: %v", filepath.Dir(dst), err)
+			}
+			if err := os.WriteFile(dst, []byte(r.Content), 0o644); err != nil {
+				t.Fatalf("gravar golden %s: %v", dst, err)
+			}
+		}
+		t.Logf("goldens regenerados: %d arquivos", len(rendered))
+		return
+	}
+
 	var goldenFiles []string
 	err = filepath.WalkDir(goldenRoot, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if !d.IsDir() && strings.HasSuffix(p, ".md") {
+		if !d.IsDir() && (strings.HasSuffix(p, ".md") || strings.HasSuffix(p, ".yaml")) {
 			rel, _ := filepath.Rel(goldenRoot, p)
 			goldenFiles = append(goldenFiles, filepath.ToSlash(rel))
 		}
@@ -85,8 +102,8 @@ func TestRenderClaudeCodeShape(t *testing.T) {
 	regData, _ := fs.ReadFile(coreFS(t), "registry.yaml")
 	reg := ParseRegistry(string(regData))
 	rendered, missing := Render(coreFS(t), reg, "claude-code")
-	if len(missing) != 0 || len(rendered) != 93 {
-		t.Fatalf("claude-code: 93 esperados, got %d (missing %v)", len(rendered), missing)
+	if len(missing) != 0 || len(rendered) != 129 {
+		t.Fatalf("claude-code: 129 esperados (124 itens + rules/templates), got %d (missing %v)", len(rendered), missing)
 	}
 	// fm = bloco entre o primeiro --- e o segundo; corpo pode mencionar "mode:" legitimately
 	for _, r := range rendered {

@@ -1,4 +1,4 @@
-// writer.go — persistência do golmet.index.json (FORMATO §8, D2).
+// writer.go — persistência do golmet.index.json (FORMAT §8, D2).
 // O kit é o ÚNICO escritor do índice: uma validate sem erros hard
 // reescreve (última validação boa = estado do índice); com erro hard
 // NÃO escreve (história preservada para H6/H8); --fix força a
@@ -17,7 +17,7 @@ import (
 
 // KitVersion é a versão do subset BASE gravada no .golmet/manifest.json
 // pelo update (bloco 3) e usada como versão do servidor MCP.
-const KitVersion = "0.3.0"
+const KitVersion = "1.0.0"
 
 // SectionHash é a normalização canônica de hash de seção (§8): SHA-256
 // hex das linhas ORIGINAIS da seção (RawLines) unidas por "\n" — a MESMA
@@ -107,7 +107,7 @@ func Build(workspace string, s Snapshot) *Index {
 
 // Recount recalcula counts (§8) a partir de Entities: total por namespace,
 // por estado (`<ns>_<estado>`), tasks agregadas da feature e os aliases
-// nominais do FORMATO (pend_open, cr_pending, features_done).
+// nominais do FORMAT (pend_open, cr_pending, features_done).
 func (i *Index) Recount() {
 	c := map[string]int{}
 	for ns, m := range i.Entities {

@@ -10,7 +10,7 @@ verificações transversais que se aplicam a qualquer linguagem.
 - Código-fonte do repo alvo (read-only) — arquivos modificados pela task
 - Playbook da stack carregado (se existir) — para comandos de verificação
 - `AGENTS.md` do repo — convenções específicas
-- Base de conhecimento do domínio (T1): `knowledge/security-review/KNOWLEDGE.md`
+- Base de conhecimento do domínio (T1): `packs/<pack-ativo>/domains/security-review/KNOWLEDGE.md`
   no config do engine — fonte canônica dos critérios de segurança
   (seção D — OWASP ASVS 5.0.0 e Top 10:2025)
 
@@ -170,7 +170,7 @@ public void CalculateTotal_WithValidItems_ReturnsSum()
 
 ## D — Segurança
 
-Fonte canônica dos critérios: base T1 `knowledge/security-review/KNOWLEDGE.md`
+Fonte canônica dos critérios: base T1 `packs/<pack-ativo>/domains/security-review/KNOWLEDGE.md`
 (OWASP ASVS 5.0.0 + Top 10:2025 + Secure Code Review Cheat Sheet) —
 tabela abaixo atualizada da lista 2021 para a **Top 10:2025** (A03
 Software Supply Chain Failures e A10 Mishandling of Exceptional

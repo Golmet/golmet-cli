@@ -6,7 +6,7 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core"
 )
 
-// H9 — Spec stale DEVE carregar reason: CR-XXX (FORMATO §7.7/§9).
+// H9 — Spec stale DEVE carregar reason: CR-XXX (FORMAT §7.7/§9).
 func H9(ctx *Context) []core.GolmetError {
 	var out []core.GolmetError
 	for _, sp := range ctx.Specs {

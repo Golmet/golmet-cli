@@ -58,7 +58,7 @@ e as tabelas de subagents dos primary agents.
     Execute o eval em baseline-mode (absorvida pelo kit golmet `skill-eval`)
     para validar a fixture e registre o snapshot em `output-expected/` após
     aprovação do usuário. Skill sem fixture não passa no Golden Set Gate do
-    `gm-core-publish`.
+    `gm-skill-eval`.
 12. **Conhecimento antes de componente.** Camada nova que introduz domínio
     de conhecimento (security, qualidade, performance, acessibilidade...)
     nasce de base pesquisada — `knowledge/<dominio>/KNOWLEDGE.md` fundada
@@ -75,7 +75,7 @@ e as tabelas de subagents dos primary agents.
 - `agents/*.md` — exemplos existentes (padrões de estilo)
 - `skills/**/SKILL.md` — exemplos existentes (padrões de estilo)
 - Skills `customize-opencode` e `gm-*-creator` (referência de schema e templates)
-- `knowledge/INDEX.md` — índice das bases de conhecimento **(T1)** por
+- `packs/<pack-ativo>/domains/INDEX.md` — índice das bases de conhecimento **(T1)** por
   domínio (existência + staleness via `proxima_revisao`)
 
 ## Gera (downstream)
@@ -152,7 +152,7 @@ acessibilidade, dados...) — ex: uma camada de security review nasce da base
 OWASP; uma camada de qualidade de código, da base Clean Code/SOLID/design
 patterns.
 
-1. **Consulte** `knowledge/INDEX.md` (arquivo ausente =
+1. **Consulte** `packs/<pack-ativo>/domains/INDEX.md` (arquivo ausente =
    nenhum domínio fundado ainda).
 2. **Domínio sem base** (não listado no INDEX) **ou base stale**
    (`proxima_revisao` do KNOWLEDGE.md vencida) → invoque a skill
@@ -165,7 +165,7 @@ patterns.
    `knowledge/<dominio>/KNOWLEDGE.md` na seção "Lê (upstream)" dele como
    fonte canônica de critérios — em vez de embutir critérios ad-hoc no
    prompt. Nuances da organização ficam no pack ativo
-   (`packs/<pack>/accumulation/knowledge/`), nunca hardcoded no componente.
+   (`packs/<pack>/accumulation/nuances/`), nunca hardcoded no componente.
 
 Componente cuja função NÃO introduz domínio de conhecimento (roteamento,
 artefatos de pipeline, integrações) → pule direto para a Fase 3 — não force

@@ -102,6 +102,37 @@ func DetectEngines(home, workspace string) []EngineInfo {
 	return out
 }
 
+// EngineConfigRootFor resolve a raiz do config do engine para o check de
+// estado do doctor (cache reconstrutível vs dado do usuário). Engines com
+// skills nativas: raiz = dir pai do SkillsDir (opencode → ~/.config/opencode,
+// claude-code → ~/.claude). Sem skills nativas: raiz canônica de config de
+// cada engine (copilot-cli respeita $COPILOT_HOME — mesmo caminho que o
+// adapter registra MCP). vscode-copilot é workspace-scoped (.vscode/ do
+// workspace — sem raiz global) e engine desconhecido → false: o check não
+// se aplica, o caller não seta EngineConfigRoot.
+func EngineConfigRootFor(home, engineID string) (string, bool) {
+	adapter, ok := LookupEngine(engineID)
+	if !ok {
+		return "", false
+	}
+	if sd := adapter.SkillsDir(home); sd != "" {
+		return filepath.Dir(sd), true
+	}
+	switch adapter.ID() {
+	case "copilot-cli":
+		return copilotDir(home), true
+	case "cursor":
+		return filepath.Join(home, ".cursor"), true
+	case "gemini-cli":
+		return filepath.Join(home, ".gemini"), true
+	case "codex":
+		return filepath.Join(home, ".codex"), true
+	default:
+		// vscode-copilot e futuros workspace-scoped: sem config global
+		return "", false
+	}
+}
+
 // patchJSON aplica a entrada do MCP num arquivo JSON idempotentemente.
 // Container key varia por engine ("mcpServers" | "servers"). Se o arquivo
 // não existe, cria com apenas o container. Preserva TODO o resto do

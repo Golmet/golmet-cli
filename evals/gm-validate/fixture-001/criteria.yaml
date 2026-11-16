@@ -2,7 +2,7 @@ mode: manual
 ---
 name: "Validate L1 — workspace com 4 violações H gera VALIDATION_REPORT FAIL"
 description: >
-  POSITIVA: workspace FORMATO com 4 violações hard reais (H3 Feature ready
+  POSITIVA: workspace FORMAT com 4 violações hard reais (H3 Feature ready
   com anchor draft, H2 Task duplicada, H1 Feature ancorada em PEND, H5
   Feature sem front matter). A gm-validate roda o pré-scan determinístico
   do kit ('golmet validate <ws> --json' → 4 erro(s), 0 aviso(s)), NÃO

@@ -1,4 +1,4 @@
-﻿---
+---
 name: gm-requirements
 description: Gera ou atualiza REQUIREMENTS.md a partir da transcrição de reunião de negócios — merge incremental, promove PEND a RN com proveniência e registra decisões em DECISIONS.md.
 requires: [file, ask, kit.jev]
@@ -15,14 +15,14 @@ de reunião de negócios. Faz merge incremental, nunca reescreve do zero.
 
 ## Referências
 
-- Entidades RN/PEND (estados, diretivas `> estado:`): FORMATO §7.2/§7.3
-- ADR (estados, append-only): FORMATO §7.8
-- IDs RN-NNN, PEND-NNN, ADR-NNN: FORMATO §4
+- Entidades RN/PEND (estados, diretivas `> estado:`): FORMAT §7.2/§7.3
+- ADR (estados, append-only): FORMAT §7.8
+- IDs RN-NNN, PEND-NNN, ADR-NNN: FORMAT §4
 - Template de 11 seções: embutido abaixo por praticidade
 
 ## Resolução de caminhos
 
-Os artefatos do workspace seguem o layout do FORMATO §2:
+Os artefatos do workspace seguem o layout do FORMAT §2:
 
 - **Raiz do workspace:** PROJECT_CHARTER.md, REQUIREMENTS.md, DECISIONS.md, CHANGE_REQUESTS.md
 - **`specs/`:** DATA_MODEL.md, API_CONTRACTS.md, ERROR_CATALOG.md, UI_SPEC.md, ARCHITECTURE.md, SECURITY.md, ACCEPTANCE_CRITERIA.md, COMPLIANCE.md
@@ -62,7 +62,7 @@ durante a transição.
 
 - `file` — ler arquivos existentes e escrever/atualizar REQUIREMENTS.md, DECISIONS.md, CHANGELOG.md
 - `ask` — para ambiguidades não cobertas pelo gm-clarify (sem ask nativo: pergunte no chat e PARE — nunca adivinhe)
-- `kit.jev` — classificação calibrada da confiança de RNs induzidas (FORMATO §10); sem kit.jev: julgamento heurístico conservador (degradação declarada)
+- `kit.jev` — classificação calibrada da confiança de RNs induzidas (FORMAT §10); sem kit.jev: julgamento heurístico conservador (degradação declarada)
 
 ## Modo de erro
 
@@ -81,7 +81,7 @@ durante a transição.
 
 ### Segunda camada de classificação calibrada (`kit.jev`, opcional) — passo 8
 
-- Antes de gravar a tag de confiança de cada RN induzida de legado, submeta ao classificador calibrado do kit (`kit.jev` — FORMATO §10): texto = corpo da RN + evidência citada (`[arquivo:linha @hash]`); critérios = `{confirmada: "Evidência citada confirma diretamente a afirmação", inferida: "Afirmação é dedução de padrão, não leitura direta", lacuna: "Evidência insuficiente para julgar"}`.
+- Antes de gravar a tag de confiança de cada RN induzida de legado, submeta ao classificador calibrado do kit (`kit.jev` — FORMAT §10): texto = corpo da RN + evidência citada (`[arquivo:linha @hash]`); critérios = `{confirmada: "Evidência citada confirma diretamente a afirmação", inferida: "Afirmação é dedução de padrão, não leitura direta", lacuna: "Evidência insuficiente para julgar"}`.
 - **Regra conservadora:** se o classificador retorna `confirmada` com probabilidade < 0.7 (ou retorna `inferida`/`lacuna`), **rebaixe** um nível (Alta→Média→Baixa) e anote no corpo da RN: `Calibração: inferida (p=0.55)` — a calibração **só rebaixa, nunca eleva** o grau.
 - Agrupe as chamadas em lote (uma sessão para todas as RNs do lote), nunca 1 por RN.
 - **Degradação (`kit.jev: heuristic`):** sem o classificador disponível, o julgamento é heurístico do agente — aplique a mesma regra conservadora (na dúvida, rebaixe), anote `Calibração: heurística` no corpo e siga; a calibração é **opcional** — nunca gate bloqueante; se falhar, grave a tag original e siga sem ela (avise no checkpoint da reunião).
@@ -130,7 +130,7 @@ docs: add/update requirements from meeting YYYY-MM-DD
 
 9. **Regra removida com relevância externa** — se uma RN deixou de se aplicar mas tem relevância externa (ex.: referenciada em tarefa de tracker do perfil FULL), marque como `[removido]` com uma frase breve do motivo em vez de apagar silenciosamente. Se era puramente interna e nunca referenciada fora do documento, pode remover a linha — na dúvida, marque como removido.
 
-10. **Promoção de PEND a RN** — PEND sai do estado aberta por promoção a RN, por virar CR (altera RN confirmada — registro em `CHANGE_REQUESTS.md`) ou por encerrar como decisão; PEND NUNCA ancora feature (FORMATO §7.3, H1). Ao promover, siga a seção "Promoção de PEND a RN".
+10. **Promoção de PEND a RN** — PEND sai do estado aberta por promoção a RN, por virar CR (altera RN confirmada — registro em `CHANGE_REQUESTS.md`) ou por encerrar como decisão; PEND NUNCA ancora feature (FORMAT §7.3, H1). Ao promover, siga a seção "Promoção de PEND a RN".
 
 ## Promoção de PEND a RN
 
@@ -163,7 +163,7 @@ e a Feature.md com a RN como âncora.
 **Checkpoint de kit (`post-write: validate`):** após escrever REQUIREMENTS.md
 (e DECISIONS.md/CHANGELOG.md), rode `golmet validate` no workspace e corrija
 o que apontar — RNs devem estar no vocabulário legal `draft|active|superseded|dropped`
-(FORMATO §7.2), PENDs em `open|deferred|resolved|dropped` (§7.3), ADRs em
+(FORMAT §7.2), PENDs em `open|deferred|resolved|dropped` (§7.3), ADRs em
 `proposed|accepted|superseded` (§7.8). Sem kit disponível, anote a pendência
 "rode golmet validate" para o próximo passo.
 
@@ -309,7 +309,7 @@ Arquivo: `<Produto>/meetings/YYYY-MM-DD-NN.md` (NN = próximo sequencial)
 **Consequências:** [impactos positivos, negativos, riscos, dívidas técnicas]
 ```
 
-> **Invariante ADR (FORMATO §7.8):** conteúdo de ADR `accepted` é append-only — para mudar uma decisão aceita, crie um ADR novo com `> estado: superseded → ADR-XXX` no antigo. Nunca edite ADR aceito.
+> **Invariante ADR (FORMAT §7.8):** conteúdo de ADR `accepted` é append-only — para mudar uma decisão aceita, crie um ADR novo com `> estado: superseded → ADR-XXX` no antigo. Nunca edite ADR aceito.
 
 ## Exemplo de Commit
 

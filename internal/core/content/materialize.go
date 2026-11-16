@@ -181,6 +181,18 @@ func previousEntries(m *ContentManifest) map[string]FileEntry {
 	return out
 }
 
+// nonDepositTemplates — templates NÃO-depositáveis no config (decisão do
+// operador, mesmo espírito da M6): template é etapa de construção — vive no
+// kit (obtenha via `golmet template <nome>`); o config carrega só os
+// DEFINITIVOS. O render CONTINUA emitindo os 3 (golden/docs do kit mantêm
+// byte-equality); o materialize pula gravação/manifest e REMOVE proveniência
+// stale (entradas antigas do manifest saem no próximo materialize).
+var nonDepositTemplates = map[string]bool{
+	"AGENTS.template.md":                   true,
+	"profile/client-profile.template.md":   true,
+	"profile/operator-profile.template.md": true,
+}
+
 // Materialize renderiza o core FULL e grava agents/skills no config do engine.
 // Sem --force, qualquer arquivo divergente do último hash conhecido é
 // preservado e listado como conflito; nunca sobrescreve customização local.
@@ -223,6 +235,12 @@ func Materialize(fsys fs.FS, reg *Registry, opt MaterializeOptions) (*Materializ
 	}
 	fileMap := previousEntries(prev)
 	for _, r := range rendered {
+		// templates não-depositáveis: o config carrega só os definitivos —
+		// pula gravação E proveniência (entrada stale sai do manifest)
+		if nonDepositTemplates[r.Rel] {
+			delete(fileMap, r.Rel)
+			continue
+		}
 		target := filepath.Join(opt.ConfigRoot, filepath.FromSlash(r.Rel))
 		data := []byte(r.Content)
 		newHash := sha(data)
@@ -265,7 +283,7 @@ func Materialize(fsys fs.FS, reg *Registry, opt MaterializeOptions) (*Materializ
 			continue
 		}
 		// Precedência local > full: arquivo registrado como local não é
-		// sobrescrito sem --force (a exceção explícita do FORMATO §2.1) —
+		// sobrescrito sem --force (a exceção explícita do FORMAT §2.1) —
 		// diferença só de EOL não é customização: cura escrevendo o LF.
 		if hadOld && oldEntry.Layer == "local" && !opt.Force && !sameNorm {
 			rep.Preserved = append(rep.Preserved, rel)
@@ -390,9 +408,11 @@ func (s safeDirFS) Open(name string) (fs.File, error) {
 	return os.Open(real)
 }
 
-// validateContentPath constrains renderer output to the two content roots.
-// The check is deliberately independent of the host path separator so a
-// malicious registry cannot exploit a different platform's syntax.
+// validateContentPath constrains renderer output to the three content roots
+// (agents/, skills/, profile/) plus the root-level template asset
+// (AGENTS.template.md — não-depositável, M12). The check is deliberately
+// independent of the host path separator so a malicious registry cannot
+// exploit a different platform's syntax.
 func validateContentPath(rel string) (string, error) {
 	normalized := strings.ReplaceAll(filepath.ToSlash(rel), "\\", "/")
 	if normalized == "" || strings.HasPrefix(normalized, "/") || filepath.IsAbs(rel) ||
@@ -405,7 +425,11 @@ func validateContentPath(rel string) (string, error) {
 			return "", fmt.Errorf("caminho de conteúdo fora do escopo: %q", rel)
 		}
 	}
-	if !strings.HasPrefix(normalized, "agents/") && !strings.HasPrefix(normalized, "skills/") {
+	if normalized == "AGENTS.template.md" {
+		return normalized, nil
+	}
+	if !strings.HasPrefix(normalized, "agents/") && !strings.HasPrefix(normalized, "skills/") &&
+		!strings.HasPrefix(normalized, "profile/") {
 		return "", fmt.Errorf("caminho de conteúdo fora do escopo: %q", rel)
 	}
 	return normalized, nil

@@ -1,6 +1,6 @@
 # RN-001 — Reservas de sala
 
-Feature documentada antes do FORMATO — arquivo solto na raiz do delivery,
+Feature documentada antes do FORMAT — arquivo solto na raiz do delivery,
 sem pasta de grupo e sem front matter.
 
 ## Tasks

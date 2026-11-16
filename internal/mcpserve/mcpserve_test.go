@@ -2,7 +2,7 @@ package mcpserve
 
 import (
 	"context"
-	"io/fs"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	golmet "github.com/Golmet/golmet-cli"
 	"github.com/Golmet/golmet-cli/internal/core/indexstate"
 	"github.com/Golmet/golmet-cli/internal/core/scaffold"
 	"github.com/Golmet/golmet-cli/internal/core/update"
+	"github.com/Golmet/golmet-cli/internal/core/upgrade"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -85,7 +85,7 @@ func TestHandshakeAndServerInfo(t *testing.T) {
 	for _, tl := range lt.Tools {
 		names[tl.Name] = true
 	}
-	for _, want := range []string{"gm_validate", "gm_doctor", "gm_next", "gm_jev_classify", "gm_update", "gm_pack_update", "gm_pack_list"} {
+	for _, want := range []string{"gm_validate", "gm_doctor", "gm_next", "gm_jev_classify", "gm_update", "gm_pack_update", "gm_pack_list", "gm_eval_reports", "gm_upgrade"} {
 		if !names[want] {
 			t.Errorf("tool %s não anunciada (%v)", want, names)
 		}
@@ -125,7 +125,8 @@ func TestGmDoctorAndNextViaMCP(t *testing.T) {
 	ws := scaffoldWS(t)
 	cs := session(t, context.Background())
 
-	_, out := callTool(t, cs, "gm_doctor", map[string]any{"workspace": ws})
+	// home injetável (hermético — nunca varre o config REAL do operador)
+	_, out := callTool(t, cs, "gm_doctor", map[string]any{"workspace": ws, "home": t.TempDir()})
 	if !strings.Contains(out, `"checks"`) || !strings.Contains(out, `"golmet.yaml"`) {
 		t.Errorf("gm_doctor payload inesperado: %s", out)
 	}
@@ -141,6 +142,66 @@ func TestGmDoctorAndNextViaMCP(t *testing.T) {
 	_, out3 := callTool(t, cs, "gm_next", map[string]any{"workspace": ws})
 	if !strings.Contains(out3, "nada pendente") {
 		t.Errorf("gm_next pós-update deveria estar em dia: %s", out3)
+	}
+}
+
+// param engine do gm_doctor resolve a raiz do config via o mesmo helper do
+// CLI — arquivos sem proveniência no manifest aparecem como não-
+// reconstrutíveis na seção engine_config do payload.
+// gm_upgrade: sem confirm e sem check é erro (padrão gm_update); check
+// read-only devolve {current, latest, has_update} sem baixar nada (a
+// API do GitHub é injetada via upgrade.DefaultAPIBase → httptest).
+func TestGmUpgradeViaMCP(t *testing.T) {
+	cs := session(t, context.Background())
+
+	// sem confirm e sem check → tool-error com a mensagem canônica
+	res, text := callTool(t, cs, "gm_upgrade", map[string]any{})
+	if !res.IsError || !strings.Contains(text, "gm_upgrade exige confirm=true; nenhuma alteração foi aplicada") {
+		t.Fatalf("gate de confirm ausente/mensagem errada: isError=%v texto=%s", res.IsError, text)
+	}
+
+	// check read-only contra release fake (v9.9.9) — sem tocar em nada
+	release := map[string]any{
+		"tag_name": "v9.9.9",
+		"assets":   []map[string]string{},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(release)
+	}))
+	t.Cleanup(srv.Close)
+	prevAPI := upgrade.DefaultAPIBase
+	upgrade.DefaultAPIBase = srv.URL
+	t.Cleanup(func() { upgrade.DefaultAPIBase = prevAPI })
+
+	_, out := callTool(t, cs, "gm_upgrade", map[string]any{"check": true})
+	if !strings.Contains(out, `"has_update":true`) || !strings.Contains(out, `"latest":"v9.9.9"`) || !strings.Contains(out, `"applied":false`) {
+		t.Errorf("check gm_upgrade payload inesperado: %s", out)
+	}
+}
+
+func TestGmDoctorEngineConfigViaMCP(t *testing.T) {
+	ws := scaffoldWS(t)
+	cs := session(t, context.Background())
+
+	home := t.TempDir()
+	cfgRoot := filepath.Join(home, ".config", "opencode")
+	plugins := filepath.Join(cfgRoot, "plugins")
+	if err := os.MkdirAll(plugins, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"a.js", "b.js", "c.js"} {
+		if err := os.WriteFile(filepath.Join(plugins, name), []byte("plugin\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	_, out := callTool(t, cs, "gm_doctor", map[string]any{"workspace": ws, "home": home})
+	if !strings.Contains(out, `"engine_config"`) {
+		t.Fatalf("seção engine_config ausente do payload: %s", out)
+	}
+	if !strings.Contains(out, `plugins`) || !strings.Contains(out, `"untracked"`) {
+		t.Errorf("plugins não apareceu como não-reconstrutível: %s", out)
 	}
 }
 
@@ -223,43 +284,19 @@ func TestGmUpdateWeakEngineErrors(t *testing.T) {
 	}
 }
 
-func TestGmUpdateExternalCoreAndPackViaMCP(t *testing.T) {
+func TestGmUpdateEmbeddedAndPackViaMCP(t *testing.T) {
 	home := t.TempDir()
-	coreDir := filepath.Join(t.TempDir(), "core")
-	coreFS, err := fs.Sub(golmet.CoreDataFS(), "coredata")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := fs.WalkDir(coreFS, ".", func(path string, entry fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		target := filepath.Join(coreDir, filepath.FromSlash(path))
-		if entry.IsDir() {
-			return os.MkdirAll(target, 0o755)
-		}
-		data, err := fs.ReadFile(coreFS, path)
-		if err != nil {
-			return err
-		}
-		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-			return err
-		}
-		return os.WriteFile(target, data, 0o644)
-	}); err != nil {
-		t.Fatal(err)
-	}
 
 	cs := session(t, context.Background())
 	_, out := callTool(t, cs, "gm_update", map[string]any{
-		"home": home, "engine": "opencode", "core": coreDir,
+		"home": home, "engine": "opencode",
 		"confirm": true, "dry_run": true,
 	})
-	if !strings.Contains(out, `"origin":"external"`) || !strings.Contains(out, `"source"`) {
-		t.Fatalf("core externo dry-run inesperado: %s", out)
+	if !strings.Contains(out, `"origin":"embedded"`) {
+		t.Fatalf("gm_update dry-run inesperado: %s", out)
 	}
 	if _, err := os.Stat(filepath.Join(home, ".golmet")); !os.IsNotExist(err) {
-		t.Fatalf("core externo dry-run criou cache/runtime: %v", err)
+		t.Fatalf("gm_update dry-run criou cache/runtime: %v", err)
 	}
 
 	packDir := filepath.Join(t.TempDir(), "pack")
@@ -300,4 +337,77 @@ func TestGmPackListViaMCP(t *testing.T) {
 	if !strings.Contains(out, `"tool":"gm_pack_list"`) || !strings.Contains(out, `"packs":[]`) {
 		t.Fatalf("lista de packs inesperada: %s", out)
 	}
+}
+
+// gm_eval grava o relatório canônico na home injetada e devolve
+// report_path existente; gm_eval_reports lista o relatório gravado com
+// skill/fixture parseados. A home real nunca é tocada (home injetável).
+func TestGmEvalReportAndReportsList(t *testing.T) {
+	home := t.TempDir()
+	base := t.TempDir()
+	fx := filepath.Join(base, "fx", "gm-datamodel", "fixture-001")
+	ws := filepath.Join(base, "ws")
+	os.MkdirAll(fx, 0o755)
+	os.MkdirAll(filepath.Join(ws, "specs"), 0o755)
+	os.WriteFile(filepath.Join(fx, "criteria.yaml"),
+		[]byte("checks:\n  - type: file_exists\n    path: \"specs/DATA_MODEL.md\"\n"), 0o644)
+	os.WriteFile(filepath.Join(ws, "specs", "DATA_MODEL.md"), []byte("# DM\nPRODUTOR\n"), 0o644)
+
+	cs := session(t, context.Background())
+	res, out := callTool(t, cs, "gm_eval", map[string]any{
+		"home": home, "fixture_dir": fx, "workspace": ws,
+	})
+	if res.IsError || !strings.Contains(out, `"report_path"`) {
+		t.Fatalf("gm_eval sem report_path: error=%v out=%s", res.IsError, out)
+	}
+	var payload struct {
+		Pass       int    `json:"pass"`
+		ReportPath string `json:"report_path"`
+	}
+	if err := extractJSON(out, &payload); err != nil {
+		t.Fatalf("payload gm_eval inválido: %v\n%s", err, out)
+	}
+	if payload.Pass != 1 {
+		t.Errorf("pass = %d, want 1", payload.Pass)
+	}
+	if st, err := os.Stat(payload.ReportPath); err != nil || st.IsDir() {
+		t.Fatalf("report_path inexistente: %v (%s)", err, payload.ReportPath)
+	}
+	if !strings.Contains(filepath.Base(payload.ReportPath), "eval-gm-datamodel-fixture-001-") {
+		t.Errorf("nome fora do padrão: %s", payload.ReportPath)
+	}
+
+	// gm_eval_reports lista o relatório gravado
+	_, out2 := callTool(t, cs, "gm_eval_reports", map[string]any{"home": home})
+	if !strings.Contains(out2, `"tool":"gm_eval_reports"`) ||
+		!strings.Contains(out2, `"skill":"gm-datamodel"`) ||
+		!strings.Contains(out2, `"fixture":"fixture-001"`) ||
+		!strings.Contains(out2, `"modified"`) {
+		t.Fatalf("lista de relatórios inesperada: %s", out2)
+	}
+	var list struct {
+		Reports []struct {
+			File    string `json:"file"`
+			Skill   string `json:"skill"`
+			Fixture string `json:"fixture"`
+		} `json:"reports"`
+	}
+	if err := extractJSON(out2, &list); err != nil {
+		t.Fatalf("payload gm_eval_reports inválido: %v\n%s", err, out2)
+	}
+	if len(list.Reports) != 1 || list.Reports[0].File != payload.ReportPath {
+		t.Errorf("relatório listado diverge: %+v (want %s)", list.Reports, payload.ReportPath)
+	}
+
+	// home sem relatórios → lista vazia (não erro)
+	_, out3 := callTool(t, cs, "gm_eval_reports", map[string]any{"home": t.TempDir()})
+	if !strings.Contains(out3, `"reports":[]`) {
+		t.Errorf("home vazia deveria listar []: %s", out3)
+	}
+}
+
+// extractJSON decodifica o primeiro valor JSON do conteúdo da tool.
+func extractJSON(text string, v any) error {
+	dec := json.NewDecoder(strings.NewReader(text))
+	return dec.Decode(v)
 }

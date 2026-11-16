@@ -1,4 +1,4 @@
-// Package update implementa o `golmet update` (FORMATO §2, DR-008):
+// Package update implementa o `golmet update` (FORMAT §2, DR-008):
 // instala o subset BASE de skills embutido no binário em
 // <workspace>/.golmet/skills/ e grava o manifest. A zona .golmet/ é
 // kit-gerida — o kit é o ÚNICO escritor dela; re-run sobrescreve
@@ -20,6 +20,7 @@ import (
 	"time"
 
 	golmet "github.com/Golmet/golmet-cli"
+	"github.com/Golmet/golmet-cli/internal/core/container"
 	"github.com/Golmet/golmet-cli/internal/core/content"
 	"github.com/Golmet/golmet-cli/internal/core/frontmatter"
 	"github.com/Golmet/golmet-cli/internal/core/indexstate"
@@ -154,11 +155,12 @@ func validateFrontMatter(rel string, data []byte) (string, *SkillError) {
 
 // InstallReport resume a instalação.
 type InstallReport struct {
-	Workspace  string
-	KitVersion string
-	Installed  int      // skills escritas (novas ou atualizadas)
-	Preserved  []string // modificadas localmente — preservadas (DR-008)
-	Total      int      // skills no subset BASE
+	Workspace          string
+	KitVersion         string
+	Installed          int      // skills escritas (novas ou atualizadas)
+	Preserved          []string // modificadas localmente — preservadas (DR-008)
+	Total              int      // skills no subset BASE
+	GitignoreException bool     // M29: org-repo — o .gitignore da org ganhou !.golmet/skills/
 }
 
 // CheckReport é o resultado do --check (consulta, sem escrita).
@@ -252,6 +254,17 @@ func Install(root string) (*InstallReport, error) {
 	}
 	if err := writeManifest(root, &manifest); err != nil {
 		return nil, err
+	}
+	// M29 — org-repo: a zona de trabalho da org é gitignored MAS a zona
+	// do kit da ORG (.golmet/skills/ — o essencial org) é VERSIONADA (a
+	// equipe herda ao clonar) — o .gitignore da org ganha a EXCEÇÃO
+	// (idempotente: já presente = no-op)
+	if fields, isContainer, cerr := container.Config(root); cerr == nil && isContainer &&
+		container.VersioningOf(fields) == container.VersioningOrgRepo {
+		if err := container.EnsureKitZoneException(root); err != nil {
+			return nil, fmt.Errorf("falha ao atualizar o .gitignore da organização: %w", err)
+		}
+		rep.GitignoreException = true
 	}
 	return rep, nil
 }

@@ -1,3 +1,5 @@
+<p align="center">English | <a href="SECURITY.pt-br.md">Português (Brasil)</a></p>
+
 # Security Policy
 
 GOLMET (`golmet-cli`) materializes workflows and specs from external sources — Git-based cores and packs — into engine configurations (opencode, claude-code, and others). Because it installs content written by third parties into configs consumed by AI agents, we treat its validation boundaries (pack contracts, path containment, credential redaction, MCP mutation gating) as security-sensitive surface.
@@ -6,10 +8,10 @@ GOLMET (`golmet-cli`) materializes workflows and specs from external sources —
 
 | Version | Supported |
 | ------- | --------- |
-| 0.3.x   | ✅ Yes    |
-| < 0.3   | ❌ No     |
+| 1.0.x   | ✅ Yes    |
+| < 1.0   | ❌ No     |
 
-Only the latest 0.3.x release receives security fixes. If you are on an older release, upgrade first — we will not backport patches to unsupported versions.
+Only the latest 1.0.x release receives security fixes. If you are on an older release, upgrade first — we will not backport patches to unsupported versions.
 
 ## Reporting a Vulnerability
 

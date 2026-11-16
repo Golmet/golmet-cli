@@ -89,7 +89,7 @@ func (o *Options) Validate() error {
 }
 
 // inventário pré-formato — espelha o parse do scan sem EXIGIR golmet.yaml
-// (o caso típico do adopt é um workspace que ainda não é FORMATO).
+// (o caso típico do adopt é um workspace que ainda não é FORMAT).
 type inventory struct {
 	root     string
 	files    []fsutil.FileDoc
@@ -294,7 +294,7 @@ func (rep *Report) classify(inv *inventory, opt Options) {
 		}
 	}
 
-	// estrutura FORMATO §2 faltante — kit resolve no apply
+	// estrutura FORMAT §2 faltante — kit resolve no apply
 	for _, m := range missingSection2(inv.root) {
 		rep.KitResolve = append(rep.KitResolve, Finding{
 			Item:   "criar " + m,
@@ -416,7 +416,7 @@ func (rep *Report) classifyEvidenceRepos(inv *inventory) {
 	}
 }
 
-// legacyLayout detecta as variantes de layout pré-FORMATO (heurística do
+// legacyLayout detecta as variantes de layout pré-FORMAT (heurística do
 // dry-run — cada uma com sugestão de normalização).
 type legacyLayout struct {
 	desc, fix string
@@ -463,7 +463,7 @@ func legacyLayouts(root string, files []fsutil.FileDoc) []legacyLayout {
 	}
 	// 2. estrutura docs/projects/
 	if dirExists(filepath.Join(root, "docs", "projects")) {
-		add("estrutura docs/projects/ (layout pré-FORMATO)",
+		add("estrutura docs/projects/ (layout pré-FORMAT)",
 			"mover os docs para o layout §2 (charter na raiz do workspace, analysis/, delivery/, specs/)")
 	}
 	// 3. TASKS*.md / TASKS.md em qualquer lugar
@@ -609,7 +609,7 @@ func (r *Report) Human() string {
 	if mode == "dry-run" {
 		mode += " (leitura pura — zero escrita)"
 	}
-	fmt.Fprintf(&b, "workspace: %s — adoção do FORMATO v1 [%s]\n", r.Workspace, mode)
+	fmt.Fprintf(&b, "workspace: %s — adoção do FORMAT v1 [%s]\n", r.Workspace, mode)
 
 	section := func(title string, items []Finding) {
 		if len(items) == 0 {

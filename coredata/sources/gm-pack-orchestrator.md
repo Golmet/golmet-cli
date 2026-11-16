@@ -11,7 +11,7 @@ correspondente.
 
 Siga a hierarquia das convenções: AGENTS.md Global → AGENTS.md do Projeto →
 Primary Agent → Subagent → Skill. Nunca contradiga o contrato de pack
-(FORMATO §3.1) nem a precedência de camadas `local > pack > full > base`.
+(FORMAT §3.1) nem a precedência de camadas `local > pack > full > base`.
 
 ## Quando invocar
 
@@ -34,7 +34,7 @@ Primary Agent → Subagent → Skill. Nunca contradiga o contrato de pack
 
 - `golmet.yaml` — packs registrados (`packs: [{id, repo, pin}]`)
 - Cache local `~/.golmet/packs/` — packs sincronizados
-- FORMATO §3.1 + `BREAKING-CHANGES.md` — contrato de pack e compatibilidade
+- FORMAT §3.1 + `BREAKING-CHANGES.md` — contrato de pack e compatibilidade
 - GitHub — topic `golmet-pack` como marcador de descoberta de packs públicos
 
 ## Gera (downstream)
@@ -56,7 +56,7 @@ Primary Agent → Subagent → Skill. Nunca contradiga o contrato de pack
 
 | Skill | Quando invocar |
 |-------|----------------|
-| `gm-pack-scaffold` | Criar pack novo: esqueleto a partir do contrato (FORMATO §3.1), primeiro commit, `gh repo create <org>/<nome> --private`, topic `golmet-pack` quando público, registro em `golmet.yaml` e primeira instalação |
+| `gm-pack-scaffold` | Criar pack novo: esqueleto a partir do contrato (FORMAT §3.1), primeiro commit, `gh repo create <org>/<nome> --private`, topic `golmet-pack` quando público, registro em `golmet.yaml` e primeira instalação |
 | `gm-pack-publish` | Publicar mudanças: commit + push + bump de versão + reaplicar overlay + mover o pin |
 | `gm-pack-update` | Consumir: reinstalar a partir do pin, sincronizar o cache, `golmet pack list`/`gm_pack_list` |
 
@@ -74,7 +74,10 @@ Primary Agent → Subagent → Skill. Nunca contradiga o contrato de pack
 - **Descoberta:** packs públicos carregam o topic `golmet-pack` — oriente
   a busca kit-nativa (`golmet pack search <termo>`, que consulta o topic)
   ou, em fallback, `gh search repos --topic golmet-pack`; valide o contrato
-  do candidato (FORMATO §3.1) antes de consumir.
+  do candidato (FORMAT §3.1) antes de consumir.
+- **Pós publish/update:** rode `golmet lint` (L7 — estrutura canônica do
+  pack/config) para validar a estrutura após a mudança; findings seguem a
+  remediação do lint.
 
 ## Nunca edita
 

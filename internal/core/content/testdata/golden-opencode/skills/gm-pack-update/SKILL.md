@@ -11,7 +11,7 @@ degrades: [edit, write, webfetch]
 Mantém os packs instalados no engine em sincronia com os remotes. O **pin**
 manda: reaplicar reinstala a partir do estado sincronizado no cache
 `~/.golmet/packs/`; mover o pin (atualizar de fato a versão) é sempre
-decisão explícita do operador. Contrato do `pack.yaml` em FORMATO §3.1;
+decisão explícita do operador. Contrato do `pack.yaml` em FORMAT §3.1;
 compatibilidade em `BREAKING-CHANGES.md`.
 
 ## Lê (upstream)

@@ -19,8 +19,8 @@ determina se vira RN direto ou entra como PEND-XXX com follow-up.
 
 ## Referências
 
-- Entidades RN/PEND (estados e diretivas): FORMATO §7.2/§7.3
-- IDs RN-NNN, PEND-NNN: FORMATO §4
+- Entidades RN/PEND (estados e diretivas): FORMAT §7.2/§7.3
+- IDs RN-NNN, PEND-NNN: FORMAT §4
 
 ## Lê (upstream)
 
@@ -154,7 +154,7 @@ sai do estado aberta SOMENTE por um destes destinos:
 | Destino | Quando | Como |
 |---|---|---|
 | **(a) Promover a RN** | A resolução esclarecida define requisito novo (ou complemento que não altera RN confirmada) | Nova RN sequencial em REQUIREMENTS.md (nunca reusa o número PEND) com nota de proveniência `> Promovida de PEND-NNN em <data>` + origem `requisito-mal-capturado` — mecanismo na `gm-requirements`; a RN ancora a feature |
-| **(b) Virar CR** | A resolução, ao ser trabalhada, revela-se **alteração em RN já confirmada** | Registrar CR em `CHANGE_REQUESTS.md` (seção `## CR-NNN — <título>`, FORMATO §7.4). Com score >= 70 o CR nasce direto; com score < 70 nasce PEND e o ciclo recomeça |
+| **(b) Virar CR** | A resolução, ao ser trabalhada, revela-se **alteração em RN já confirmada** | Registrar CR em `CHANGE_REQUESTS.md` (seção `## CR-NNN — <título>`, FORMAT §7.4). Com score >= 70 o CR nasce direto; com score < 70 nasce PEND e o ciclo recomeça |
 | **(c) Encerrar como decisão** | A discussão encerra o ponto sem gerar requisito | Registrar ADR em `DECISIONS.md` com `[confirmado] (data)` — sem RN nem CR |
 
 **Orientação padrão ao operador:** "promova a PEND a RN primeiro (nova
@@ -266,11 +266,33 @@ itens foi >= 70.
 10. Registre as respostas e **recalcule** os scores dos itens afetados
     pelas respostas.
 11. Gere o checkpoint:
+    - **Detecte o contexto:** se o cwd é a raiz de um container de
+      organização (golmet.yaml com `container: true`), resolva o destino
+      pela seção **Contexto de container** abaixo — nunca grave na raiz
+      sem saber o contexto
     - Liste checkpoints existentes em `<Produto>/meetings/`.
     - Encontre o maior número sequencial (NN).
     - Escreva `<Produto>/meetings/YYYY-MM-DD-NN.md` com o template
       abaixo, incluindo scores, critérios, perguntas de follow-up para
       cada PEND, e indicando quais itens são RN candidatos.
+
+## Contexto de container (org)
+
+O checkpoint grava no workspace DO ASSUNTO — nunca na raiz de um container
+sem contexto (FORMAT §2, regra de scoping). Se o cwd é a raiz de um
+container de organização (golmet.yaml com `container: true`):
+
+- **(a) Assunto TRANSVERSAL da org** (não pertence a um produto) → grave na
+  zona de trabalho do kit no container (FORMAT §2.3, M19):
+  `<container>/.golmet/meetings/YYYY-MM-DD-NN.md`
+- **(b) Assunto pertence a um workspace filho** → pergunte qual via `ask`
+  com a lista de `products:` do container e grave lá
+  (`<container>/<produto>/meetings/YYYY-MM-DD-NN.md`)
+- **(c) Produto não declarado no `products:`** → pergunte via `ask`:
+  "declare o produto no container (`golmet init <produto> --into <container>`)
+  ou grave como transversal no container?" — nunca decida por omissão
+- Sem container (cwd é um workspace-produto), o comportamento atual —
+  `<Produto>/meetings/` — fica inalterado
 
 ## Categorias de Questionamento
 

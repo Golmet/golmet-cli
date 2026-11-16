@@ -12,7 +12,7 @@ Camada dedicada de security review do workflow — revisão
 **agêntica** guiada pela base canônica do domínio (T1) —
 não é scanner automatizado. Aplica os princípios P-01..P-10, o checklist
 de 18 itens e os anti-patterns AP-01..AP-08 da base
-`knowledge/security-review/KNOWLEDGE.md` no config do engine (OWASP
+`packs/<pack-ativo>/domains/security-review/KNOWLEDGE.md` no config do engine (OWASP
 ASVS 5.0.0, Top 10:2025, Secure Code Review Cheat Sheet) para produzir
 **findings acionáveis** (arquivo:linha — princípio — severidade —
 evidência — correção sugerida). Em modo dif, é o especialista do eixo de
@@ -35,11 +35,11 @@ Não emite veredito approve/request-changes (papel do
 | `gm-security-audit` (esta) | Especialista de segurança — findings com severidade | review pós-implementação (dif) e auditoria (baseline) | profunda — 10 princípios + 18 checks + 8 anti-patterns |
 | `gm-quality-gates` (§D) | Checklist largo de qualidade (KISS/SOLID/perf) + segurança rasa | implementação (executor) | superficial — tabela Top 10:2025 de referência |
 | `gm-dev-reviewer` | **Dono do veredito** approve/request-changes (5 eixos) | pré-PR | consumidor dos findings desta skill |
-| `gm-architecture` (SECURITY.md) | Artefato de design-time do módulo | tradução técnica | complementar — esta skill verifica o código contra ele + a base |
+| `gm-arch` (SECURITY.md) | Artefato de design-time do módulo | tradução técnica | complementar — esta skill verifica o código contra ele + a base |
 
 ## Lê (upstream)
 
-- **Base T1 `knowledge/security-review/KNOWLEDGE.md` no config do engine —
+- **Base T1 `packs/<pack-ativo>/domains/security-review/KNOWLEDGE.md` no config do engine —
   fonte canônica de critérios** (P-01..P-10, checklist de 18 itens,
   AP-01..AP-08, tabela de severidade; OWASP ASVS 5.0.0, Top 10:2025,
   Secure Code Review Cheat Sheet). Nenhum critério é improvisado fora dela.
@@ -86,7 +86,7 @@ Não emite veredito approve/request-changes (papel do
 
 ## Modo de erro
 
-`strict` na fundação — base `knowledge/security-review/KNOWLEDGE.md`
+`strict` na fundação — base `packs/<pack-ativo>/domains/security-review/KNOWLEDGE.md`
 ausente ou com `proxima_revisao` vencida → **não executa com critérios de
 improviso**: reporte a lacuna e encerre indicando re-pesquisa via
 `gm-domain-research`.
@@ -201,7 +201,7 @@ Relatório baseline (`quality/SECURITY_AUDIT_<timestamp>.md`):
 # SECURITY AUDIT — <módulo/repo>
 
 - data: AAAA-MM-DD-HHmm · modo: baseline | dif
-- base: knowledge/security-review/KNOWLEDGE.md v<versão> (proxima_revisao AAAA-MM-DD)
+- base: packs/<pack-ativo>/domains/security-review/KNOWLEDGE.md v<versão> (proxima_revisao AAAA-MM-DD)
 - escopo: <raiz + exclusões | range do dif>
 - resumo: <N> findings — Crítico: <N> · Alto: <N> · Médio: <N> · Baixo: <N>
 

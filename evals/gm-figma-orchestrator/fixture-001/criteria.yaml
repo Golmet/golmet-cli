@@ -1,0 +1,39 @@
+---
+name: "gm-figma-orchestrator — prompt para protótipo no Figma Make"
+description: >
+  Specs fechadas: o operador pede o prompt para o protótipo no Figma Make.
+  O orchestrator roteia ao gm-figma-prompt (e gm-design-brief se o contexto
+  de design não existir ainda). "Tasks a partir do design real" é fase
+  posterior com fileKey (gm-figma-tasks). Roteia, não executa.
+  Artefato: delegacao.md.
+inputs_required: ["input/cenario.md"]
+
+checks:
+  - type: file_exists
+    path: "delegacao.md"
+    severity: error
+
+  - type: section_exists
+    path: "delegacao.md"
+    section: "## Delegação"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-figma-prompt"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-design-brief"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-figma-tasks"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "Roteia"
+    severity: error

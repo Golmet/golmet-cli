@@ -36,7 +36,7 @@ Os artefatos do módulo seguem a estrutura com subpastas:
 - **`support/`:** LEGACY_CONTEXT.md, KNOWN_ERRORS.md, MIGRATION.md, CHANGE_REQUESTS.md
 - **`glossaries/`:** DEV_GLOSSARY.md, BUSINESS_GLOSSARY.md, USER_GLOSSARY.md, GLOSSARY.md
 - **`docs/`:** howto/*.md e documentos auxiliares
-- **`meetings/`, `contracts/`:** checkpoints (inalterados)
+- **`meetings/`, `contracts/`:** checkpoints (workspace-produto mantém `meetings/`; container de organização grava na zona de trabalho do kit — `.golmet/meetings/`, FORMAT §2.3/M19)
 
 **Regra de fallback (transição):** ao **LER** um artefato, verifique primeiro
 o caminho novo; se não existir, use o caminho legado na raiz do módulo. Ao
@@ -53,6 +53,7 @@ continuam legíveis durante a transição.
 - `<modulo>/<projeto>/quality/PROPAGATION_STATUS.md` (se existir)
 - `<modulo>/<projeto>/quality/TRACEABILITY.md` (se existir)
 - `<modulo>/<projeto>/` — todos os artefatos (para verificação de staleness e integridade)
+- Registries de boilerplates na config do engine: `packs/<id>/rules/stack-templates.yaml` (org, pack-first) e `profile/stack-templates.yaml` (fallback kit) — Verificação J
 - Artefatos da DAG (specs/, quality/, delivery/, support/, glossaries/, docs/)
 
 ## Gera (downstream)
@@ -158,12 +159,19 @@ Use `glob` para encontrar diretórios com `PROJECT_CHARTER.md`.
 3. Busque por padrões de erro comum (case-insensitive): `TODO`, `FIXME`, `PLACEHOLDER`,
    `<descrição>`, `[NÃO IMPLEMENTADO]` no corpo.
 
-### Passo 4 — Verificação C: Artefatos Órfãos
+### Passo 4 - Verificação C: Artefatos Órfãos
 
 1. Liste todos os artefatos no módulo (estrutura de subpastas).
 2. Para cada artefato, verifique se é referenciado em pelo menos um
    outro artefato (usando `grep`).
 3. Artefatos não referenciados por ninguém são "órfãos".
+4. **Temporários da zona `.golmet/` do container (válvula de escape —
+   FORMAT §2.3):** arquivo em `.golmet/` com sinais de função ganha
+   (conteúdo estruturado, nome estável, citado por outros artefatos) →
+   sugira ao operador a **promoção à estrutura canônica** via o escritor
+   canônico correspondente (`gm-datamodel` specs · `gm-rule-keeper`
+   rules · `gm-doc` documentação); sem sinais, permanece temporário e
+   morre ignorado pelo Git.
 
 ### Passo 5 — Verificação D: Staleness dos Artefatos
 
@@ -265,10 +273,10 @@ justificar | ❌ violação.
 ### Passo 7b — Verificação G: Índice lazy do AGENTS.md global
 
 1. Leia o AGENTS.md global e extraia as entradas do índice
-   "Índice de Referências — lazy loading" (padrão: `` `rules/<arquivo>.md` ``).
-2. Para cada entrada, verifique se o arquivo existe em `rules/` →
+   "Índice de Referências — lazy loading" (padrão: `` `profile/<arquivo>.md` ``).
+2. Para cada entrada, verifique se o arquivo existe em `profile/` →
    **referência quebrada = ❌**.
-3. Para cada arquivo em `rules/`, verifique se está referenciado no
+3. Para cada arquivo em `profile/`, verifique se está referenciado no
    índice → arquivo órfão = ⚠️ (nunca será carregado).
 4. Verifique a seção "Hierarquia de Convenções" → ausente = ❌.
 5. Tamanho do AGENTS.md global: > 60 linhas = ⚠️ (teto: 40;
@@ -292,9 +300,49 @@ Saída: tabela entrada ↔ arquivo ↔ status + contagem de linhas.
 5. Correção: atualizar a matriz OU o front matter via gm-workflow-improver —
    nunca "consertar" a matriz para refletir allow amplo sem justificativa.
 
+### Passo 7d — Verificação I: Varredura estrutural (`gm_lint`)
+
+Varredura estrutural do config/pack via tool `gm_lint` (ou CLI
+`golmet lint --workspace .`): refs mortas (L1), órfãos (L3), manifest stale
+(L4), nomes fora do padrão (L5), componentes fantasma (L6), estrutura
+canônica (L7) e conformidade definitivo↔template (L8).
+
+- **Quando:** rode após mudanças estruturais (renomear/mover/apagar
+  arquivos, morte de modelo) e inclua o resultado no relatório de saúde.
+- **Gatilhos de usuário:** "verifica se tem inconsistência", "está tudo em
+  ordem estrutural?" — qualquer pedido nesse sentido roda o lint.
+- **Correção:** o lint APONTA, o monitor corrige o que for trivial
+  (paths mortos, renomeações kebab-case, entradas stale de manifest);
+  decisões (apagar órfão com dado, ampliar allowlist) → operador.
+- Findings entram na seção de saúde do relatório com severidade + remediação.
+
+### Passo 7e — Verificação J: Drift de boilerplates (registry de stack-templates)
+
+Verificação agêntica/opcional — compara cada `ref` declarada nos registries
+de boilerplates com as tags reais dos repos dos boilerplates. Sem `gh`
+autenticado → declare **"N/A — sem gh"** no relatório (nunca bloqueia).
+
+1. Localize os registries na config do engine: `packs/<id>/rules/stack-templates.yaml`
+   (org — pack-first) e `profile/stack-templates.yaml` (fallback kit).
+   Nenhum existente → "Não avaliado — sem registry de boilerplates".
+2. Para cada template com `boilerplate` não-null **E** `ref` declarada:
+   - Resolva `<org>/<repo>` a partir de `boilerplate_org` (client-profile,
+     IMP-105) + o valor do campo `boilerplate`.
+   - Compare a `ref` com as tags do repo:
+     `gh api repos/<org>/<repo>/tags --jq '.[].name'`.
+   - `ref` ≠ tag mais recente (semver) = ⚠️ **DRIFT** — remediação:
+     "atualize o `ref` no `rules/stack-templates.yaml` do pack +
+     `golmet pack publish`; a equipe atualiza com `golmet pack update`".
+   - `ref` declarada e INEXISTENTE entre as tags = ❌ (o clone determinístico
+     do `gm-stack-boilerplate` vai falhar — criar a tag ou remover o campo).
+   - Template sem `ref` = ✅ por definição (HEAD/main é o comportamento
+     declarado — não há drift conceituável).
+3. Reporte por registry: N refs OK / N drift / N refs inexistentes / N skip
+   (sem gh), com o par `repo ↔ ref ↔ tag mais recente` dos drifts.
+
 ### Passo 8 — Montar e salvar relatório
 
-Combine as 8 verificações (A-H) num relatório único com resumo executivo,
+Combine as 10 verificações (A-J) num relatório único com resumo executivo,
 seções detalhadas e recomendações. Salve em
 `<modulo>/<projeto>/quality/AGENT_HEALTH_REPORT_<timestamp>.md`.
 
@@ -329,6 +377,9 @@ generated_at: "YYYY-MM-DDTHH:mm:ssZ"
 | E. Propagation | ✅/⚠️/❌ | N pendentes |
 | F. Conformidade (checklists) | ✅/⚠️/❌ | N conformes / N violações |
 | G. Índice lazy (AGENTS.md) | ✅/⚠️/❌ | N refs OK / N quebradas |
+| H. Coerência PERMISSIONS.md | ✅/⚠️/❌ | N coerentes / N divergências |
+| I. Lint estrutural (gm_lint) | ✅/⚠️/❌ | N findings por severidade |
+| J. Drift de boilerplates | ✅/⚠️/❌/N/A | N refs OK / N drift / N skip |
 
 ---
 

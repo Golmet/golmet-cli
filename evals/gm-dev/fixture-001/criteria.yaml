@@ -1,0 +1,63 @@
+---
+name: "gm-dev — roteamento de task de feature completa (ciclo, executor, QA, reviewer)"
+description: >
+  Operador solicita feature completa (endpoint + teste + docs, 3+ arquivos).
+  O primary NÃO implementa inline: roteia o ciclo ao gm-dev-orchestrator,
+  delega o executor no formato da skill com gate de branch, QA independente
+  e revisão formal antes de PR. Artefato: delegacao.md com o plano.
+inputs_required: ["input/cenario.md"]
+
+checks:
+  - type: file_exists
+    path: "delegacao.md"
+    severity: error
+
+  - type: section_exists
+    path: "delegacao.md"
+    section: "## Delegação"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-dev-orchestrator"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-dev-backend"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "RN-010"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "relatório compacto"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "Gate de branch"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-dev-qa"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-dev-reviewer"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "reviewed: true"
+    severity: error
+
+  - type: not_contains
+    path: "delegacao.md"
+    pattern: "implemento inline"
+    severity: error

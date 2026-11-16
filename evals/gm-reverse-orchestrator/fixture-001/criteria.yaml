@@ -1,0 +1,44 @@
+﻿---
+name: "gm-reverse-orchestrator — multi-repo com fonte congelada e sharding"
+description: >
+  O gm-doc convoca o orchestrator para engenharia reversa de 2 repos em
+  produção com fonte congelada (HEADs informados). O orchestrator identifica
+  stack por repo (Fatia 1), sharda a varredura em fatias, extrai na tríade
+  O/I/U, registra UNKNOWNS, e devolve dados estruturados SEM executar git
+  (sincronização é do gm-doc). Artefato: delegacao.md com o plano de fatias.
+inputs_required: ["input/cenario.md"]
+
+checks:
+  - type: file_exists
+    path: "delegacao.md"
+    severity: error
+
+  - type: section_exists
+    path: "delegacao.md"
+    section: "## Sharding"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "Fatia 1"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "a1b2c3d"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "UNKNOWNS"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-doc"
+    severity: error
+
+  - type: not_contains
+    path: "delegacao.md"
+    pattern: "git checkout"
+    severity: error

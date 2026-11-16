@@ -1,0 +1,13 @@
+{
+  "name": "@golmet/cli-win32-x64",
+  "version": "1.0.0",
+  "description": "The golmet native binary for win32/x64 — the stone guardian of your product's documented truth (GOLMET).",
+  "os": ["win32"],
+  "cpu": ["x64"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Golmet/golmet-cli.git"
+  },
+  "files": ["golmet.exe"]
+}

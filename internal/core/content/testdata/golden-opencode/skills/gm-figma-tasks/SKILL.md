@@ -1,7 +1,7 @@
 ---
 name: gm-figma-tasks
 description: >-
-   Extrai o design real de um frame Figma via MCP (figma-developer-mcp), cruza com os docs do módulo e gera o delta de specs/UI_SPEC.md + propostas de RNs/CRs de UI + handoff de features candidatas (RN-âncora + RNs do escopo) para o gm-task-spec. Direção Figma → módulo — inversa da gm-figma-prompt. Fallback: notas do operador.
+   Extrai o design real de um frame Figma via MCP (figma-developer-mcp), cruza com os docs do módulo e gera o delta de specs/UI_SPEC.md + propostas de RNs/CRs de UI + handoff de features candidatas (RN-âncora + RNs do escopo) para o gm-taskspec. Direção Figma → módulo — inversa da gm-figma-prompt. Fallback: notas do operador.
 requires: [file, edit, write, glob, grep, ask]
 degrades: [shell, webfetch]
 ---
@@ -11,10 +11,10 @@ degrades: [shell, webfetch]
 Fecha o ciclo inverso do domínio Figma: em vez de gerar prompt PARA o Figma Make,
 lê um design REAL (frame/arquivo no Figma) via MCP e o traduz para os artefatos
 do módulo — delta de UI_SPEC.md, propostas de RNs/CRs de UI e um handoff de features
-candidatas no formato que o `gm-task-spec` consome (RN-âncora + RNs do escopo).
+candidatas no formato que o `gm-taskspec` consome (RN-âncora + RNs do escopo).
 A geração da análise (`analysis/RN-NNN — <título>/`) e das tasks
 (`delivery/<grupo>/RN-NNN — <título> — Feature.md`) permanece papel exclusivo do
-`gm-task-spec` (reuso — esta skill NÃO gera analysis/ nem delivery/).
+`gm-taskspec` (reuso — esta skill NÃO gera analysis/ nem delivery/).
 
 ## Diferenciação
 
@@ -23,7 +23,7 @@ A geração da análise (`analysis/RN-NNN — <título>/`) e das tasks
 | `gm-figma-prompt` | módulo → Figma | Prompt textual para protótipo no Figma Make |
 | `gm-design-brief` | módulo → Figma | Contexto de produto (identidade, estilo) para o Figma Make |
 | **`gm-figma-tasks`** (esta) | **Figma → módulo** | Design real → delta de UI_SPEC + propostas RN/CR + handoff de features |
-| `gm-task-spec` | docs → analysis/ + delivery | Gera `analysis/RN-NNN — <título>/` + `delivery/<grupo>/RN-NNN — <título> — Feature.md` (IMP-093; consumidor do handoff) |
+| `gm-taskspec` | docs → analysis/ + delivery | Gera `analysis/RN-NNN — <título>/` + `delivery/<grupo>/RN-NNN — <título> — Feature.md` (IMP-093; consumidor do handoff) |
 | `gm-mcp-figma-setup` | infra | Wizard de token/conexão do MCP Figma |
 
 ## Pré-requisito — MCP Figma
@@ -42,10 +42,10 @@ A geração da análise (`analysis/RN-NNN — <título>/`) e das tasks
 - **`docs/`:** FIGMA_TASKS_HANDOFF.md e documentos auxiliares
 - **`analysis/`:** pastas `RN-NNN — <título>/` (RN-NNN — Analise-Funcional.md +
   RN-NNN — Analise-Tecnica.md) — camada de análise gerada SOMENTE pelo
-  gm-task-spec (IMP-092)
+  gm-taskspec (IMP-092)
 - **`delivery/<grupo>/`:** arquivos `RN-NNN — <título> — Feature.md` (IMP-093;
   grupo conforme o `delivery_style` da CONSTITUTION.md §9) — gerados SOMENTE
-  pelo gm-task-spec
+  pelo gm-taskspec
 - Fallback de leitura: caminho novo primeiro; se não existir, caminho legado na raiz do módulo
 
 ## Lê (upstream)
@@ -65,8 +65,8 @@ A geração da análise (`analysis/RN-NNN — <título>/`) e das tasks
 ## Gera (downstream)
 
 - **Delta de `specs/UI_SPEC.md`** — telas/componentes/estados a adicionar ou alterar; aplicado via `edit` SOMENTE após aprovação explícita do operador (permissão `ask` reforça)
-- **`<modulo>/<projeto>/docs/FIGMA_TASKS_HANDOFF.md`** — append-only, com timestamp: delta proposto (quando não aplicado), propostas de RNs/CRs de UI e seção `## Features candidatas` no formato de handoff do gm-task-spec (que gerará a análise `analysis/RN-NNN — <título>/` + o arquivo de feature `delivery/<grupo>/RN-NNN — <título> — Feature.md` — IMP-092/IMP-093)
-- **Relatório no chat** — resumo do cruzamento + próximo passo (invocar `gm-task-spec` com o handoff)
+- **`<modulo>/<projeto>/docs/FIGMA_TASKS_HANDOFF.md`** — append-only, com timestamp: delta proposto (quando não aplicado), propostas de RNs/CRs de UI e seção `## Features candidatas` no formato de handoff do gm-taskspec (que gerará a análise `analysis/RN-NNN — <título>/` + o arquivo de feature `delivery/<grupo>/RN-NNN — <título> — Feature.md` — IMP-092/IMP-093)
+- **Relatório no chat** — resumo do cruzamento + próximo passo (invocar `gm-taskspec` com o handoff)
 
 ## Nunca edita
 
@@ -75,7 +75,7 @@ A geração da análise (`analysis/RN-NNN — <título>/`) e das tasks
 - **O design no Figma** — somente leitura via MCP
 - **Config do engine** (skills, agents, config JSON) — setup é papel da `gm-mcp-figma-setup`
 - **O token FIGMA_API_KEY** — nunca logar, nunca escrever em arquivo
-- **`gm-task-spec`, analysis/ e delivery/** — a geração de análise e tasks é
+- **`gm-taskspec`, analysis/ e delivery/** — a geração de análise e tasks é
   dele (`analysis/RN-NNN — <título>/` + `delivery/<grupo>/RN-NNN — <título> — Feature.md`,
   IMP-092); esta skill só entrega o handoff
 - **UI_SPEC.md sem aprovação** — o delta é proposto no chat/arquivo; aplicação só com confirmação explícita do operador
@@ -156,8 +156,8 @@ Agrupar os deltas aprovados/propostos em features candidatas, cada uma com:
 - **RN-âncora sugerida**: primeira RN do escopo — PREFERIR RN confirmada existente; se o escopo depende de RN proposta, indicar a dependência explicitamente
 - **RNs do escopo**: âncora + demais (confirmadas e propostas, sinalizadas)
 - **Repositório frontend** (do PROJECT_CHARTER.md) e telas afetadas
-- **Status**: `pronto para gm-task-spec` (só RNs confirmadas) ou `bloqueado — registrar RNs primeiro` (depende de proposta)
-- **Saída que o gm-task-spec gerará (IMP-092)**: análise em
+- **Status**: `pronto para gm-taskspec` (só RNs confirmadas) ou `bloqueado — registrar RNs primeiro` (depende de proposta)
+- **Saída que o gm-taskspec gerará (IMP-092)**: análise em
   `analysis/RN-NNN — <título>/` (Analise-Funcional + Analise-Tecnica) + tasks no
   arquivo `delivery/<grupo>/RN-NNN — <título> — Feature.md` — o handoff informa
   RN-âncora + RNs do escopo, nunca o caminho final dos artefatos
@@ -166,4 +166,4 @@ Agrupar os deltas aprovados/propostos em features candidatas, cada uma com:
 
 1. Gravar/atualizar `docs/FIGMA_TASKS_HANDOFF.md` (append-only: nova entrada timestampada por execução).
 2. Relatório no chat: resumo do delta, propostas, features candidatas e próximo passo —
-   invocar `gm-task-spec` (via `gm-quality-orchestrator` ou demanda direta) usando o handoff como insumo.
+   invocar `gm-taskspec` (via `gm-quality-orchestrator` ou demanda direta) usando o handoff como insumo.

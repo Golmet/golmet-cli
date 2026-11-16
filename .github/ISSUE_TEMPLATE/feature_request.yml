@@ -33,5 +33,5 @@ body:
       options:
         - label: I checked ROADMAP.md and existing issues for overlap
           required: true
-        - label: I understand features are accepted at the maintainer's discretion and scope is bounded by FORMATO.md
+        - label: I understand features are accepted at the maintainer's discretion and scope is bounded by docs/FORMAT.md
           required: true

@@ -34,13 +34,13 @@ Interpreta o estado do projeto e orienta quais skills compõem o fluxo.
 
 | Skill | Função | Quando usar |
 |-------|--------|-------------|
-| `gm-data-model` | Gerar DATA_MODEL.md (tabelas, colunas, FKs) | REQUIREMENTS.md completo e sem pendência |
-| `gm-api-contracts` | Gerar API_CONTRACTS.md + ERROR_CATALOG.md | REQUIREMENTS.md completo e sem pendência |
-| `gm-ui-spec` | Gerar UI_SPEC.md (telas, componentes, fluxos) | REQUIREMENTS.md completo e sem pendência |
-| `gm-architecture` | Gerar ARCHITECTURE.md + SECURITY.md | REQUIREMENTS.md completo e sem pendência |
+| `gm-datamodel` | Gerar DATA_MODEL.md (tabelas, colunas, FKs) | REQUIREMENTS.md completo e sem pendência |
+| `gm-apicontracts` | Gerar API_CONTRACTS.md + ERROR_CATALOG.md | REQUIREMENTS.md completo e sem pendência |
+| `gm-uispec` | Gerar UI_SPEC.md (telas, componentes, fluxos) | REQUIREMENTS.md completo e sem pendência |
+| `gm-arch` | Gerar ARCHITECTURE.md + SECURITY.md | REQUIREMENTS.md completo e sem pendência |
 | `gm-glossary` | Gerar os 3 glossários (DEV/BUSINESS/USER) | A qualquer momento, incremental |
-| `gm-acceptance-criteria` | Gerar ACCEPTANCE_CRITERIA.md (Dado/Quando/Então) | REQUIREMENTS.md tem RNs |
-| `gm-task-spec` | Gerar analysis/RN-NNN — <título>/ + delivery/<grupo>/RN-NNN — <título> — Feature.md (âncora só RN — PEND nunca ancora feature) | RNs prontas; documentos de tradução existentes (mesmo que parciais — tasks saem "sujeitas a revisão") |
+| `gm-criteria` | Gerar ACCEPTANCE_CRITERIA.md (Dado/Quando/Então) | REQUIREMENTS.md tem RNs |
+| `gm-taskspec` | Gerar analysis/RN-NNN — <título>/ + delivery/<grupo>/RN-NNN — <título> — Feature.md (âncora só RN — PEND nunca ancora feature) | RNs prontas; documentos de tradução existentes (mesmo que parciais — tasks saem "sujeitas a revisão") |
 
 ## Política de delegação
 
@@ -63,18 +63,18 @@ Interpreta o estado do projeto e orienta quais skills compõem o fluxo.
 
 | Se o pedido for... | Rota |
 |--------------------|------|
-| "gerar modelo de dados", "DATA_MODEL" | `gm-data-model` |
-| "gerar contratos", "API_CONTRACTS", "endpoint" | `gm-api-contracts` |
-| "gerar UI", "UI_SPEC", "telas" | `gm-ui-spec` |
-| "gerar arquitetura" | `gm-architecture` |
+| "gerar modelo de dados", "DATA_MODEL" | `gm-datamodel` |
+| "gerar contratos", "API_CONTRACTS", "endpoint" | `gm-apicontracts` |
+| "gerar UI", "UI_SPEC", "telas" | `gm-uispec` |
+| "gerar arquitetura" | `gm-arch` |
 | "gerar glossário" | `gm-glossary` |
-| "gerar critérios de aceitação" | `gm-acceptance-criteria` |
-| "gerar tasks", "spec de tasks", "tasks da RN-NNN" | `gm-task-spec` |
+| "gerar critérios de aceitação" | `gm-criteria` |
+| "gerar tasks", "spec de tasks", "tasks da RN-NNN" | `gm-taskspec` |
 
 ### Passo 2 — Validar pré-condições
 
-- **gm-data-model / gm-api-contracts / gm-ui-spec / gm-architecture /
-  gm-glossary / gm-acceptance-criteria**: REQUIREMENTS.md
+- **gm-datamodel / gm-apicontracts / gm-uispec / gm-arch /
+  gm-glossary / gm-criteria**: REQUIREMENTS.md
   existe, contém RNs, e não há PEND-XXX aberto que bloqueie a tradução
 
 ### Passo 3 — Executar
@@ -96,7 +96,7 @@ Próximos passos: <o que falta / recomendação>
 
 ### Artefato de tradução não aplicável
 
-Se um artefato não se aplica ao módulo (ex: `gm-ui-spec` para projeto
+Se um artefato não se aplica ao módulo (ex: `gm-uispec` para projeto
 API-only, declarado no charter), omita-o. A DAG permite pular etapas.
 
 ### Artefato stale detectado

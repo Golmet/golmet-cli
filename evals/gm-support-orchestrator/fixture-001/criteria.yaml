@@ -1,0 +1,33 @@
+---
+name: "gm-support-orchestrator — incidente: post-mortem + known error"
+description: >
+  Incidente em produção: o operador pede post-mortem documentado
+  (gm-incident-postmortem: timeline, causa raiz, ações corretivas) e registro
+  como known error (gm-known-error: KNOWN_ERRORS.md para o suporte).
+  Roteia, não executa. Artefato: delegacao.md.
+inputs_required: ["input/cenario.md"]
+
+checks:
+  - type: file_exists
+    path: "delegacao.md"
+    severity: error
+
+  - type: section_exists
+    path: "delegacao.md"
+    section: "## Delegação"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-incident-postmortem"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-known-error"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "Roteia"
+    severity: error

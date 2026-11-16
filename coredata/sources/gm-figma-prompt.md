@@ -175,6 +175,6 @@ marcador foi atualizado e que o prompt foi persistido em FIGMA_PROMPTS.md.
 
 Em seguida, aponte o próximo passo natural: fechado o conjunto de specs do
 módulo, a camada seguinte da DAG é a de features — proponha gerá-la com
-`gm-task-spec` (análise `analysis/RN-NNN — <título>/` +
+`gm-taskspec` (análise `analysis/RN-NNN — <título>/` +
 arquivo de feature `delivery/<grupo>/RN-NNN — <título> — Feature.md`) ou confirme
 a ordem com o kit golmet (`next`).

@@ -36,7 +36,7 @@ negócio — a linha `> Análise:` do Feature.md aponta o caminho relativo).
 Como o título é variável, resolva SEMPRE por glob — NUNCA construa o nome
 exato. Na localização, o `<grupo>` sob `delivery/` depende do estilo da §9 da
 CONSTITUTION (monthly, sprint, release, flow, horizon, epic, custom — ver
-`gm-task-spec`); a **leitura é agnóstica ao estilo** (glob recursivo). Em
+`gm-taskspec`); a **leitura é agnóstica ao estilo** (glob recursivo). Em
 ordem:
 
 1. glob `<modulo>/<projeto>/delivery/**/RN-NNN — * — Feature.md` (fallback: repetir com `— Tasks.md` pré-rename — IMP-092) — quando a RN é
@@ -74,7 +74,7 @@ use o próprio `— Feature.md` como corpo com AVISO na saída (ver Modo de erro
 
 ## Nunca edita
 
-- O arquivo `— Feature.md` (fallback: `— Tasks.md` pré-rename; fonte primária — a criação de tasks é do `gm-task-spec`)
+- O arquivo `— Feature.md` (fallback: `— Tasks.md` pré-rename; fonte primária — a criação de tasks é do `gm-taskspec`)
 - Os arquivos de `analysis/` (fonte do corpo)
 - Artefatos de specs do módulo
 - Work items já existentes (nunca duplica — consulta antes; comentário/edição de work item alheio está fora de escopo)
@@ -91,14 +91,14 @@ use o próprio `— Feature.md` como corpo com AVISO na saída (ver Modo de erro
 ## Parâmetros do Azure (pergunta agrupada — IMP-043)
 
 Pergunte em UMA única pergunta (defaults do ambiente — org/projeto/repos/usuário
-do perfil do cliente: `rules/client-profile.md` (IMP-103), espelhados no bloco
+do perfil do cliente: `profile/client-profile.md` (IMP-103), espelhados no bloco
 `azure-devops` do AGENTS.md global — pré-oferecidos, SEMPRE aceitando override;
 nunca hardcode como únicos):
 
 | Parâmetro | Default do ambiente | Observação |
 |---|---|---|
-| Org | `<org-do-perfil>` | organização Azure DevOps — consultar `rules/client-profile.md` (IMP-103) |
-| Projeto | `<projeto-do-perfil>` | projeto do produto — consultar `rules/client-profile.md` (IMP-103) |
+| Org | `<org-do-perfil>` | organização Azure DevOps — consultar `profile/client-profile.md` (IMP-103) |
+| Projeto | `<projeto-do-perfil>` | projeto do produto — consultar `profile/client-profile.md` (IMP-103) |
 | AreaPath | área default do projeto | aceitar override |
 | IterationPath | iteração corrente do projeto | aceitar override; nunca invente |
 | Tipo do principal | `Feature` ou `User Story` | pergunta obrigatória — sem default por omissão |
@@ -115,7 +115,7 @@ Se o pedido já trouxer algum parâmetro explícito, não re-pergunte o informad
   localização → aborta com mensagem clara.
 - `Analise-Funcional.md` ausente com linha `> Análise:` presente (migração
   parcial): AVISE e use o próprio `— Feature.md` como corpo do work item
-  principal, sinalizando regenerar via `gm-task-spec` ou completar a migração
+  principal, sinalizando regenerar via `gm-taskspec` ou completar a migração
   via `gm-restructure` (modo split-delivery).
 - Erro do Azure na criação (permissão, area/iteration inexistente): reporte o
   erro tal qual retornado pelo MCP, interrompa o lote e registre no

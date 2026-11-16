@@ -29,7 +29,7 @@ existem (registry, índices, TRACEABILITY, front matter) em vez de exigir links 
 
 ## Fundação de conhecimento
 
-- Base canônica consumida (T1): knowledge/knowledge-management/KNOWLEDGE.md (v1.5.0 — arquitetura
+- Base canônica consumida (T1): packs/<pack-ativo>/domains/knowledge-management/KNOWLEDGE.md (v1.5.0 — arquitetura
   dos stores T1-T5, padrões de memória/grafo de conhecimento) — base VÁLIDA (proxima_revisao
   2027-04-21), reuso direto, NÃO re-fundar.
 - Decisão de fundação (builder, 05/11/2026): padrões de renderização de grafo visual
@@ -44,7 +44,7 @@ Fontes read-only (parse tolerante — fonte ausente vira aviso, não aborta, exc
 
 - **T5 (workflow)**: registry.yaml no config do engine (OBRIGATÓRIO — delegação, invokes, domains),
   AGENTS.md do config (índice lazy de rules/ + menções a knowledge/packs)
-- **T1 (conhecimento)**: knowledge/INDEX.md do config (domínios, versão, data_pesquisa,
+- **T1 (conhecimento)**: packs/<pack-ativo>/domains/INDEX.md do config (domínios, versão, data_pesquisa,
   proxima_revisao → flag stale)
 - **T3 (rules)**: rules/*.md do config (exceto *.template.md) + índice lazy do AGENTS.md
 - **T2 (acúmulo)**: packs/<pack-ativo>/accumulation/patterns/INDEX.md (tabela do
@@ -56,7 +56,7 @@ Fontes read-only (parse tolerante — fonte ausente vira aviso, não aborta, exc
   "— Tasks.md" IMP-092), specs/*.md
 - Referências textuais knowledge/<domínio>/KNOWLEDGE.md em agents/*.md e skills/*/SKILL.md
   → arestas fundado_em
-- Fundação: knowledge/knowledge-management/KNOWLEDGE.md (T1)
+- Fundação: packs/<pack-ativo>/domains/knowledge-management/KNOWLEDGE.md (T1)
 
 ## Gera (downstream)
 

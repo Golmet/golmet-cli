@@ -5,7 +5,7 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core/evidence"
 )
 
-// H4 — RN active exige ≥1 evidência parseável na seção (FORMATO §7.2/§9).
+// H4 — RN active exige ≥1 evidência parseável na seção (FORMAT §7.2/§9).
 // Com --tolerant degrada para aviso com worklist.
 func H4(ctx *Context) []core.GolmetError {
 	var out []core.GolmetError

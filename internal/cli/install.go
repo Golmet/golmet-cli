@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -65,7 +66,7 @@ func newInstallCmd() *cobra.Command {
 						return exitError(2)
 					}
 					if cancelled {
-						fmt.Fprintln(out, "install cancelado — nada foi escrito")
+						fmt.Fprintln(out, "cancelado — nada foi aplicado")
 						return nil
 					}
 					req = model.ToOptions()
@@ -91,7 +92,7 @@ func newInstallCmd() *cobra.Command {
 					// Ordem: perfil (decisão macro) → engine → MCPs. Com
 					// perfil completo, a lista de engines já vem FILTRADA
 					// para os compatíveis (skills nativas).
-					w := &installWizard{out: out, in: bufio.NewReader(os.Stdin)}
+					w := &installWizard{out: out, in: bufio.NewReader(os.Stdin), tty: isTTY()}
 					var werr error
 					if req.Profile, werr = w.pickProfile(); werr != nil {
 						return installExit(cmd, werr)
@@ -112,8 +113,12 @@ func newInstallCmd() *cobra.Command {
 					if req.Workspace == "" {
 						req.Workspace = "."
 					}
-					if !w.confirm(req) {
-						fmt.Fprintln(out, "install cancelado — nada foi escrito")
+					ok, werr := w.confirm(req)
+					if werr != nil {
+						return installExit(cmd, werr)
+					}
+					if !ok {
+						fmt.Fprintln(out, "cancelado — nada foi aplicado")
 						return nil
 					}
 				}
@@ -171,7 +176,7 @@ func newInstallCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&yes, "yes", false, "não-interativo: executa direto com as flags informadas")
 	cmd.Flags().BoolVar(&jsonOut, "json", false, "saída estruturada (relatório do install)")
 	cmd.Flags().BoolVar(&force, "force", false, "sobrescreve skills/blocos divergentes no engine")
-	cmd.Flags().BoolVar(&full, "full", false, "materializa o workflow FULL (93 gm-* embarcados) no engine")
+	cmd.Flags().BoolVar(&full, "full", false, "materializa o workflow FULL (126 componentes embarcados) no engine")
 	cmd.Flags().BoolVar(&plain, "plain", false, "wizard em modo numerado (fallback sem teclas de seta)")
 	cmd.Flags().BoolVar(&listEngines, "list-engines", false, "lista os engines suportados (detectado/ausente) e sai")
 	cmd.Flags().BoolVar(&listMcps, "list-mcps", false, "lista o catálogo de MCPs e sai")
@@ -180,6 +185,12 @@ func newInstallCmd() *cobra.Command {
 }
 
 func installExit(cmd *cobra.Command, err error) error {
+	if errors.Is(err, errWizardCancelled) {
+		// ESC/CTRL+C/EOF no TTY = cancelamento limpo (o padrão único de
+		// wizard_read.go) — NUNCA a mensagem de script/CI aqui
+		fmt.Fprintln(cmd.OutOrStdout(), "cancelado — nada foi aplicado")
+		return nil
+	}
 	fmt.Fprintln(cmd.ErrOrStderr(), "golmet: "+err.Error())
 	return exitError(2)
 }
@@ -290,6 +301,9 @@ func runInstallList(cmd *cobra.Command, engines, mcps bool) error {
 			if len(def.EnvRequired) > 0 {
 				envInfo = " · env: " + strings.Join(def.EnvRequired, ",")
 			}
+			if len(def.EnvOptional) > 0 {
+				envInfo += " · env opcional: " + strings.Join(def.EnvOptional, ",")
+			}
 			fmt.Fprintf(out, "  %s %-10s %-10s%s\n", tag, def.Type, def.Name, envInfo)
 		}
 	}
@@ -353,10 +367,14 @@ func printInstallReport(out interface{ Write([]byte) (int, error) }, rep *instal
 	fmt.Fprintf(out, "\ninstall concluído — passo seguinte: rode 'golmet validate' no workspace após o primeiro uso\n")
 }
 
-// installWizard — prompts numerados lendo stdin (hand-rolled).
+// installWizard — prompts numerados lendo stdin (hand-rolled). tty é o
+// contexto do wizard — o cancelamento segue o padrão único de
+// wizard_read.go (ESC/CTRL+C/EOF no TTY = limpo; mensagem de script só
+// fora de TTY).
 type installWizard struct {
 	out interface{ Write([]byte) (int, error) }
 	in  *bufio.Reader
+	tty bool
 }
 
 func (w *installWizard) home() string {
@@ -367,16 +385,18 @@ func (w *installWizard) home() string {
 	return h
 }
 
-func (w *installWizard) prompt(question string) string {
+func (w *installWizard) prompt(question string) (string, error) {
 	fmt.Fprint(w.out, question)
-	line, err := w.in.ReadString('\n')
-	if err != nil && line == "" {
-		// EOF (pipe fechado/CI): o modo numerado não tem de onde ler —
-		// sai com erro estruturado em vez de loop infinito de "inválido"
-		fmt.Fprintf(w.out, "\nstdin fechado (EOF) — o modo numerado precisa de entrada; use --engine/--mcp/--yes para não-interativo\n")
-		os.Exit(2)
+	line, cancelled, serr := readWizardLine(w.in, w.tty,
+		"use --engine/--mcp/--yes para não-interativo")
+	switch {
+	case cancelled:
+		fmt.Fprintln(w.out) // quebra a linha do prompt antes da saída
+		return "", errWizardCancelled
+	case serr != nil:
+		return "", serr
 	}
-	return strings.TrimSpace(line)
+	return line, nil
 }
 
 func (w *installWizard) pick(label string, options []string, decorate func(string) string) (string, error) {
@@ -391,7 +411,10 @@ func (w *installWizard) pick(label string, options []string, decorate func(strin
 		fmt.Fprintf(w.out, "  %d. %s %s\n", i+1, decorate(opt), opt)
 	}
 	for {
-		answer := w.prompt(fmt.Sprintf("número [1-%d]: ", len(options)))
+		answer, perr := w.prompt(fmt.Sprintf("número [1-%d]: ", len(options)))
+		if perr != nil {
+			return "", perr
+		}
 		n, err := strconv.Atoi(strings.TrimSpace(answer))
 		if err == nil && n >= 1 && n <= len(options) {
 			return options[n-1], nil
@@ -418,7 +441,10 @@ func (w *installWizard) pickProfile() (string, error) {
 		fmt.Fprintf(w.out, "     limitação: %s\n", ch.Limitation)
 	}
 	for {
-		answer := w.prompt("número [1-2] (default: 1): ")
+		answer, perr := w.prompt("número [1-2] (default: 1): ")
+		if perr != nil {
+			return "", perr
+		}
 		if answer == "" {
 			return choices[0].ID, nil
 		}
@@ -461,13 +487,19 @@ func (w *installWizard) pickMCPs(installed map[string]string) ([]string, error) 
 		if len(def.EnvRequired) > 0 {
 			extra += " · precisa env: " + strings.Join(def.EnvRequired, ",")
 		}
+		if len(def.EnvOptional) > 0 {
+			extra += " · env opcional: " + strings.Join(def.EnvOptional, ",")
+		}
 		if def.Type == "remote" {
 			extra += " · remote"
 		}
 		fmt.Fprintf(w.out, "  %s %s — %s%s\n", tag, def.Name, def.Description, extra)
 		catalog = append(catalog, def.Name)
 	}
-	answer := w.prompt("\nNúmeros dos MCPs a registrar (ex.: 1,2,4) [default: 1 (golmet)]: ")
+	answer, perr := w.prompt("\nNúmeros dos MCPs a registrar (ex.: 1,2,4) [default: 1 (golmet)]: ")
+	if perr != nil {
+		return nil, perr
+	}
 	var selected []string
 	for _, part := range strings.Split(strings.TrimSpace(answer), ",") {
 		p := strings.TrimSpace(part)
@@ -486,7 +518,10 @@ func (w *installWizard) pickMCPs(installed map[string]string) ([]string, error) 
 		if !ok || def.Param == "" {
 			continue
 		}
-		value := w.prompt(fmt.Sprintf("Valor de %s para o %s (ex.: MinhaOrg): ", def.Param, def.Name))
+		value, verr := w.prompt(fmt.Sprintf("Valor de %s para o %s (ex.: MinhaOrg): ", def.Param, def.Name))
+		if verr != nil {
+			return nil, verr
+		}
 		for i, s := range selected {
 			if s == name {
 				selected[i] = name + "=" + strings.TrimSpace(value)
@@ -504,9 +539,22 @@ func (w *installWizard) pickMCPs(installed map[string]string) ([]string, error) 
 	return out, nil
 }
 
-func (w *installWizard) confirm(req install.Options) bool {
+func (w *installWizard) confirm(req install.Options) (bool, error) {
 	fmt.Fprintf(w.out, "\nResumo:\n\n  engine:   %s\n  perfil:   %s\n  mcps:     %s\n  workspace (doctor final): %s\n\n",
 		req.EngineID, req.Profile, strings.Join(req.MCPs, ", "), req.Workspace)
-	answer := w.prompt("Confirmar e executar? (s/n): ")
-	return strings.EqualFold(strings.TrimSpace(answer), "s")
+	// o frame ◆ isolado do resumo (o padrão visual do install — M28):
+	// ENTER confirma, n/esc cancelam (o install não tem passo de edição)
+	fmt.Fprintf(w.out, "%s◆ Confirmar e instalar?%s %s(ENTER confirma · n/esc cancelam)%s\n\n",
+		wizardANSI("\x1b[1m"), wizardANSI("\x1b[0m"), wizardANSI("\x1b[90m"), wizardANSI("\x1b[0m"))
+	answer, perr := w.prompt("> ")
+	if perr != nil {
+		return false, perr
+	}
+	switch {
+	case answer == "":
+		return true, nil // ENTER confirma (o default)
+	case strings.EqualFold(answer, "s"):
+		return true, nil // alias do ENTER (compat)
+	}
+	return false, nil // n (ou qualquer outra coisa) cancela
 }

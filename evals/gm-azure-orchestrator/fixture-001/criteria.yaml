@@ -1,0 +1,33 @@
+---
+name: "gm-azure-orchestrator — work items + pré-condição de PAT"
+description: >
+  Pedido de subir tasks para o Azure Boards + pré-condição do MCP falhando
+  (server desabilitado / PAT ausente). Roteia: gm-azure-workitem-creator para
+  o pedido; gm-azure-setup para a pré-condição. Roteia, não executa.
+  Artefato: delegacao.md.
+inputs_required: ["input/cenario.md"]
+
+checks:
+  - type: file_exists
+    path: "delegacao.md"
+    severity: error
+
+  - type: section_exists
+    path: "delegacao.md"
+    section: "## Delegação"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-azure-workitem-creator"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "gm-azure-setup"
+    severity: error
+
+  - type: contains
+    path: "delegacao.md"
+    pattern: "Roteia"
+    severity: error

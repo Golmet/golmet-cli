@@ -66,8 +66,8 @@ quais skills compõem o fluxo — mas não executa nada.
 | `gm-clarify` | Fazer perguntas ao cliente, score de ambiguidade (0-100) por item | Antes de requisitos; resolver PEND-XXX |
 | `gm-requirements` | Gerar/atualizar REQUIREMENTS.md (RNs, UCs, campos, decisões) — criação inicial e merge incremental, a partir de transcrição de reunião ou checkpoint de clarify | Após clarify; transcrição disponível; merge incremental |
 | `gm-change-request` | Registrar CHANGE_REQUESTS.md (pending → approved → implemented) | Mudança em RN confirmada |
-| `gm-scope-agreement` | Alinhar SCOPE_AGREEMENT.md com o cliente em linguagem de negócio | Requisitos maduros, antes de traduzir |
-| `gm-client-requirements` | CLIENT_REQUIREMENTS.md visão cliente | REQUIREMENTS.md existe |
+| `gm-scope` | Alinhar SCOPE_AGREEMENT.md com o cliente em linguagem de negócio | Requisitos maduros, antes de traduzir |
+| `gm-clientreq` | CLIENT_REQUIREMENTS.md visão cliente | REQUIREMENTS.md existe |
 | `gm-client-report` | CLIENT_REPORT_<periodo>.md — relatório periódico para o cliente em linguagem de negócio | Período a reportar (mês corrente por default); fechar ciclo com o cliente |
 | `gm-decision-log` | Formalizar decisão em DECISIONS.md (ADR-NNN formato MADR: Status, Decisor, Contexto, Decisão, Consequências) | Decisão tomada durante clarify/requirements |
 | `gm-decision-audit` | Auditar DECISIONS.md (conflitos semânticos, IDs, referências) | Após novas decisões; validar integridade |
@@ -101,17 +101,17 @@ específica do módulo e as convenções de ID (RN-XXX, PEND-XXX).
 | "fazer perguntas ao cliente", "esclarecer" | `gm-clarify` |
 | "gerar requisitos", "REQUIREMENTS.md", "transcrição", "gerar do zero", "atualizar requisitos", "merge" | `gm-requirements` |
 | "mudança em requisito", "alterar RN" | `gm-change-request` |
-| "alinhar escopo com cliente" | `gm-scope-agreement` |
-| "sincronizar com cliente", "client requirements" | `gm-client-requirements` |
+| "alinhar escopo com cliente" | `gm-scope` |
+| "sincronizar com cliente", "client requirements" | `gm-clientreq` |
 | "relatório do cliente", "client report", "report do período" | `gm-client-report` |
 
 ### Passo 2 — Validar pré-condições
 
 - **gm-requirements**: checkpoint de `gm-clarify` existe ou a transcrição
   da reunião é a entrada; só promove item a RN se score >= 70
-- **gm-scope-agreement**: REQUIREMENTS.md tem requisitos maduros
+- **gm-scope**: REQUIREMENTS.md tem requisitos maduros
 - **gm-change-request**: REQUIREMENTS.md existe
-- **gm-client-requirements**: REQUIREMENTS.md existe
+- **gm-clientreq**: REQUIREMENTS.md existe
 - **gm-client-report**: SCOPE_AGREEMENT.md e/ou Feature.md com entregue_em do período existem; dashboard do `gm-progress` é insumo recomendado (bloco Resultado)
 
 ### Passo 3 — Executar

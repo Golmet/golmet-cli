@@ -18,6 +18,7 @@ repo vêm do `AGENTS.md` do repo (precedência sobre este playbook).
 - `Cargo.toml` (e `[workspace]`, quando houver) — edition, `rust-version`, dependências e features
 - Código-fonte do repo (read-only) — `src/`, `tests/`, `benches/`, `migrations/`
 - Artefatos de spec do módulo referenciados pela task: TASKS.md, API_CONTRACTS.md, ERROR_CATALOG.md, ACCEPTANCE_CRITERIA.md, REQUIREMENTS.md
+- Docs correntes das libs do playbook (sintaxe/API/config) — MCP context7 (`resolve-library-id` + `query-docs`) quando disponível; este playbook define o padrão da casa, não a sintaxe corrente
 
 ## Gera (downstream)
 
@@ -214,7 +215,7 @@ falhando no Passo 5, a task não é reportada como concluída.
 
 ## Tools
 
-- Capacidade `kit.graph` (política graph-first — FORMATO §10/DR-020): com o grafo disponível e índice fresco, mapeie o repo por navegação estruturada (`get_architecture`, `search_graph`, `trace_path`) ANTES de grep/glob; grep/glob ficam para literais e para o que o grafo não resolve. Índice stale → re-indexar antes de usar. Sem grafo → degradação `grep-fallback` declarada no relatório.
+- Capacidade `kit.graph` (política graph-first — FORMAT §10/DR-020): com o grafo disponível e índice fresco, mapeie o repo por navegação estruturada (`get_architecture`, `search_graph`, `trace_path`) ANTES de grep/glob; grep/glob ficam para literais e para o que o grafo não resolve. Índice stale → re-indexar antes de usar. Sem grafo → degradação `grep-fallback` declarada no relatório.
 
 - `file`/`glob`/`grep` — inspecionar código-fonte, `Cargo.toml` e configs (read-only)
 - `shell` — executar `cargo build`, `cargo test`, `cargo clippy` e `cargo fmt` (verificação)

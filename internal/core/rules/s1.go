@@ -7,7 +7,7 @@ import (
 )
 
 // S1 — CR implemented com Spec stale = propagação devedora
-// (FORMATO §7.4/§9 — tolerada por prática, reportada como AVISO).
+// (FORMAT §7.4/§9 — tolerada por prática, reportada como AVISO).
 func S1(ctx *Context) []core.GolmetError {
 	var staleFiles []string
 	linked := map[string][]string{}

@@ -8,7 +8,7 @@ requires: [file, edit, write, ask]
 # gm-taskspec — Gera a análise e o arquivo de feature para revisão antes da execução
 
 Gera, numa passada, AS DUAS CAMADAS da feature no diretório do workspace
-(conforme FORMATO §2):
+(conforme FORMAT §2):
 
 1. **Análise** — pasta `analysis/RN-NNN — <título da feature>/` contendo SEMPRE exatamente
    2 arquivos: `RN-NNN — Analise-Funcional.md` (o que a feature precisa fazer — linguagem de
@@ -25,14 +25,14 @@ análise e carrega o campo **RNs**; a análise NUNCA cita tasks, grupos de deliv
 pastas de entrega. Reorganizar, mover ou apagar tasks nunca invalida a documentação.
 
 O grupo de pasta sob `delivery/` (`<grupo>`) é subpasta livre — o kit não interpreta o
-nome (FORMATO §2: `2026-10`, `core`, …); default de escrita quando não decidido:
+nome (FORMAT §2: `2026-10`, `core`, …); default de escrita quando não decidido:
 `YYYY-MM` (mês corrente). O usuário revisa e edita os arquivos; se o perfil tiver
 tracking externo (recurso FULL), o fluxo de issues do tracker cria as tarefas lá —
 no perfil BASE, o Feature.md é o próprio backlog e as tasks são executadas a partir dele.
 
 ## Resolução de caminhos
 
-Os artefatos do workspace seguem o layout do FORMATO §2:
+Os artefatos do workspace seguem o layout do FORMAT §2:
 
 - **Raiz:** PROJECT_CHARTER.md, REQUIREMENTS.md, DECISIONS.md, CHANGE_REQUESTS.md
 - **`analysis/`:** `RN-NNN — <título da feature>/` — PASTA por feature com exatamente 2
@@ -57,12 +57,12 @@ Feature.md` — ambos nomeados pela **RN-âncora + espaço + em-dash (`—`) + e
 feature**. **Grafia fixa:** os nomes usam EXATAMENTE `Analise-Funcional`
 e `Analise-Tecnica` (sem acento no "Analise") — NÃO mudar para "Análise". O em-dash `—`
 (U+2014) é o separador válido. A RN-âncora sempre existe em REQUIREMENTS.md (nunca inventar)
-e é SEMPRE uma RN (âncora = só `RN-XXX`; PEND nunca ancora feature — FORMATO §7.3, H1).
+e é SEMPRE uma RN (âncora = só `RN-XXX`; PEND nunca ancora feature — FORMAT §7.3, H1).
 **Sanitização do título:** substitua caracteres inválidos para nome de
 pasta/arquivo (`/` `\` `:` `*` `?` `"` `<` `>` `|`) por espaço; colapse espaços duplicados;
 remova espaços/pontos finais. NÃO troque o em-dash por hífen.
 
-**Variante legada tolerada (FORMATO §2):** `delivery/<grupo>/<RN-NNN — <título>>/RN-NNN —
+**Variante legada tolerada (FORMAT §2):** `delivery/<grupo>/<RN-NNN — <título>>/RN-NNN —
 <título> — Feature.md` (Feature dentro de pasta própria) é legada de LEITURA — legível e
 tolerada pelo `validate`, mas NUNCA gerada por esta skill.
 
@@ -106,7 +106,7 @@ por glob, NUNCA construindo o nome exato, nesta ordem:
 
 - `file` — ler os documentos de entrada do workspace; materializar as duas camadas (`analysis/RN-NNN — <título>/` + `delivery/<grupo>/RN-NNN — <título> — Feature.md`)
 - `ask` — apenas o mínimo necessário (RN-âncora da feature, título se não derivável, grupo do delivery quando não derivável, dados de tracking se o perfil usa tracker — sem ask nativo: pergunte no chat e PARE — nunca adivinhe)
-- `kit` — checkpoint `post-write: validate` (o Feature.md gerado tem front matter obrigatório — FORMATO §7.5, H5)
+- `kit` — checkpoint `post-write: validate` (o Feature.md gerado tem front matter obrigatório — FORMAT §7.5, H5)
 
 ## Fluxo
 
@@ -358,13 +358,13 @@ elementos, com nomes de seção FIXOS. A estrutura é idêntica entre todos os a
 campos de estado legítimos divergem (`status` do front matter, linha `Status` da Issue
 principal, datas, Tracking ID):
 
-1. **Front matter YAML** — chaves fixas (FORMATO §7.5, obrigatório): `status` (`draft` = gerado para revisão) e `anchor: RN-NNN` (a RN-âncora). Transições legais: `draft → ready → in_progress → done` (`→cancelled` de qualquer não-final); `ready` exige anchor RN `active` (H3)
+1. **Front matter YAML** — chaves fixas (FORMAT §7.5, obrigatório): `status` (`draft` = gerado para revisão) e `anchor: RN-NNN` (a RN-âncora). Transições legais: `draft → ready → in_progress → done` (`→cancelled` de qualquer não-final); `ready` exige anchor RN `active` (H3)
 2. **H1** — `# RN-NNN — <título da feature>` (coincide com o nome do arquivo sem o sufixo ` — Feature.md`)
 3. **Bloco de proveniência** (linhas `>`) — 1ª linha no padrão fixo `> Gerado por <executor> em <DD/MM/AAAA>.` (executor REAL: `gm-taskspec` na geração; o executor migrador real na migração); **2ª linha OBRIGATÓRIA** `> Análise: ../../analysis/RN-NNN — <título>/` — link relativo para a pasta da análise (ajuste a quantidade de `../` se o grupo do delivery tiver profundidade maior que 1 — ex.: grupo custom com múltiplos níveis); linhas `>` adicionais opcionais para anotações (`**Migrado em ...**`, `**Fonte:** ...`, `**Rastreamento:** ...`, `**✅ Implementado em ...**`)
 4. **`## Issue principal`** — tabela Campo/Valor com as linhas fixas `Título`, `Tracking ID`, `Produto`, `Grupo`, `Repositórios` + linha opcional `Status` (somente quando o arquivo refletir implementação concluída; proibida em arquivo `draft`). Tracking ID é metadata opcional — `—` no perfil BASE; só preenchido no fluxo FULL com tracker
 5. **`## Resumo das tasks`** — tabela de 4 colunas (Regra das 4 colunas)
 6. **`## Ordem de Execução`** — formato canônico em waves (seção "Ordem de Execução" abaixo)
-7. **Tasks** — `### RN-NNN-M. <título>` com diretiva `> estado: todo` (FORMATO §7.6 — estados `todo · in_progress · done · blocked`), separadas por `---`, cada uma no "Template de cada task"
+7. **Tasks** — `### RN-NNN-M. <título>` com diretiva `> estado: todo` (FORMAT §7.6 — estados `todo · in_progress · done · blocked`), separadas por `---`, cada uma no "Template de cada task"
 8. **`## Dependências entre Tasks`** (OPCIONAL) — somente para features com grafo de dependências não-trivial; diagrama ASCII ou lista. Se ausente, as waves do item 6 são a representação canônica de ordem/dependência
 
 **Proibido:** seções fora desta lista, nomes alternativos para as seções de nome fixo
@@ -602,8 +602,8 @@ verificação rápida — se um leitor de negócio não entender uma frase, rees
 ## Checkpoint de kit (`post-write: validate`)
 
 Após gerar as duas camadas, rode `golmet validate` no workspace e corrija o que apontar:
-- O front matter do Feature.md é OBRIGATÓRIO e parseável (H5 — FORMATO §7.5): `status: draft` + `anchor: RN-NNN`
-- Tasks com diretiva `> estado:` no vocabulário legal (`todo · in_progress · done · blocked` — FORMATO §7.6)
+- O front matter do Feature.md é OBRIGATÓRIO e parseável (H5 — FORMAT §7.5): `status: draft` + `anchor: RN-NNN`
+- Tasks com diretiva `> estado:` no vocabulário legal (`todo · in_progress · done · blocked` — FORMAT §7.6)
 - IDs únicos (H2) e referências cruzadas resolvem (H10)
 Sem kit disponível, anote a pendência "rode golmet validate" para o próximo passo.
 
@@ -632,7 +632,7 @@ docs(tasks): gerar analysis/RN-NNN — <título>/ + delivery/<grupo>/RN-NNN — 
 
 compatibility: multi-engine
 
-> **Degradação de checkpoints:** o checkpoint `post-write: validate` depende do kit golmet disponível. Sem o kit, a skill continua funcionando — o checkpoint vira "rode `golmet validate` manualmente" após a escrita (o front matter do Feature.md segue obrigatório pelo FORMATO §7.5).
+> **Degradação de checkpoints:** o checkpoint `post-write: validate` depende do kit golmet disponível. Sem o kit, a skill continua funcionando — o checkpoint vira "rode `golmet validate` manualmente" após a escrita (o front matter do Feature.md segue obrigatório pelo FORMAT §7.5).
 ## Convergência com a twin BASE (FULL)
 
 A twin BASE `gm-taskspec` publicada no kit cobre o fluxo essencial. Esta edição

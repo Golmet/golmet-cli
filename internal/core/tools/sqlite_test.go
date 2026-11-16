@@ -36,7 +36,7 @@ func serveSqliteRelease(t *testing.T, exeContent []byte, corruptChecksum bool) (
 	sum := sha256.Sum256(zipBuf.Bytes())
 	checksumLine := hex.EncodeToString(sum[:]) + "  " + SqliteAssetName()
 	if corruptChecksum {
-		// hash falsificado mantendo o FORMATO (2 fields: hash de 64 + nome)
+		// hash falsificado mantendo o FORMAT (2 fields: hash de 64 + nome)
 		checksumLine = "deadbeef" + checksumLine[8:64] + "  " + SqliteAssetName()
 	}
 	mux := http.NewServeMux()

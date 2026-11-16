@@ -8,7 +8,7 @@ import (
 )
 
 // H6 — Estados no vocabulário da entidade; só transições legais
-// (FORMATO §7/§9 — o índice é a história). Sem golmet.index.json o
+// (FORMAT §7/§9 — o índice é a história). Sem golmet.index.json o
 // v0 valida vocabulário e destinos obrigatórios; com índice, valida
 // também a transição a partir do estado anterior registrado.
 

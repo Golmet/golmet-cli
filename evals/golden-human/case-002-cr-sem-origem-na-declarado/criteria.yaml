@@ -1,0 +1,14 @@
+# Golden set humano — seed gerado por agent, NAO revisado ainda (IMP-100).
+# Situacao real: CR sem campo **Origem:** (IMP-099) chega ao Bloco
+# Resultado do gm-progress — o correto e declarar "N/A (sem dados)",
+# nunca inventar fracao/percentual.
+status: seed-nao-revisado
+checks:
+- type: contains
+  path: "PROGRESS_REPORT.md"
+  pattern: "N/A (sem dados)"
+  severity: error
+- type: not_contains
+  path: "PROGRESS_REPORT.md"
+  pattern: "requisito-mal-capturado"
+  severity: error

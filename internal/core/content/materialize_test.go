@@ -27,7 +27,7 @@ func TestMaterializeWritesFullAndManifest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rep.Total != 93 || len(rep.Written) != 93 || len(rep.Conflicts) != 0 {
+	if rep.Total != 129 || len(rep.Written) != 126 || len(rep.Conflicts) != 0 {
 		t.Fatalf("materialize: total=%d written=%d conflicts=%d", rep.Total, len(rep.Written), len(rep.Conflicts))
 	}
 	if _, err := os.Stat(filepath.Join(root, "agents", "gm-dev.md")); err != nil {
@@ -57,7 +57,9 @@ func TestMaterializeDryRunDoesNotWriteFilesOrManifest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rep.Written) != rep.Total || len(rep.Preserved) != 0 || len(rep.Conflicts) != 0 {
+	// dry-run: 3 templates não-depositáveis (nonDepositTemplates) saem do
+	// plano de escrita — written = total - 3
+	if len(rep.Written) != rep.Total-3 || len(rep.Preserved) != 0 || len(rep.Conflicts) != 0 {
 		t.Fatalf("plano dry-run inesperado: total=%d written=%d preserved=%d conflicts=%d", rep.Total, len(rep.Written), len(rep.Preserved), len(rep.Conflicts))
 	}
 	if _, err := os.Stat(filepath.Join(root, ".golmet")); !os.IsNotExist(err) {

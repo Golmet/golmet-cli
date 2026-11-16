@@ -60,7 +60,7 @@ status: active
 
 # Constituição do Repositório — <REPO_DOCS>
 
-> **Propósito:** Documentar decisões, requisitos e arquitetura de todos os projetos `<CLIENTE>` (do perfil — `rules/client-profile.md`).
+> **Propósito:** Documentar decisões, requisitos e arquitetura de todos os projetos `<CLIENTE>` (do perfil — `profile/client-profile.md`).
 > **Última atualização:** <DATA_ATUAL>
 
 ---
@@ -152,7 +152,7 @@ REQUIREMENTS.md
 > (default `monthly` → `YYYY-MM`; `sprint` → `YYYY-MM-DD`; `release` → nome livre; `flow` → `backlog`;
 > `horizon` → `now|next|later`; `epic` → nome do épico; `custom` → placeholders do template). Leitores resolvem
 > por glob recursivo `delivery/**/RN-NNN*` (preferindo arquivos `— Feature.md`; fallback: `— Tasks.md` pré-rename). Ambas as camadas são geradas pelo
-> `gm-task-spec`. Dependência unidirecional tasks→análise: a análise NUNCA cita tasks, sprints ou delivery.
+> `gm-taskspec`. Dependência unidirecional tasks→análise: a análise NUNCA cita tasks, sprints ou delivery.
 
 ---
 
@@ -202,7 +202,7 @@ REQUIREMENTS.md
 ## 9. Organização de Delivery e Análise (IMP-092)
 
 > Define onde vivem a análise e as tasks das features e como o delivery é agrupado.
-> Editável por projeto; consultada pelo `gm-task-spec` e pelo `gm-restructure`.
+> Editável por projeto; consultada pelo `gm-taskspec` e pelo `gm-restructure`.
 
 | Campo | Valor | Descrição |
 |-------|-------|-----------|

@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# scan.sh — Gate de neutralidade do open core (Fase 1 — Apache-2.0 + DCO).
+#
+# Scanner determinístico: falha se conteúdo identificado de organização/cliente
+# aparecer na base aberta do workflow (agents/, skills/, registry, templates,
+# evals/) E nos docs vivos do kit (docs/ — M32: o vazamento em doc pública é
+# finding; a jornada narrativa usa os placeholders neutros do kit).
+#
+# Escopo (a partir da raiz do repo, resolvida relativa a este script):
+#   agents/Golmet-*.md, skills/**/* (qualquer arquivo), registry.yaml,
+#   rules/stack-templates.yaml, AGENTS.template.md, evals/ (recursivo),
+#   docs/**.md (M32 — os docs vivos do kit entram no gate; a jornada usa os
+#   placeholders neutros).
+#
+# Exclusões explícitas (motivo entre parênteses):
+#   evals/reports/     (histórico de execuções — não é base)
+#   evals/trends/      (dados acumulados — não é base)
+#   evals/golden-human/(casos humanos — IMP-100; fora do core por definição)
+#   evals/neutrality/  (o próprio scanner contém a wordlist)
+#   evals/run-evals.sh (apenas delega a este scanner)
+#   rules/packs/*.md, packs/ (instalados de pack — fonte no repo do pack, IMP-112)
+#   *.md da raiz, incl. README (docs vivos — branding do dono mantido por
+#     decisão IMP-105; sanitização só na publicação, Fase 3)
+#   quality/           (operacional)
+#   plugins/           (extensões locais)
+#   MANIFEST.sha256    (checksums — não é conteúdo)
+#
+# Saída: uma linha por hit `caminho:linha: trecho`; no fim
+#   `neutrality: FALHOU (<N> hits)` + exit 1, ou
+#   `neutrality: OK (<A> arquivos varridos)` + exit 0.
+
+set -euo pipefail
+export LC_ALL=C
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+cd "$REPO_ROOT"
+
+# Wordlist de neutralidade (ERE, case-insensitive): org, clientes, produtos e
+# identificadores que NÃO podem vazar para o open core.
+# IMP-133: produtos reais da org adicionados (antes só org + 2 clientes/produtos).
+WORDLIST_FILE="${NEUTRALITY_WORDLIST:-$REPO_ROOT/evals/neutrality/wordlist.local}"
+if [[ -f "$WORDLIST_FILE" ]]; then
+  WORDLIST="$(cat "$WORDLIST_FILE")"
+else
+  # default generico publicado — tokens reais vivem em wordlist.local (nao versionado)
+  WORDLIST='zz-placeholder-org|zz-placeholder-cliente|zz-placeholder-produto'
+fi
+
+LIST="$(mktemp)"
+trap 'rm -f "$LIST"' EXIT
+: > "$LIST"
+
+# --- montagem determinística da lista de arquivos (escopo fechado) ---
+# agents: primary/subagents da base
+find agents -maxdepth 1 -type f -name 'Golmet-*.md' 2>/dev/null >> "$LIST" || true
+# skills: todo o conteúdo, qualquer arquivo
+find skills -type f 2>/dev/null >> "$LIST" || true
+# manifestos e templates de raiz
+for f in registry.yaml rules/stack-templates.yaml AGENTS.template.md; do
+  [ -f "$f" ] && printf '%s\n' "$f" >> "$LIST"
+done
+# evals: recursivo, com as exclusões comentadas no cabeçalho
+find evals -type f \
+  -not -path 'evals/reports/*' \
+  -not -path 'evals/trends/*' \
+  -not -path 'evals/golden-human/*' \
+  -not -path 'evals/neutrality/*' \
+  -not -path 'evals/run-evals.sh' \
+  2>/dev/null >> "$LIST" || true
+# docs/ do repo do kit (M32 — o gate cobre os docs vivos). Exclusão
+# declarada: docs/ é snapshot arqueológico do processo (mesma
+# política do migrations/ da org — histórico, não doc pública)
+find docs -type f -name '*.md' \
+  -not -path 'docs/*' \
+  2>/dev/null >> "$LIST" || true
+
+# Fora do escopo por construção (nunca entram na lista): rules/packs/ e packs/
+# (instalados de pack — IMP-112; nota futura: excluir via sources.yaml skills de
+# pack instaladas em skills/), docs vivos da raiz (*.md), quality/, plugins/,
+# MANIFEST.sha256.
+
+sort -u "$LIST" -o "$LIST"
+
+HITS=0
+SCANNED=0
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  SCANNED=$((SCANNED + 1))
+  out="$(grep -HniE "$WORDLIST" "$f" 2>/dev/null || true)"
+  if [ -n "$out" ]; then
+    printf '%s\n' "$out"
+    n="$(printf '%s\n' "$out" | wc -l | tr -d ' ')"
+    HITS=$((HITS + n))
+  fi
+done < "$LIST"
+
+if [ "$HITS" -gt 0 ]; then
+  echo "neutrality: FALHOU ($HITS hits)"
+  exit 1
+fi
+echo "neutrality: OK ($SCANNED arquivos varridos)"
+exit 0

@@ -4,13 +4,13 @@
 
 **Kit (Go, 14 comandos funcionais, 321 testes):**
 
-- golmet validate — FORMATO v1 (H1–H10/S1–S5) com evidência grammar, modo tolerant/strict, --json
+- golmet validate — FORMAT v1 (H1–H10/S1–S5) com evidência grammar, modo tolerant/strict, --json
 - golmet init — scaffold de workspace/container (.golmet/ + adapters)
 - golmet install — wizard de onboarding (7 engines, catálogo 12 MCPs, badges de já-registrados, pós-verify em cascata)
 - golmet update — BASE skills via go:embed, manifest sha256; --full materializa o workflow FULL no engine (embarcado ou core externo)
 - golmet status / golmet next — dashboard + recomendação p1..p9
 - golmet doctor — 9 checks com remediação, smoke Jev por default (--no-network pula)
-- golmet adopt — handshake de adoção do FORMATO (dry-run classificado, apply determinístico, keep-legacy-layouts)
+- golmet adopt — handshake de adoção do FORMAT (dry-run classificado, apply determinístico, keep-legacy-layouts)
 - golmet eval — checker determinístico de evals (15 checks, suite, json)
 - golmet tools — instalação de codegraph com supply-chain (SHA-256 + attestation)
 - golmet mcp — servidor MCP stdio (10 tools)
@@ -26,13 +26,13 @@
 
 **MCP (10 tools)**: gm_validate, gm_doctor, gm_next, gm_status, gm_index, gm_eval, gm_jev_classify, gm_update (FULL embarcado/core externo, dry-run), gm_pack_update, gm_pack_list
 
-**FORMATO v1**: spec normativa (entidades, H1–H10/S1–S5, evidência, subset YAML §6.1, estados-default §7) + S10 (política graph-first) + §2.1 camadas de conteúdo e §3.1 contrato de pack
+**FORMAT v1**: spec normativa (entidades, H1–H10/S1–S5, evidência, subset YAML §6.1, estados-default §7) + S10 (política graph-first) + §2.1 camadas de conteúdo e §3.1 contrato de pack
 
 **Infra**: registry de evals com corpus gm (22 fixtures), neutralidade auditada (0 hits de org), cross-compile pronto
 
 ### Commits (19)
 
-BLOCK 1: validate end-to-end. BLOCK 2: init/status/doctor/index. BASE gm-_. FORMATO v1. kit vocabulário. BLOCK 3: update/mcp/tools/next. adopt. eval + corpus gm-_. dívidas técnicas. install wizard. stack playbooks. fix Jev transport. FORMATO 2. gm_status/gm_index/gm_eval via MCP. FORMATO S10 graph-first. content L1 + FULL embarcado com overlay 3-way (install/update --full). tools MCP gm_update/gm_pack_update/gm_pack_list com dry-run e segurança de camadas. db drift (gm-dba determinístico).
+BLOCK 1: validate end-to-end. BLOCK 2: init/status/doctor/index. BASE gm-_. FORMAT v1. kit vocabulário. BLOCK 3: update/mcp/tools/next. adopt. eval + corpus gm-_. dívidas técnicas. install wizard. stack playbooks. fix Jev transport. FORMAT 2. gm_status/gm_index/gm_eval via MCP. FORMAT S10 graph-first. content L1 + FULL embarcado com overlay 3-way (install/update --full). tools MCP gm_update/gm_pack_update/gm_pack_list com dry-run e segurança de camadas. db drift (gm-dba determinístico).
 
 ### Testes
 

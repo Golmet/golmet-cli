@@ -7,7 +7,7 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core/entities"
 )
 
-// H10 — Referências cruzadas resolvem (FORMATO §9): todo RN/PEND/CR/ADR/
+// H10 — Referências cruzadas resolvem (FORMAT §9): todo RN/PEND/CR/ADR/
 // CAND citado existe no workspace. IMP é namespace global do workflow
 // (§4) — não resolvível no escopo do workspace, fica fora do v0.
 

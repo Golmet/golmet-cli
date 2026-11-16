@@ -34,10 +34,11 @@ ambiente identificado e backup confirmado.
 - Conexão ao banco vivo QUANDO o serviço exigir (env/profile — nunca credenciais inline)
 - DECISIONS.md da org (decisões com dente de banco: fuso, multi-tenant)
 - Playbook da stack do repo (requerimentos de migration)
-- **T1 — `knowledge/banco-dados-distribuidos/KNOWLEDGE.md`**: a base teórica
+- **T1 — `packs/<pack-ativo>/domains/banco-dados-distribuidos/KNOWLEDGE.md`**: a base teórica
   (ACID, CAP, PACELC, replicação, sharding/quórum, consenso, Saga, matriz
   de tecnologias). **OBRIGATÓRIA antes de qualquer parecer de arquitetura**
   (escolha de tecnologia, sharding, replicação, consistência) — ver §Arquitetura
+- Docs correntes das libs do projeto (API/config/migrations) — MCP context7 ANTES de confiar na memória do modelo
 
 ## Gera (downstream)
 

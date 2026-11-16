@@ -17,7 +17,7 @@ func newAdoptCmd() *cobra.Command {
 	var charterStatus string
 	cmd := &cobra.Command{
 		Use:   "adopt [workspace]",
-		Short: "Adota o FORMATO v1 num workspace existente (dry-run → apply; skill gm-adopt)",
+		Short: "Adota o FORMAT v1 num workspace existente (dry-run → apply; skill gm-adopt)",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if dryRun && apply {

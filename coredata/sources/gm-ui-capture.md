@@ -110,7 +110,7 @@ existentes) e `grep`.
   pessoal real em formulários do sistema capturado.
 - **Toda imagem com possível dado pessoal** (mesmo em tela alheia — ex.:
   listagem com nomes/CPFs) é marcada `⚠️ PII` no manifesto. Só sinalize — a
-  triagem de tratamento é papel do `gm-compliance-check`; NUNCA opine sobre
+  triagem de tratamento é papel do `gm-compliance`; NUNCA opine sobre
   base legal, anonimização ou conformidade.
 - **NUNCA navegar para URL não declarada no prompt** (inclui links externos
   encontrados nas telas) e **NUNCA produção**.

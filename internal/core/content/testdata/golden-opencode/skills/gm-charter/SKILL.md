@@ -12,8 +12,8 @@ primeira conversa com o cliente.
 
 ## Referências
 
-- Contrato do Charter (estados, pré-condições): FORMATO §7.1
-- Layout do workspace: FORMATO §2
+- Contrato do Charter (estados, pré-condições): FORMAT §7.1
+- Layout do workspace: FORMAT §2
 
 ## Lê (upstream)
 
@@ -179,7 +179,7 @@ Se o usuário informar repositório existente ou que o workspace documenta algo
 já implementado (sistema vivo/em produção):
 
 1. **Registre TODOS os repositórios na §1 do charter** — tabela
-   `| Repo | Branch | HEAD |` (FORMATO §7.1: cada repo do produto com path,
+   `| Repo | Branch | HEAD |` (FORMAT §7.1: cada repo do produto com path,
    branch e HEAD; o HEAD é congelado na confirmação do charter)
 2. **Marque na §5** a opção **Documentação de sistema existente** (não
    greenfield puro)
@@ -243,7 +243,7 @@ Skill: cria MeuApp/PROJECT_CHARTER.md com a §1 listando MeuApp-API e MeuApp-FE
 ```yaml
 ---
 status: draft
-# campos opcionais conforme respostas (FORMATO §7.1):
+# campos opcionais conforme respostas (FORMAT §7.1):
 # legado: true
 # sistema_existente: true
 # compliance: true
@@ -268,7 +268,7 @@ status: draft
 | Repositórios | \`repo1\`, \`repo2\` — listar todos os repos do produto |
 | Data de início | DD/MM/AAAA |
 
-### §1.1 Repos (FORMATO §7.1 — HEAD congelado no `confirmed`)
+### §1.1 Repos (FORMAT §7.1 — HEAD congelado no `confirmed`)
 
 | Repo | Branch | HEAD |
 |---|---|---|
@@ -377,9 +377,27 @@ ask:
 |---------|---------------------|
 | Diretório é pasta-mãe de produtos | `<pasta-de-produtos>/<Produto>/` |
 | Diretório é repo de código (ex: `MeuApp-API/`) | `<pasta-de-produtos>/<Produto>/` (unificar com outros repos do mesmo produto) |
-| Diretório já é workspace de produto (tem `golmet.yaml`) | `<Produto>/` (raiz — charter na raiz do workspace, FORMATO §2) |
+| Diretório já é workspace de produto (tem `golmet.yaml`) | `<Produto>/` (raiz — charter na raiz do workspace, FORMAT §2) |
+| Diretório é container de organização (`golmet.yaml` com `container: true`) | `<container>/<Produto>/` — pergunte qual produto via `ask` (seção abaixo); assunto transversal NÃO é charter |
 
 > **Lembrete:** A unidade é o **produto**, não a camada. Se o diretório é `MeuApp-API/` mas existe `MeuApp-FE`, crie o workspace `MeuApp/`.
+
+### Contexto de container (org)
+
+Se o cwd é a raiz de um container de organização (golmet.yaml com
+`container: true` — FORMAT §2), detecte o contexto ANTES de gravar:
+
+- **(a) Assunto TRANSVERSAL da org** (não é um charter) →
+  NÃO é charter — registre o checkpoint transversal na zona de trabalho
+  do kit do container (FORMAT §2.3, M19):
+  `<container>/.golmet/meetings/` (território da base canônica
+  CONSTITUTION.md/INDEX.md é gm-governance/gm-init)
+- **(b) Assunto pertence a um workspace filho** → pergunte qual via `ask`
+  com a lista de `products:` do container e crie/edite o charter lá
+  (`<container>/<Produto>/PROJECT_CHARTER.md`)
+- **(c) Produto não declarado no `products:`** → pergunte via `ask`:
+  "declare o produto no container (`golmet init <produto> --into <container>`)
+  ou trate como transversal?" — nunca crie charter na raiz do container
 
 ### Nunca faça
 

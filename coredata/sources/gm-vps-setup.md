@@ -32,6 +32,7 @@ confirmação por fase).
 - Repos do projeto quando existirem localmente (`scripts/deploy.sh`,
   `scripts/setup-cloudflare-autostart.sh`, `docker-compose.prod.yml`) —
   para adaptar nomes de serviços, portas e hostnames ao projeto alvo
+- Sintaxe corrente de GitHub Actions/Compose/cloudflared/systemd — MCP context7
 
 ## Gera (downstream)
 

@@ -6,7 +6,7 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core"
 )
 
-// H1 — PEND nunca ancora Feature (FORMATO §9 / §7.3, invariante hard).
+// H1 — PEND nunca ancora Feature (FORMAT §9 / §7.3, invariante hard).
 func H1(ctx *Context) []core.GolmetError {
 	var out []core.GolmetError
 	for i := range ctx.Features {

@@ -1,5 +1,5 @@
 // Package git isola o spawn do git para o kit (HEAD de repo e resolução
-// de objetos por hash — FORMATO §5). Sem git no PATH o adapter degrada:
+// de objetos por hash — FORMAT §5). Sem git no PATH o adapter degrada:
 // Available()==false e o validate emite aviso S-level em vez de erro.
 package git
 
