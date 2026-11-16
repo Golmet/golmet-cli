@@ -112,7 +112,7 @@ jobs:
           mount_pkg() {
             local goos="$1" goarch="$2" pkgos="$3" pkgarch="$4" ext="$5"
             local dir="npm/${pkgos}-${pkgarch}"
-            cp "dist/golmet_${goos}_${goarch}" "${dir}/golmet${ext}"
+            cp "dist/golmet_${goos}_${goarch}${ext}" "${dir}/golmet${ext}"
             if [ "${goos}" != "windows" ]; then chmod 755 "${dir}/golmet${ext}"; fi
             node -e "
               const fs = require('fs');
