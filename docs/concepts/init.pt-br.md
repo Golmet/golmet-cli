@@ -35,5 +35,5 @@ comando: `golmet init --org` (declara a org, cria o `.gitignore`, registra
 no catálogo global) e `golmet init <produto> --into <container>` (entrega o
 produto no modelo de versionamento declarado pela org). O `--yes` pula a
 confirmação nos flags explícitos. A declaração completa dos caminhos está
-em [FORMAT §2](../../FORMAT.md) e na referência
+em [FORMAT §2](../../docs/FORMAT.md) e na referência
 ([commands.pt-br.md](../reference/commands.pt-br.md)).

@@ -13,5 +13,5 @@
 - [ ] `go test ./...` green locally
 - [ ] `gofmt` clean (CI enforces it)
 - [ ] New behavior covered by tests
-- [ ] `FORMAT.md` updated if this changes documented behavior
+- [ ] `docs/FORMAT.md` updated if this changes documented behavior
 - [ ] No real client/project names introduced (neutrality gate will block)

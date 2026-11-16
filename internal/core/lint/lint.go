@@ -1378,9 +1378,13 @@ func lintMermaidBlock(rep *Report, rel string, startLine int, body []string) {
 			firstWord+"\" (esperado ex.: flowchart, sequenceDiagram, erDiagram, stateDiagram, gantt, pie, mindmap, C4*)")
 		return // sem tipo válido, as demais heurísticas são ruído
 	}
-	// (2..5) corpo: aspas, delimitadores, setas, subgraph/end
+	// (2..5) corpo: aspas, setas, subgraph/end — os delimitadores são
+	// agregados POR BLOCO (o padrão ER de atributos abre `{` numa linha e
+	// fecha em outra: julgar por linha quebra sintaxe válida — falso-
+	// positivo real pego na 1ª execução sobre o gm-datamodel)
 	labelRe := regexp.MustCompile(`\|[^|\n]*\|`)
 	subgraphs, ends := 0, 0
+	balance := map[string]int{} // por tipo: aberturas - fechamentos no bloco
 	for j, raw := range body {
 		line := startLine + 1 + j
 		t := strings.TrimSpace(raw)
@@ -1398,21 +1402,25 @@ func lintMermaidBlock(rep *Report, rel string, startLine int, body []string) {
 			find(line, "aspas desbalanceadas na linha do diagrama ("+fmt.Sprint(n)+" aspas)")
 			continue
 		}
-		// delimitadores balanceados por linha (conteúdo dentro de aspas
-		// removido - pode conter [ ] ( ) legítimos em texto)
-		noStr := regexp.MustCompile(`"[^"]*"`).ReplaceAllString(t, "")
-		var dangle []string
-		for _, pair := range []struct{ open, close, name string }{
-			{"[", "]", "colchetes"}, {"(", ")", "parênteses"}, {"{", "}", "chaves"},
-		} {
-			if strings.Count(noStr, pair.open) != strings.Count(noStr, pair.close) {
-				dangle = append(dangle, pair.name)
-			}
+		// delimitadores: conteúdo dentro de aspas removido (pode conter
+		// [ ] ( ) legítimos em texto), agregado no saldo do bloco.
+		// erDiagram: os tokens de CARDINALIDADE (`}o--||`, `|o--o{`...)
+		// usam chaves/pipe como sintaxe consagrada - removidos antes de
+		// contar (falso-positivo real pego na 1ª execução sobre o
+		// gm-datamodel)
+		if firstWord == "erDiagram" {
+			cardRe := regexp.MustCompile(`(?:\}o|\}|\|o|\|\||o\||o\{|\|\{)\s*--\s*(?:\}o|\}|\|o|\|\||o\||o\{|\|\{)`)
+			t = cardRe.ReplaceAllString(t, "--")
 		}
-		if len(dangle) > 0 {
-			find(line, "delimitadores desbalanceados na linha do diagrama: "+
-				strings.Join(dangle, ", ")+" abertos sem fechamento (ou vice-versa)")
-			continue
+		noStr := regexp.MustCompile(`"[^"]*"`).ReplaceAllString(t, "")
+		for _, pair := range []struct {
+			open, close rune
+			name         string
+		}{
+			{'[', ']', "colchetes"}, {'(', ')', "parênteses"}, {'{', '}', "chaves"},
+		} {
+			balance[pair.name] += strings.Count(noStr, string(pair.open)) -
+				strings.Count(noStr, string(pair.close))
 		}
 		// seta com origem E destino (labels |...| removidos; sequenceDiagram
 		// ->> e construções exóticas NÃO validadas - anti-falso-positivo)
@@ -1440,6 +1448,18 @@ func lintMermaidBlock(rep *Report, rel string, startLine int, body []string) {
 			}
 			break // uma validação de seta por linha basta
 		}
+	}
+	// delimitadores: o SALDO do bloco inteiro (abertura e fechamento podem
+	// estar em linhas diferentes — padrão ER de atributos)
+	var dangle []string
+	for _, name := range []string{"colchetes", "parênteses", "chaves"} {
+		if balance[name] != 0 {
+			dangle = append(dangle, fmt.Sprintf("%s (%+d)", name, balance[name]))
+		}
+	}
+	if len(dangle) > 0 {
+		find(startLine+len(body), "delimitadores desbalanceados no diagrama: "+
+			strings.Join(dangle, ", "))
 	}
 	if subgraphs != ends {
 		find(startLine+len(body), "subgraph/end desbalanceados no diagrama ("+

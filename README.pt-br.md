@@ -94,7 +94,7 @@ A doc pública é escrita como uma **jornada** — comece por ela:
 | [docs/concepts/artefatos.pt-br.md](docs/concepts/artefatos.pt-br.md) | A arquitetura de artefatos: para que serve cada documento, o que o alimenta, o que ele alimenta |
 | [docs/recommended.pt-br.md](docs/recommended.pt-br.md) | O modo recomendado (Organização + FULL + Opencode) — e o que você perde sem ele |
 | [docs/concepts/](docs/concepts/) | Os conceitos em profundidade: organização e versionamento, camadas de conteúdo, profile, conhecimento, self-governing |
-| [FORMAT.md](FORMAT.md) | A spec normativa (v1) — o contrato que todo check enforça |
+| [docs/FORMAT.md](docs/FORMAT.md) | A spec normativa (v1) — o contrato que todo check enforça |
 | [docs/ARQUITETURA_GOLMET_V2.md](docs/ARQUITETURA_GOLMET_V2.md) | A arquitetura da plataforma (camadas, decision records DR-001..022) |
 | [docs/reference/](docs/reference/) | Referência: os 18 commands, as 14 tools MCP |
 | [CHANGELOG.md](CHANGELOG.md) | Onda por onda, com a motivação real |

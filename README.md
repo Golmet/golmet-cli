@@ -97,7 +97,7 @@ The public docs are written as a **journey** — start there:
 | [docs/concepts/artefatos.md](docs/concepts/artefatos.md) | The artifact architecture: what each document is for, what feeds it, what it feeds |
 | [docs/recommended.md](docs/recommended.md) | The recommended mode (Organization + FULL + Opencode) — and what you lose without it |
 | [docs/concepts/](docs/concepts/) | The concepts in depth: organization and versioning, content layers, profile, knowledge, self-governing |
-| [FORMAT.md](FORMAT.md) | The normative spec (v1) — the contract every check enforces |
+| [docs/FORMAT.md](docs/FORMAT.md) | The normative spec (v1) — the contract every check enforces |
 | [docs/ARQUITETURA_GOLMET_V2.md](docs/ARQUITETURA_GOLMET_V2.md) | The platform architecture (layers, decision records DR-001..022) |
 | [docs/reference/](docs/reference/) | Reference: the 18 commands, the 14 MCP tools |
 | [CHANGELOG.md](CHANGELOG.md) | Wave by wave, with the real-world motivation |
