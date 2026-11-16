@@ -1434,7 +1434,7 @@ func lintMermaidBlock(rep *Report, rel string, startLine int, body []string) {
 		noStr := regexp.MustCompile(`"[^"]*"`).ReplaceAllString(t, "")
 		for _, pair := range []struct {
 			open, close rune
-			name         string
+			name        string
 		}{
 			{'[', ']', "colchetes"}, {'(', ')', "parênteses"}, {'{', '}', "chaves"},
 		} {
