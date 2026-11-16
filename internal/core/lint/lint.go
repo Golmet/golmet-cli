@@ -1383,7 +1383,8 @@ func lintMermaidBlock(rep *Report, rel string, startLine int, body []string) {
 	// fecha em outra: julgar por linha quebra sintaxe válida — falso-
 	// positivo real pego na 1ª execução sobre o gm-datamodel)
 	labelRe := regexp.MustCompile(`\|[^|\n]*\|`)
-	subgraphs, ends := 0, 0
+	openerRe := regexp.MustCompile(`^(subgraph|alt|opt|loop|par|critical|break|rect)(\s|$)`)
+	openers, ends := 0, 0
 	balance := map[string]int{} // por tipo: aberturas - fechamentos no bloco
 	for j, raw := range body {
 		line := startLine + 1 + j
@@ -1391,8 +1392,8 @@ func lintMermaidBlock(rep *Report, rel string, startLine int, body []string) {
 		if t == "" || strings.HasPrefix(t, "%%") {
 			continue
 		}
-		if strings.HasPrefix(t, "subgraph") {
-			subgraphs++
+		if openerRe.MatchString(t) {
+			openers++
 		}
 		if t == "end" {
 			ends++
@@ -1461,9 +1462,11 @@ func lintMermaidBlock(rep *Report, rel string, startLine int, body []string) {
 		find(startLine+len(body), "delimitadores desbalanceados no diagrama: "+
 			strings.Join(dangle, ", "))
 	}
-	if subgraphs != ends {
-		find(startLine+len(body), "subgraph/end desbalanceados no diagrama ("+
-			fmt.Sprint(subgraphs)+" subgraph / "+fmt.Sprint(ends)+" end)")
+	// openers (subgraph no flowchart; alt/opt/loop/par/critical/break/rect
+	// no sequenceDiagram) vs end — o par universal do Mermaid
+	if openers != ends {
+		find(startLine+len(body), "aberturas/end desbalanceados no diagrama ("+
+			fmt.Sprint(openers)+" opener / "+fmt.Sprint(ends)+" end)")
 	}
 }
 

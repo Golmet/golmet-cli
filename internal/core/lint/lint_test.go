@@ -856,6 +856,15 @@ func TestL11Mermaid(t *testing.T) {
 	if got := l11(findings("```mermaid\nsequenceDiagram\n  Alice->>Bob: oi\n```\n")); len(got) != 0 {
 		t.Fatalf("sequenceDiagram válido flagado: %+v", got)
 	}
+	// tolerado: sequenceDiagram com blocos alt...end (o opener par com o end)
+	if got := l11(findings("```mermaid\nsequenceDiagram\n  A->>B: ok\n  alt contradição\n    A-->>B: 400\n  end\n```\n")); len(got) != 0 {
+		t.Fatalf("sequenceDiagram alt/end válido flagado: %+v", got)
+	}
+	// tolerado: erDiagram com attribute-blocks multilinha E cardinalidade
+	// }o--|| (falso-positivo real pego na 1ª execução sobre o gm-datamodel)
+	if got := l11(findings("```mermaid\nerDiagram\n  TABELA {\n    string id PK\n  }\n  TABELA }o--|| TABELA2 : \"fk\"\n```\n")); len(got) != 0 {
+		t.Fatalf("erDiagram válido flagado: %+v", got)
+	}
 	if got := l11(findings("```mermaid\nC4Context\n  Person(user, \"Usuário\")\n```\n")); len(got) != 0 {
 		t.Fatalf("C4 válido flagado: %+v", got)
 	}

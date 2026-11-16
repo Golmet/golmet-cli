@@ -40,126 +40,9 @@ O FORMAT governa apenas o **estado normativo** do produto: o que foi decidido e 
                                     #   por micro-contexto (specs/data_model/ + INDEX.md — §7.7.1)
 ```
 
-**O `golmet init` sem flags e sem `--yes` é SEMPRE interativo** (M22) —
-pergunta o que inicializar (**Organização** — termo do usuário; "container"
-permanece o termo interno do `golmet.yaml`/FORMAT — / workspace-produto em
-Organização existente / workspace-produto raiz livre) e **confirma antes de
-criar** (nome/destino exibidos); nunca cria no cwd silenciosamente. A
-escolha é **wizard visual com setas quando TTY** (o mesmo padrão do wizard
-do install — `◆` · `↑/↓ move · enter confirma · esc cancela`; itens com
-**detail curto ao lado** e a **descrição contextual do item ativo**
-embaixo do frame, que muda com o cursor — o mesmo mecanismo do install;
-SEM jargão de implementação no menu: golmet.yaml/container: true/
-CONSTITUTION.md são consequências da escolha, exibidas no resumo de
-confirmação) · **numerado como fallback** (`--plain` ou terminal sem VT).
-Campos de texto e confirmação
-final são linha-a-linha (o estilo dos campos livres do install). Scripts
-e CI exigem flags explícitos (`--org` ou `--into <container>`) com `--yes`;
-sem TTY e sem flags → fail-closed com o comando a rodar (exit 2, nada
-escrito). Detecção de Organização existente: o dir PAI do cwd quando ele é
-container (golmet.yaml com `container: true`) vira a sugestão do wizard —
-o disco NÃO é globado (o operador aponta caminhos explícitos). Caso real
-que motivou: init bare no HOME criou um workspace misturado com a
-instalação global do kit (`~/.golmet/tools/` — o codegraph do kit, 333 MB,
-quase apagado junto); o `~/.golmet/` é do kit GLOBAL — **o init nunca cria
-na raiz do home** (guarda no scaffold; subpastas do home são legítimas).
-
-**Catálogo global de organizações (M22.1).** `~/.golmet/organizations.json`
-— a zona global do kit (junto de skills/ e tools/) — lista as organizações
-que o kit criou/adotou: `{organizations: [{name, path, created}]}`. O
-invariante: **o golmet.yaml do container é a fonte da verdade da org
-(estrutura + products); o registro global é o catálogo para o wizard — o
-kit nunca cria organização sem registrar, e organizações fora do kit
-entram no catálogo ao serem adotadas** (`golmet init --org` sobre dir
-existente: idempotência do scaffold intacta, registro reporta "(adoção)").
-Unicidade: mesmo nome com o MESMO path = idempotente; mesmo nome com path
-DIFERENTE = erro claro ANTES de criar ("use outro nome ou remova a
-entrada"). O wizard da opção "Workspace-produto dentro de uma
-Organização existente" lista as organizações registradas com o path VIVO
-(path morto = pulada com aviso discreto), "Outra — caminho manual" por
-último; catálogo vazio → direto no caminho manual com o aviso de criação.
-O caminho manual pede **"Caminho completo da pasta que contém o
-golmet.yaml da Organização"** com **exemplo PLACEHOLDER genérico**
-(`C:\Projetos\MinhaOrganizacao`) — **NUNCA um path do catálogo** (M24 —
-privacidade: o exemplo do prompt não expõe username/estrutura de pastas
-do usuário; o catálogo alimenta APENAS a lista de seleção e o aviso de
-paths mortos, onde o path é funcional), aceita absoluto ou relativo
-ao cwd (aspas e trailing slashes normalizados — o absoluto resolvido
-aparece na confirmação) e **valida com re-pergunta**: pasta inexistente →
-"a pasta não existe — verifique o caminho"; sem golmet.yaml → "a pasta
-não é uma Organização declarada — rode golmet init --org nela, ou informe
-outra"; golmet.yaml sem `container: true` → "essa pasta é um workspace-
-produto, não uma Organização"; `esc` cancela o wizard inteiro.
-
-**A convenção bilingue da doc pública (M33).** O idioma base é
-**ENGLISH** (o arquivo sem sufixo — o padrão internacional, consistente com
-o README.md EN); a tradução PT-BR usa o sufixo **`.pt-br.md`**. Cada doc
-público carrega o **badge de alternância no topo**
-(`English | Português (Brasil)`) com os links cruzados (o EN linka o par
-`.pt-br.md` e vice-versa; o README raiz idem). O conteúdo das versões PT é
-PT-BR natural (não tradução de robô). O FORMAT.md e o
-`docs/ARQUITETURA_GOLMET_V2.md` são specs técnicas integrais em PT — a
-tradução EN integral é **onda própria** (a escala da spec; o
-`docs/reference/format.md` é o apontador com o mapa de seções EN enquanto
-não existe). Os cross-links internos da doc linkam o MESMO idioma (o doc
-PT linka pares `.pt-br.md`; o EN linka os bases). O sync da árvore é
-vigiado pelo teste (`internal/cli/docs_sync_test.go` — par PT↔EN + badges).
-
-**Documentação de produto — FORA da DAG (M30).** A documentação é OUTPUT
-pós-release, não requisito: a doc pública do KIT vive no repo do kit
-(README rico + `docs/concepts/`, `docs/getting-started/`,
-`docs/reference/` — o site público renderiza depois, o repo é a fonte); a
-doc de PRODUTO pós-release vive no produto (`docs/howto/` — o
-`gm-howto` roda por design quando uma feature é marcada done; modo de erro
-continue — não bloqueia). A DAG/`validate` NÃO vareja documentação: o
-que é requisito de verdade entra como RN normal (a doc que DEVE existir
-é definida em requisito, não em doc); a doc não gera findings do
-validate. O lint do KIT vigia a DOC DO KIT (L1: refs mortas; L6: `gm-*`
-citados que não existem no registry — já vigente). A referência pública é
-manual sincronizada com a registry (commands/tools), vigiada pelo lint L6
-e pelo teste de sincronismo do repo.
-
-**Navegação multi-step do wizard do init (M27):** o wizard navega —**enter avança; ← no texto VAZIO volta ao passo anterior** (o valor
-anterior do passo fica **pré-ecado e editável** — o raw editor recebe o
-initial; com conteúdo a seta é ignorada, o backspace apaga); **`n` no
-confirm volta a editar** (não cancela — ← idem); o **primeiro passo** (a
-escolha) não tem anterior — ← nele é ignorado; **esc/ctrl-c cancelam
-tudo**; nada é criado antes da confirmação final (o invariante se
-mantém); a pré-checagem de duplicado do catálogo acontece antes de
-avançar e voltar não a re-dispara até o passo ser alcançado de novo. A
-navegação é de TTY (raw); no fallback cooked o ← não é entregável pelo
-console — o back acontece pelo `n` do confirm (o valor anterior é
-mantido com ENTER). O peek pós-ESC do menu (runPickTTY) usa a mesma
-janela curta do editor — o ESC sozinho responde imediatamente.
-
-**O confirm-frame (M28 — o padrão visual do install, em todos os wizards
-de linha):** o frame ◆ fica **isolado embaixo do resumo** (linha em
-branco entre eles — nunca colado) com o hint entre parênteses, e
-**re-renderiza a cada re-pergunta**. O input do confirm do init:
-**ENTER confirma e cria** (o default — a ação principal sem letra);
-**`n`/← voltam a editar** (M27); **esc/ctrl-c cancelam tudo**; **`s`
-confirma como ALIAS** (compat com quem digita s); qualquer outra resposta
-= re-pergunta. install: ENTER confirma, n/esc cancelam (não há passo de
-edição); uninstall: a remoção é destrutiva — o default permanece NÃO
-(`s` confirma; ENTER/n/esc cancelam, declarado no hint).
-
-**Padrão único de cancelamento dos wizards do CLI (M24/25/26 — init,install, uninstall; FORMAT §2/§9):** o modo RAW (o padrão quando há TTY+VT
-— o wizard do init INTEIRO é raw: menus e campos) entrega **ESC de
-teclado e CTRL+C como bytes** — cancelam em QUALQUER passo, o ESC nunca
-vaza como caractere no input (o console captura o ESC em modo COOKED — é
-o comando de limpar-a-linha do console; a leitura nunca o vê). No
-fallback COOKED (sem VT/`--plain`): o cancelamento é **CTRL+C** (a
-leitura retorna EOF → cancelado limpo) **ou a linha literal "esc"** — o
-ESC de teclado NÃO é entregável em cooked (console do Windows); a linha
-`\x1b` vaza só em terminais que a entregam (tratada igualmente).
-Cancelamento limpo = *"cancelado — nada foi criado | aplicado |
-removido"*, exit 0, NUNCA a mensagem de script/CI no meio de uma sessão
-interativa; EOF verdadeiro FORA de TTY (script/CI) = a mensagem de script
-com o comando a rodar. Cancelamento em qualquer passo = nada modificado
-(os wizards só criam após a confirmação final). O padrão vive em helpers
-únicos (`readWizardLine` cooked + `rawEditLine` raw — fonte única dos
-wizards).
-
+O `golmet init` cria esse layout **nunca silenciosamente** - pergunta o que
+inicializar, confirma antes de criar e, em scripts, exige flags explicitos
+(§2.4).
 ### 2.1 Camadas de conteúdo do GOLMET (DR-021)
 
 O conteúdo instalado pelo kit segue quatro camadas, da mais fraca para a mais
@@ -346,6 +229,124 @@ TRABALHO do kit, não conteúdo da organização.
   ausentes = warning (o stub vem do `golmet init --org` — idempotente).
 - **Dir desconhecido na raiz** = warning (mesma política do config §9.1).
 
+### 2.4 Iniciar um workspace — `golmet init`
+
+O `golmet init` cria um workspace **nunca silenciosamente**: pergunta o que
+inicializar e **confirma antes de criar** (nome e destino exibidos; nada é
+escrito antes da confirmação final).
+
+**O que pode inicializar (3 opções):**
+
+1. **Organização** (termo do usuário; internamente `golmet.yaml` com
+   `container: true` — §2.3).
+2. **Workspace-produto dentro de uma Organização existente.**
+3. **Workspace-produto raiz livre.**
+
+**Wizard.** Visual com setas quando TTY (`↑/↓ move · enter confirma · esc
+cancela`; itens com detail curto ao lado e a descrição contextual do item
+ativo embaixo do frame — o mesmo padrão do install); numerado como fallback
+(`--plain` ou terminal sem VT). Campos de texto e confirmação final são
+linha-a-linha. **Sem jargão de implementação no menu** — `golmet.yaml`/
+`container: true`/`CONSTITUTION.md` são consequências da escolha, exibidas
+no resumo de confirmação.
+
+**Scripts e CI** exigem flags explícitos (`--org` ou `--into <container>`)
+com `--yes`; sem TTY e sem flags → fail-closed com o comando a rodar
+(exit 2, nada escrito).
+
+**Guardas:**
+
+- Detecção de Organização existente: o diretório **pai** do cwd, quando é
+  container, vira a sugestão do wizard — o disco **não** é globado (o
+  operador aponta caminhos explícitos).
+- **O init nunca cria na raiz do home** — `~/.golmet/` é a zona global do
+  kit (o caso real que motivou: um init bare no HOME criou um workspace
+  misturado com a instalação global — os 333 MB do codegraph quase apagados
+  junto; subpastas do home são legítimas).
+
+### 2.5 Catálogo global de organizações
+
+`~/.golmet/organizations.json` — a zona global do kit (junto de `skills/`
+e `tools/`) — lista as organizações que o kit criou ou adotou:
+`{organizations: [{name, path, created}]}`.
+
+- **Fonte da verdade**: o `golmet.yaml` do container (estrutura + products).
+  O catálogo serve ao wizard. O kit nunca cria organização sem registrar;
+  organizações fora do kit entram no catálogo **por adoção** (`golmet init
+  --org` sobre diretório existente — reporta "(adoção)", idempotência do
+  scaffold intacta).
+- **Unicidade**: mesmo nome + mesmo path = idempotente; mesmo nome + path
+  diferente = erro claro **antes** de criar ("use outro nome ou remova a
+  entrada").
+- **Privacidade do prompt (M24)**: o exemplo do caminho manual é placeholder
+  genérico (`C:\Projetos\MinhaOrganizacao`) — **nunca** um path do catálogo
+  (não expõe username/estrutura de pastas do usuário). O catálogo alimenta
+  apenas a lista de seleção e o aviso de paths mortos, onde o path é
+  funcional.
+- O wizard da opção "dentro de uma Organização" lista as organizações com o
+  path **vivo** (path morto = pulado com aviso discreto) e "Outra — caminho
+  manual" por último; catálogo vazio → direto ao caminho manual com aviso de
+  criação. O caminho manual **valida com re-pergunta**: pasta inexistente →
+  "verifique o caminho"; sem `golmet.yaml` → "não é uma Organização
+  declarada — rode `golmet init --org` nela"; `golmet.yaml` sem
+  `container: true` → "é um workspace-produto, não uma Organização". `esc`
+  cancela o wizard inteiro.
+
+### 2.6 Documentação de produto — fora da DAG
+
+A documentação é **output pós-release, não requisito**:
+
+- A doc pública do **kit** vive no repo do kit (README rico +
+  `docs/concepts/`, `docs/getting-started/`, `docs/reference/` — o site
+  público renderiza depois; o repo é a fonte).
+- A doc de **produto** pós-release vive no produto (`docs/howto/` — o
+  `gm-howto` roda por design quando uma feature é marcada done; modo de
+  erro continue — não bloqueia).
+- A DAG/`validate` **não varejam documentação**: o que é requisito de
+  verdade entra como RN normal (a doc que DEVE existir é definida em
+  requisito); a doc não gera findings do validate.
+- O lint do kit vigia a **doc do kit** (L1 refs mortas; L6 `gm-*` citados
+  que não existem no registry). A referência pública
+  (`docs/reference/commands` + `tools`) é sincronizada com o registry e
+  vigiada pelo L6 + teste de sincronismo.
+
+### 2.7 Convenção bilíngue da doc pública
+
+O idioma base é **inglês** (o arquivo sem sufixo — o padrão internacional,
+consistente com o `README.md` EN); a tradução PT-BR usa o sufixo
+**`.pt-br.md`**. Cada doc público carrega o **badge de alternância no topo**
+(`English | Português (Brasil)`) com os links cruzados; o conteúdo PT é
+PT-BR natural (não tradução de robô). O FORMAT e o
+`docs/ARQUITETURA_GOLMET_V2.md` são specs técnicas integrais em PT — a
+tradução EN integral é **onda própria** (a escala da spec; o
+`docs/reference/format.md` aponta o mapa de seções EN enquanto não existe).
+Cross-links internos linkam o **mesmo idioma** (o doc PT linka pares
+`.pt-br.md`; o EN linka os bases). O sync da árvore é vigiado por teste
+(`internal/cli/docs_sync_test.go` — par PT↔EN + badges).
+
+### 2.8 UX dos wizards do CLI (padrão único — init, install, uninstall)
+
+**Confirm-frame (M28).** O frame `?` fica **isolado embaixo do resumo**
+(linha em branco entre eles — nunca colado) e **re-renderiza a cada
+re-pergunta**. Comportamento por comando:
+
+| Comando | ENTER | `n` | `s` | esc/ctrl-c |
+|---|---|---|---|---|
+| **init** | confirma e cria (default) | voltam a editar (M27) | confirma como alias | cancelam tudo |
+| **install** | confirma | cancelam | — | cancelam |
+| **uninstall** | cancela (destrutivo) | cancelam | confirma | cancelam |
+
+**Cancelamento único (M24/25/26).** No modo **RAW** (TTY+VT — o wizard do
+init inteiro é raw: menus e campos), **esc de teclado e CTRL+C cancelam em
+qualquer passo** (o esc nunca vaza como caractere no input). No fallback
+**COOKED** (sem VT / `--plain`): o cancelamento é **CTRL+C** (a leitura
+retorna EOF = cancelado limpo) **ou** a linha literal `esc` (o esc de
+teclado não é entregável em cooked no console do Windows). Cancelamento
+limpo = *"cancelado — nada foi criado | aplicado | removido"*, exit 0;
+EOF verdadeiro fora de TTY = a mensagem de script com o comando a rodar.
+Cancelar em qualquer passo = **nada modificado** (os wizards só criam após
+a confirmação final). O padrão vive em helpers únicos (`readWizardLine`
+cooked + `rawEditLine` raw — fonte única dos wizards).
 ## 3. `golmet.yaml`
 
 ```yaml
