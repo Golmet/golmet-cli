@@ -42,8 +42,24 @@ func TestDocsReferenceCoversAllCommands(t *testing.T) {
 }
 
 // As 13 tools gm_* do MCP estão citadas em docs/reference/tools.md.
-func TestDocsReferenceCoversAllMCPTools(t *testing.T) {
-	doc := readDocRef(t, toolsRef)
+// TestDocsReferenceCoversAllLintChecks trava a referência das camadas do
+// lint aos checks implementados: docs/reference/lint.pt-br.md cita todos os
+// IDs (L1, L3-L13 + L7-size) — camada nova sem doc = falha (a doc anda com
+// o código, não atrás).
+func TestDocsReferenceCoversAllLintChecks(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "docs", "reference", "lint.pt-br.md"))
+	if err != nil {
+		t.Fatalf("docs/reference/lint.pt-br.md ilegível: %v", err)
+	}
+	content := string(data)
+	for _, id := range []string{"L1", "L3", "L4", "L5", "L6", "L7", "L7-size", "L8", "L9", "L10", "L11", "L12", "L13"} {
+		if !strings.Contains(content, id) {
+			t.Errorf("docs/reference/lint.pt-br.md não cita o check %s — a doc de referência anda com o código", id)
+		}
+	}
+}
+
+func TestDocsReferenceCoversAllMCPTools(t *testing.T) {	doc := readDocRef(t, toolsRef)
 	for _, tool := range []string{
 		"gm_validate", "gm_doctor", "gm_lint", "gm_status", "gm_next",
 		"gm_index", "gm_update", "gm_pack_update", "gm_pack_publish",
