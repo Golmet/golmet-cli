@@ -1,4 +1,6 @@
-# INSTALL_COMPATIBILITY — Matriz MCP × Engine (v0.1)
+<p align="center">English | <a href="compatibility.pt-br.md">Português (Brasil)</a></p>
+
+# INSTALL_COMPATIBILITY - Matriz MCP × Engine (v0.1)
 
 > Matriz REAL de compatibilidade do `golmet install`, verificada célula a
 > célula contra a implementação (`internal/core/install/`) e TRAVADA por

@@ -10,7 +10,7 @@ import (
 
 func execLookPathImpl(s string) (string, error) { return exec.LookPath(s) }
 
-// Células da matriz docs/INSTALL_COMPATIBILITY.md que faltavam travar:
+// Células da matriz docs/reference/compatibility.md que faltavam travar:
 
 // opencode remote: args da CLI com --url (wire) + pós-verify.
 func TestOpenCodeRemoteURLWire(t *testing.T) {
@@ -129,7 +129,7 @@ func TestOpenCodeSkillsWithoutCLI(t *testing.T) {
 	}
 }
 
-// Matriz completa 7 engines × {essencial, completo} (docs/INSTALL_COMPATIBILITY.md):
+// Matriz completa 7 engines × {essencial, completo} (docs/reference/compatibility.md):
 // essencial (via Run sem Full) vale para TODOS os engines; completo vale
 // APENAS para os engines com skills nativas (opencode, claude-code —
 // materialização no config root); engines sem skills nativas falham

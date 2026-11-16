@@ -40,7 +40,7 @@ maturidade acumulada via `golmet pack publish`. Dentro dele, três
 prateleiras com escritores canônicos: **`rules/`** (normas com gatilho de
 leitura), **`domains/`** (fundamentos de domínio de fontes primárias) e
 **`accumulation/`** (patterns, metrics, nuances). O ferramental do pack
-(skills/agents) é materializado no engine; os dados são lidos in-place.
+(skills/agents) é materializado no engine; os dados são lidos localmente.
 Veja [knowledge.md](knowledge.pt-br.md).
 
 ## 5. Organização — governança empresarial
