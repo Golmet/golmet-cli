@@ -1,0 +1,74 @@
+---
+name: "Spec UI - 3 atores com telas próprias e RNs por ator"
+description: >
+  REQUIREMENTS com RN-001 (técnico), RN-002 (supervisor) e RN-003 (cliente)
+  + API_CONTRACTS. A spec de UI deve trazer 3 atores, cada um com suas
+  telas e RNs próprias, formulários com contrato por campo e fluxo de
+  navegação consolidado.
+inputs_required: [REQUIREMENTS.md, API_CONTRACTS.md]
+
+checks:
+  - type: file_exists
+    path: "specs/UI_SPEC.md"
+    severity: error
+
+  - type: section_exists
+    path: "specs/UI_SPEC.md"
+    section: "## 1. Atores e Telas"
+    severity: error
+
+  - type: section_exists
+    path: "specs/UI_SPEC.md"
+    section: "## 2. Telas"
+    severity: error
+
+  - type: contains
+    path: "specs/UI_SPEC.md"
+    pattern: "### Técnico de Campo"
+    severity: error
+
+  - type: contains
+    path: "specs/UI_SPEC.md"
+    pattern: "### Supervisor"
+    severity: error
+
+  - type: contains
+    path: "specs/UI_SPEC.md"
+    pattern: "### Cliente"
+    severity: error
+
+  - type: contains
+    path: "specs/UI_SPEC.md"
+    pattern: "RN-001"
+    severity: error
+
+  - type: contains
+    path: "specs/UI_SPEC.md"
+    pattern: "RN-002"
+    severity: error
+
+  - type: contains
+    path: "specs/UI_SPEC.md"
+    pattern: "RN-003"
+    severity: error
+
+  - type: cross_ref
+    path: "specs/UI_SPEC.md"
+    pattern: "RN-(\\d+)"
+    sources: ["REQUIREMENTS.md"]
+    severity: error
+
+  - type: frontmatter_valid
+    path: "specs/UI_SPEC.md"
+    severity: error
+
+  - type: no_todos
+    path: "specs/UI_SPEC.md"
+    patterns: ["TODO", "FIXME"]
+    severity: error
+
+  - type: line_count_range
+    path: "specs/UI_SPEC.md"
+    min: 40
+    max: 250
+    severity: warning

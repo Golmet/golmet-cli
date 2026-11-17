@@ -1,0 +1,65 @@
+---
+name: "Scope Agreement - CR pendente aparece como mudança em andamento, nunca como escopo"
+description: >
+  REQUIREMENTS com RN-001/RN-002 confirmadas + CR-001 PENDING no
+  CHANGE_REQUESTS. O acordo deve listar as entregas confirmadas em
+  linguagem de negócio, o CR pendente como mudança em andamento (com a
+  situação explícita de aprovação pendente) e a rastreabilidade com IDs -
+  sem vocabulário EARS.
+inputs_required: [REQUIREMENTS.md]
+
+checks:
+  - type: file_exists
+    path: "delivery/SCOPE_AGREEMENT.md"
+    severity: error
+
+  - type: contains
+    path: "delivery/SCOPE_AGREEMENT.md"
+    pattern: "saldo"
+    severity: error
+
+  - type: contains
+    path: "delivery/SCOPE_AGREEMENT.md"
+    pattern: "Mudanças em Andamento"
+    severity: error
+
+  - type: contains
+    path: "delivery/SCOPE_AGREEMENT.md"
+    pattern: "Aprovação pendente"
+    severity: error
+
+  - type: contains
+    path: "delivery/SCOPE_AGREEMENT.md"
+    pattern: "NÃO está no escopo desta fase"
+    severity: error
+
+  - type: contains
+    path: "delivery/SCOPE_AGREEMENT.md"
+    pattern: "Rastreamento"
+    severity: error
+
+  - type: contains
+    path: "delivery/SCOPE_AGREEMENT.md"
+    pattern: "CR-001"
+    severity: warning
+
+  - type: not_contains
+    path: "delivery/SCOPE_AGREEMENT.md"
+    pattern: "EARS"
+    severity: warning
+
+  - type: cross_ref
+    path: "delivery/SCOPE_AGREEMENT.md"
+    pattern: "RN-(\\d+)"
+    sources: ["REQUIREMENTS.md"]
+    severity: error
+
+  - type: frontmatter_valid
+    path: "delivery/SCOPE_AGREEMENT.md"
+    severity: error
+
+  - type: line_count_range
+    path: "delivery/SCOPE_AGREEMENT.md"
+    min: 25
+    max: 150
+    severity: warning

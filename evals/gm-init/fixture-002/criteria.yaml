@@ -1,0 +1,78 @@
+---
+name: "Init simplificado - sistema existente nasce com repos indefinido e nota de legado"
+description: >
+  Workspace com PROJECT_CHARTER.md confirmado em MODO SIMPLIFICADO
+  (legado: true, sistema_existente: true, sem tabela de repos). gm-init
+  deve criar CONSTITUTION.md e INDEX.md registrando o projeto com a
+  coluna Repos indefinida (—), a nota de modo simplificado sob a seção
+  Projetos e o princípio de legado explícito. Charter é upstream - nunca
+  editado.
+inputs_required: [PROJECT_CHARTER.md]
+
+checks:
+  - type: file_exists
+    path: "CONSTITUTION.md"
+    severity: error
+
+  - type: file_exists
+    path: "INDEX.md"
+    severity: error
+
+  - type: file_exists
+    path: "PROJECT_CHARTER.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "CONSTITUTION.md"
+    severity: error
+
+  - type: section_exists
+    path: "CONSTITUTION.md"
+    section: "## 6. Projetos"
+    severity: error
+
+  - type: section_exists
+    path: "CONSTITUTION.md"
+    section: "## 9. Organização de Delivery e Análise"
+    severity: error
+
+  - type: contains
+    path: "CONSTITUTION.md"
+    pattern: "| PortalCliente | — |"
+    severity: error
+
+  - type: contains
+    path: "CONSTITUTION.md"
+    pattern: "Modo simplificado"
+    severity: error
+
+  - type: contains
+    path: "CONSTITUTION.md"
+    pattern: "LEGACY_CONTEXT.md"
+    severity: error
+
+  - type: contains
+    path: "CONSTITUTION.md"
+    pattern: "delivery_style: monthly"
+    severity: error
+
+  - type: contains
+    path: "INDEX.md"
+    pattern: "| PortalCliente | `./` (raiz do repositório) | — | draft |"
+    severity: error
+
+  - type: section_exists
+    path: "INDEX.md"
+    section: "## Desambiguação"
+    severity: error
+
+  - type: no_todos
+    path: "CONSTITUTION.md"
+    patterns: ["TODO", "FIXME"]
+    severity: error
+
+  - type: line_count_range
+    path: "CONSTITUTION.md"
+    min: 60
+    max: 220
+    severity: warning

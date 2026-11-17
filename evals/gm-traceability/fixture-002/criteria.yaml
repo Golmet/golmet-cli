@@ -1,0 +1,77 @@
+---
+name: "Traceability - workspace coberto fecha com zero gaps e CR implementado"
+description: >
+  VARIANTE LIMPA: REQUIREMENTS com RN-001/RN-002, ambos os downstreams
+  esperados cobrindo as duas RNs, e CR-001 IMPLEMENTADO com reflexo
+  declarado. A matriz fecha completa (status completo por RN), a seção de
+  gaps declara explicitamente que nenhum foi detectado e o CR aparece como
+  implementado com o reflexo citado.
+inputs_required: [REQUIREMENTS.md, specs/DATA_MODEL.md, specs/API_CONTRACTS.md]
+
+checks:
+  - type: file_exists
+    path: "quality/TRACEABILITY.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "quality/TRACEABILITY.md"
+    severity: error
+
+  - type: section_exists
+    path: "quality/TRACEABILITY.md"
+    section: "## 1. Matriz RN vs Downstreams"
+    severity: error
+
+  - type: section_exists
+    path: "quality/TRACEABILITY.md"
+    section: "## 2. Gaps Detectados"
+    severity: error
+
+  - type: section_exists
+    path: "quality/TRACEABILITY.md"
+    section: "## 3. CRs Aprovados vs Implementados"
+    severity: error
+
+  - type: section_order
+    path: "quality/TRACEABILITY.md"
+    sections:
+      - "## 1. Matriz RN vs Downstreams"
+      - "## 2. Gaps Detectados"
+      - "## 3. CRs Aprovados vs Implementados"
+    severity: error
+
+  - type: contains
+    path: "quality/TRACEABILITY.md"
+    pattern: "Nenhum gap detectado"
+    severity: error
+
+  - type: contains
+    path: "quality/TRACEABILITY.md"
+    pattern: "| RN-001 | ✓ | ✓ |"
+    severity: error
+
+  - type: contains
+    path: "quality/TRACEABILITY.md"
+    pattern: "| RN-002 | ✓ | ✓ |"
+    severity: error
+
+  - type: contains
+    path: "quality/TRACEABILITY.md"
+    pattern: "CR-001"
+    severity: error
+
+  - type: contains
+    path: "quality/TRACEABILITY.md"
+    pattern: "implemented"
+    severity: error
+
+  - type: no_todos
+    path: "quality/TRACEABILITY.md"
+    patterns: ["TODO", "FIXME"]
+    severity: error
+
+  - type: line_count_range
+    path: "quality/TRACEABILITY.md"
+    min: 20
+    max: 120
+    severity: warning

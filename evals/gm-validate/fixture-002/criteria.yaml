@@ -1,0 +1,69 @@
+---
+name: "Validate - CR aprovado sem reflexo downstream gera violação hard e FAIL"
+description: >
+  POSITIVA (caso CR): workspace FORMAT com CR-001 APPROVED no REQUIREMENTS
+  ("exibir a data da última atualização") e specs/DATA_MODEL.md que cobre a
+  RN-001 mas NÃO reflete o CR (nenhum campo de atualização). A gm-validate
+  roda o pré-scan determinístico, NÃO corrige a prosa e congela
+  quality/VALIDATION_REPORT.md com ok=false, status FAIL e a violação hard
+  citando o CR e o downstream faltante. Coerência: o CR segue aprovado no
+  workspace pós-skill (checagem de intactidão).
+inputs_required: [REQUIREMENTS.md, golmet.yaml]
+
+checks:
+  # --- o relatório existe e tem a estrutura da skill ---
+  - type: file_exists
+    path: "quality/VALIDATION_REPORT.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "quality/VALIDATION_REPORT.md"
+    severity: error
+
+  - type: section_exists
+    path: "quality/VALIDATION_REPORT.md"
+    section: "## 1. Resumo"
+    severity: error
+
+  - type: section_exists
+    path: "quality/VALIDATION_REPORT.md"
+    section: "## 2. Violações"
+    severity: error
+
+  # --- a violação do CR aparece no relatório ---
+  - type: contains
+    path: "quality/VALIDATION_REPORT.md"
+    pattern: "CR-001 aprovado sem reflexo downstream"
+    severity: error
+
+  - type: contains
+    path: "quality/VALIDATION_REPORT.md"
+    pattern: "specs/DATA_MODEL.md"
+    severity: error
+
+  - type: contains
+    path: "quality/VALIDATION_REPORT.md"
+    pattern: "FAIL"
+    severity: error
+
+  # --- coerência: o CR segue aprovado no workspace (intactidão) ---
+  - type: contains
+    path: "REQUIREMENTS.md"
+    pattern: "approved"
+    severity: error
+
+  - type: not_contains
+    path: "specs/DATA_MODEL.md"
+    pattern: "ULTIMA_ATUALIZACAO"
+    severity: error
+
+  - type: no_todos
+    path: "quality/VALIDATION_REPORT.md"
+    patterns: ["TODO", "FIXME"]
+    severity: error
+
+  - type: line_count_range
+    path: "quality/VALIDATION_REPORT.md"
+    min: 15
+    max: 120
+    severity: warning

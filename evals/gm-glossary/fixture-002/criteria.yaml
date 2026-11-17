@@ -1,0 +1,56 @@
+---
+mode: manual
+---
+name: "Glossary - definição conflitante abre ask, nunca sobrescreve o termo vigente"
+description: >
+  NEGATIVO: o glossário de negócio JÁ EXISTE no input com "Crédito"
+  definido; o REQUIREMENTS da fase traz definição CONFLICTANTE para o
+  mesmo termo + um termo novo (Custeio). A skill adiciona o termo novo,
+  PRESERVA a definição vigente do termo existente e abre a seção de
+  conflitos pendentes de ask - nunca sobrescreve silenciosamente.
+inputs_required: [REQUIREMENTS.md]
+
+checks:
+  - type: file_exists
+    path: "glossaries/BUSINESS_GLOSSARY.md"
+    severity: error
+
+  - type: contains
+    path: "glossaries/BUSINESS_GLOSSARY.md"
+    pattern: "Valor total financiado ao cooperado para a atividade agropecuária"
+    severity: error
+
+  - type: contains
+    path: "glossaries/BUSINESS_GLOSSARY.md"
+    pattern: "Custeio"
+    severity: error
+
+  - type: contains
+    path: "glossaries/BUSINESS_GLOSSARY.md"
+    pattern: "Conflitos pendentes de ask"
+    severity: error
+
+  - type: contains
+    path: "glossaries/BUSINESS_GLOSSARY.md"
+    pattern: "nunca sobrescrever"
+    severity: error
+
+  - type: section_exists
+    path: "glossaries/BUSINESS_GLOSSARY.md"
+    section: "## Conflitos pendentes de ask"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "glossaries/BUSINESS_GLOSSARY.md"
+    severity: error
+
+  - type: no_todos
+    path: "glossaries/BUSINESS_GLOSSARY.md"
+    patterns: ["TODO", "FIXME"]
+    severity: error
+
+  - type: line_count_range
+    path: "glossaries/BUSINESS_GLOSSARY.md"
+    min: 10
+    max: 80
+    severity: warning

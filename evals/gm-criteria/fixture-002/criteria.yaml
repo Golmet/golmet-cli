@@ -1,0 +1,68 @@
+---
+mode: manual
+---
+name: "Aceitação - RN não-EARS vai para pendências de clarificação, sem Gherkin inventado"
+description: >
+  NEGATIVO: REQUIREMENTS traz RN-001 mapeável (evento EARS) e RN-002
+  subjetiva ("interface bonita e intuitiva", sem comportamento observável).
+  A skill deriva Gherkin APENAS para a RN-001 e abre pendência de
+  clarificação para a RN-002 - nenhum cenário inventado para critério
+  subjetivo. A pendência cita a RN e pergunta ao operador.
+inputs_required: [REQUIREMENTS.md]
+
+checks:
+  - type: file_exists
+    path: "specs/ACCEPTANCE_CRITERIA.md"
+    severity: error
+
+  - type: section_exists
+    path: "specs/ACCEPTANCE_CRITERIA.md"
+    section: "## RN-001"
+    severity: error
+
+  - type: contains
+    path: "specs/ACCEPTANCE_CRITERIA.md"
+    pattern: "**Dado**"
+    severity: error
+
+  - type: contains
+    path: "specs/ACCEPTANCE_CRITERIA.md"
+    pattern: "**Então**"
+    severity: error
+
+  - type: section_exists
+    path: "specs/ACCEPTANCE_CRITERIA.md"
+    section: "## Pendências de clarificação"
+    severity: error
+
+  - type: contains
+    path: "specs/ACCEPTANCE_CRITERIA.md"
+    pattern: "RN-002"
+    severity: error
+
+  - type: contains
+    path: "specs/ACCEPTANCE_CRITERIA.md"
+    pattern: "nenhum cenário"
+    severity: error
+
+  - type: not_contains
+    path: "specs/ACCEPTANCE_CRITERIA.md"
+    pattern: "## RN-002"
+    severity: error
+
+  - type: id_sequence
+    path: "specs/ACCEPTANCE_CRITERIA.md"
+    pattern: "RN-(\\d+)"
+    allow_gaps: true
+    severity: error
+
+  - type: no_todos
+    path: "specs/ACCEPTANCE_CRITERIA.md"
+    patterns: ["TODO", "FIXME"]
+    severity: error
+
+  - type: line_count_range
+    path: "specs/ACCEPTANCE_CRITERIA.md"
+    min: 15
+    max: 120
+    severity: warning

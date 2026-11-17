@@ -1,0 +1,69 @@
+---
+name: "Modelo de dados - decisão de armazenamento e coluna (não usado)"
+description: >
+  REQUIREMENTS com RN-001 (tokenização: PAN nunca no banco) e RN-002
+  (coluna herdada EMAIL_ALTERNATIVO sem uso no fluxo novo). O DATA_MODEL
+  deve trazer a tabela com o token (nunca o PAN), a coluna herdada
+  marcada "(não usado)", a seção de Decisões de Armazenamento e a tabela
+  legada fora do fluxo.
+inputs_required: [REQUIREMENTS.md, LEGACY_CONTEXT.md]
+
+checks:
+  - type: file_exists
+    path: "specs/DATA_MODEL.md"
+    severity: error
+
+  - type: section_exists
+    path: "specs/DATA_MODEL.md"
+    section: "## 1. Diagrama Entidade-Relacionamento"
+    severity: error
+
+  - type: section_exists
+    path: "specs/DATA_MODEL.md"
+    section: "## 2. Tabelas"
+    severity: error
+
+  - type: section_exists
+    path: "specs/DATA_MODEL.md"
+    section: "## 3. Decisões de Armazenamento"
+    severity: error
+
+  - type: contains
+    path: "specs/DATA_MODEL.md"
+    pattern: "RN-001"
+    severity: error
+
+  - type: contains
+    path: "specs/DATA_MODEL.md"
+    pattern: "RN-002"
+    severity: error
+
+  - type: contains
+    path: "specs/DATA_MODEL.md"
+    pattern: "(não usado)"
+    severity: error
+
+  - type: contains
+    path: "specs/DATA_MODEL.md"
+    pattern: "Nunca no banco da aplicação"
+    severity: error
+
+  - type: not_contains
+    path: "specs/DATA_MODEL.md"
+    pattern: "PAN | NUMBER"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "specs/DATA_MODEL.md"
+    severity: error
+
+  - type: no_todos
+    path: "specs/DATA_MODEL.md"
+    patterns: ["TODO", "FIXME"]
+    severity: error
+
+  - type: line_count_range
+    path: "specs/DATA_MODEL.md"
+    min: 30
+    max: 200
+    severity: warning
