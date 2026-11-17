@@ -333,8 +333,9 @@ func TestNPMPlatformPackagesShape(t *testing.T) {
 	}
 }
 
-// ---- M31 — o release.yml: a ordem npm (os 5 de plataforma ANTES do
-// principal), o NPM_TOKEN e a tolerância a falha ----
+// ---- M38 — o release.yml endurecido: a ordem npm (os 5 de plataforma
+// ANTES do principal), o preflight do token, a idempotência e o VERMELHO
+// no publish falho ----
 
 func TestReleaseWorkflowNPMPublish(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join("..", "..", ".github", "workflows", "release.yml"))
@@ -355,15 +356,104 @@ func TestReleaseWorkflowNPMPublish(t *testing.T) {
 	if !strings.Contains(y, "npm/win32-x64") || !strings.Contains(y, "npm/darwin-arm64") {
 		t.Errorf("os 5 pacotes de plataforma ausentes do passo de publish")
 	}
-	// a tolerância a falha (decisão da M4): o release nunca quebra por npm
-	if !strings.Contains(y, "continue-on-error: true") {
-		t.Errorf("os passos npm devem ser tolerantes a falha (continue-on-error)")
-	}
 	if !strings.Contains(y, "NPM_TOKEN") {
 		t.Errorf("o publish npm sem o NPM_TOKEN")
 	}
-	// a versão fixada pela tag
-	if !strings.Contains(y, "GITHUB_REF_NAME#v") {
-		t.Errorf("a versão dos pacotes deveria vir da tag (GITHUB_REF_NAME#v)")
+	// M38 — o fim da tolerância cega (a lição da v1.0.0: steps verdes com
+	// publish morto): nenhum continue-on-error; o preflight valida o token
+	// cedo e o gate final fecha VERMELHO com FAILED_PKGS
+	if strings.Contains(y, "continue-on-error") {
+		t.Errorf("o release.yml não deve carregar continue-on-error cego — preflight (npm whoami) falha rápido e o gate final fecha vermelho com FAILED_PKGS")
+	}
+	if !strings.Contains(y, "npm whoami") {
+		t.Errorf("o preflight do token (npm whoami) ausente — sem ele o ENEEDAUTH só aparece no fim, no log")
+	}
+	if !strings.Contains(y, "FAILED_PKGS") {
+		t.Errorf("o gate vermelho (FAILED_PKGS) ausente — publishes falhos ficariam verdes em silêncio")
+	}
+	// a idempotência: re-run não quebra (create → upload --clobber;
+	// já-publicado → skip pelo npm view)
+	if !strings.Contains(y, "--clobber") {
+		t.Errorf("a GitHub Release idempotente (upload --clobber) ausente — o re-run quebrava no create com a release já existente")
+	}
+	if !strings.Contains(y, "já publicado — skip idempotente") {
+		t.Errorf("o skip idempotente dos publishes ausente — o re-run de release completa falharia em 'cannot publish over'")
+	}
+	// a versão fixada pela tag — resolvida de push de tag OU do dispatch
+	// do workflow version (a tag é a fonte da verdade)
+	if !strings.Contains(y, "inputs.tag || github.ref_name") {
+		t.Errorf("a versão deveria vir da tag (inputs.tag || github.ref_name — push de tag ou dispatch do workflow version)")
+	}
+	if !strings.Contains(y, "${VERSION#v}") {
+		t.Errorf("a versão npm deveria ser o strip do prefixo v (${VERSION#v})")
+	}
+}
+
+// ---- M38 — o version.yml: o bump por Conventional Commits em TODO merge
+// na main — a fonte da verdade do versionamento ----
+
+func TestVersionWorkflowBump(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", ".github", "workflows", "version.yml"))
+	if err != nil {
+		t.Fatalf("version.yml ausente: %v", err)
+	}
+	y := string(data)
+	// o gatilho: TODO push na main (o merge é a fonte da versão)
+	if !strings.Contains(y, "branches: [main]") {
+		t.Errorf("o version.yml deve disparar no push para main (o merge é a fonte da versão)")
+	}
+	// as regras do bump — o contrato do semver por Conventional Commits
+	if !strings.Contains(y, "'^[a-z]+(\\([^)]*\\))?!:'") {
+		t.Errorf("a regra de major (o ! no subject, qualquer tipo) ausente")
+	}
+	if !strings.Contains(y, "'^feat(\\([^)]*\\))?:'") {
+		t.Errorf("a regra de minor (feat) ausente")
+	}
+	if !strings.Contains(y, "'^fix(\\([^)]*\\))?:'") {
+		t.Errorf("a regra de patch (fix) ausente")
+	}
+	if !strings.Contains(y, "BREAKING CHANGE:") {
+		t.Errorf("a regra de major (footer BREAKING CHANGE) ausente")
+	}
+	// sem commit releasável → nenhuma tag (nenhuma release fantasma de docs)
+	if !strings.Contains(y, "bump=none") {
+		t.Errorf("o caminho sem bump ausente — merges de docs não devem gerar release")
+	}
+	// a tag anotada + o dispatch explícito da release (o push de tag feito
+	// com o GITHUB_TOKEN não dispara workflows — o dispatch é a exceção)
+	if !strings.Contains(y, "git tag -a") {
+		t.Errorf("a tag anotada ausente")
+	}
+	if !strings.Contains(y, "gh workflow run release.yml") {
+		t.Errorf("o dispatch da release ausente — o push de tag com GITHUB_TOKEN não dispara o release.yml")
+	}
+}
+
+// ---- M38 — o ci.yml: os gates de PR (conventional-commits +
+// release-readiness) que impedem a main de quebrar a release ----
+
+func TestCIWorkflowReleaseGates(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", ".github", "workflows", "ci.yml"))
+	if err != nil {
+		t.Fatalf("ci.yml ausente: %v", err)
+	}
+	y := string(data)
+	for _, job := range []string{"conventional-commits:", "release-readiness:"} {
+		if !strings.Contains(y, job) {
+			t.Errorf("o gate %q ausente do ci.yml", job)
+		}
+	}
+	// o gate de commits valida o padrão CC nos subjects E no título do PR
+	for _, want := range []string{"feat|fix|docs", "Título do PR"} {
+		if !strings.Contains(y, want) {
+			t.Errorf("a validação de Conventional Commits sem %q", want)
+		}
+	}
+	// o gate de readiness: sync de versões, pack dry-run, cross-compile
+	// dos 5 alvos e o contrato do launcher
+	for _, want := range []string{"npm pack --dry-run", "darwin/arm64", "bin/golmet.js"} {
+		if !strings.Contains(y, want) {
+			t.Errorf("o release-readiness sem %q", want)
+		}
 	}
 }

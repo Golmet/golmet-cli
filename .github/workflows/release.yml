@@ -1,20 +1,33 @@
-# Release do golmet — disparado por tag v*: build cross-compile das 5
-# plataformas alvo (actions oficiais, sem GoReleaser), checksums SHA-256 e
-# GitHub Release com os assets + notas do CHANGELOG. M31: além dos assets,
-# o workflow MONTA os 5 pacotes npm de plataforma (npm/<os>-<arch>/ com o
-# binário) e publica via `npm publish` — **os 5 de plataforma ANTES do
-# pacote principal** (o npm resolve as optionalDependencies na instalação
-# do principal). O publish é TOLERANTE A FALHA (decisão da M4): o release
-# nunca quebra por npm — cada passo leva continue-on-error.
+# Release do golmet — disparada por tag v* (push manual OU o workflow
+# version, que a despacha por workflow_dispatch após calcular a versão por
+# Conventional Commits). Build cross-compile das 5 plataformas alvo,
+# checksums SHA-256 e GitHub Release IDEMPOTENTE com os assets + notas
+# geradas como digest dos Conventional Commits (agrupados; fallback para o
+# CHANGELOG). M38 — o publish npm ganhou certeza: o token é pré-validado
+# (npm whoami, fail fast com mensagem de remediação), os 5 pacotes de
+# plataforma publicam ANTES do principal (o npm resolve as
+# optionalDependencies na instalação), publishes já-feitos são skip
+# idempotente e QUALQUER falha de publish fecha o job VERMELHO — a release
+# e os assets permanecem no ar (o re-run completa só o que falta).
 name: release
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'A tag v* a ser lançada (ex.: v1.0.1)'
+        required: true
+        type: string
 
 permissions:
   contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -22,6 +35,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Resolve a versão (a tag é a fonte da verdade)
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ inputs.tag || github.ref_name }}"
+          case "${VERSION}" in
+            v[0-9]*.*.*) ;;
+            *) echo "::error::a release roda sobre uma tag v* — recebido '${VERSION}'"; exit 1 ;;
+          esac
+          echo "VERSION=${VERSION}" >> "${GITHUB_ENV}"
+          echo "lançando ${VERSION} (commit $(git rev-parse --short HEAD))"
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -33,7 +60,6 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          VERSION="${GITHUB_REF_NAME}"
           LDFLAGS="-s -w -X github.com/Golmet/golmet-cli/internal/cli.Version=${VERSION}"
           targets=(
             "windows/amd64"
@@ -66,49 +92,72 @@ jobs:
           sha256sum * > checksums.txt
           cat checksums.txt
 
-      - name: Release notes (seção da versão no CHANGELOG)
+      - name: Release notes (digest dos Conventional Commits)
         shell: bash
         run: |
           set -euo pipefail
-          VERSION="${GITHUB_REF_NAME#v}"
+          PREV_TAG=$(git tag -l 'v*' --sort=-v:refname | sed -n '2p')
+          if [ -n "${PREV_TAG}" ]; then
+            RANGE="${PREV_TAG}..HEAD"
+          else
+            RANGE="HEAD"
+          fi
           NOTES_FILE="dist/RELEASE_NOTES.md"
+          SUBJECTS=$(git log "${RANGE}" --pretty=%s | grep -vE '^Merge pull request' || true)
+          BREAKING=$(printf '%s\n' "${SUBJECTS}" | grep -E '^[a-z]+(\([^)]*\))?!:' || true)
+          FEATS=$(printf '%s\n' "${SUBJECTS}" | grep -E '^feat(\([^)]*\))?:' || true)
+          FIXES=$(printf '%s\n' "${SUBJECTS}" | grep -E '^fix(\([^)]*\))?:' || true)
           {
-            echo "# golmet ${GITHUB_REF_NAME}"
+            echo "# golmet ${VERSION}"
             echo
-            # extrai a seção "## [X.Y.Z] ..." correspondente ao CHANGELOG;
-            # sem seção → aponta para o CHANGELOG (o release nunca falha por nota)
-            awk -v ver="${VERSION}" '
-              $0 ~ "^## \\[" ver "\\]" { found = 1; next }
-              /^## \[/ && found { exit }
-              found { print }
-            ' CHANGELOG.md > /tmp/section.md
-            if [ -s /tmp/section.md ]; then
-              cat /tmp/section.md
-            else
-              echo "Notas completas em [CHANGELOG.md](https://github.com/Golmet/golmet-cli/blob/main/CHANGELOG.md)."
+            if [ -n "${BREAKING}" ]; then
+              echo "## Breaking changes"
+              echo
+              printf '%s\n' "${BREAKING}" | sed 's/^/- /'
+              echo
             fi
+            if [ -n "${FEATS}" ]; then
+              echo "## Features"
+              echo
+              printf '%s\n' "${FEATS}" | sed 's/^/- /'
+              echo
+            fi
+            if [ -n "${FIXES}" ]; then
+              echo "## Fixes"
+              echo
+              printf '%s\n' "${FIXES}" | sed 's/^/- /'
+              echo
+            fi
+            if [ -z "${BREAKING}${FEATS}${FIXES}" ]; then
+              echo "Notas completas no CHANGELOG."
+              echo
+            fi
+            echo "Changelog completo: [CHANGELOG.md](https://github.com/Golmet/golmet-cli/blob/${VERSION}/CHANGELOG.md)."
           } > "${NOTES_FILE}"
           echo "NOTES_FILE=${NOTES_FILE}" >> "${GITHUB_ENV}"
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release (idempotente — re-run não quebra)
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          gh release create "${GITHUB_REF_NAME}" \
-            --title "golmet ${GITHUB_REF_NAME}" \
+          gh release create "${VERSION}" \
+            --title "golmet ${VERSION}" \
             --notes-file "${NOTES_FILE}" \
-            dist/*
+            dist/* \
+            || gh release upload "${VERSION}" dist/* --clobber
 
       - name: Mount platform npm packages
         shell: bash
         run: |
           set -euo pipefail
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION_NPM="${VERSION#v}"
           # os dirs npm/<os>-<arch>/ (o package.json esqueleto é versionado
-          # no repo — o shape validado por teste); o binário cross-compilado
-          # entra como o file declarado e a versão é fixada pela tag
+          # no repo — o shape validado pelo job release-readiness do CI);
+          # o binário cross-compilado entra como o file declarado e a
+          # versão é fixada pela TAG (a fonte da verdade — o package.json
+          # versionado pode estar um degrau atrás; o registry, nunca)
           mount_pkg() {
             local goos="$1" goarch="$2" pkgos="$3" pkgarch="$4" ext="$5"
             local dir="npm/${pkgos}-${pkgarch}"
@@ -117,7 +166,7 @@ jobs:
             node -e "
               const fs = require('fs');
               const p = JSON.parse(fs.readFileSync('${dir}/package.json', 'utf8'));
-              p.version = '${VERSION}';
+              p.version = '${VERSION_NPM}';
               fs.writeFileSync('${dir}/package.json', JSON.stringify(p, null, 2) + '\n');
             "
           }
@@ -127,29 +176,64 @@ jobs:
           mount_pkg darwin amd64 darwin x64 ""
           mount_pkg darwin arm64 darwin arm64 ""
 
-      - name: Publish platform npm packages (tolerante a falha — M4)
-        continue-on-error: true
+      - name: Preflight npm (npm whoami — fail fast com remediação)
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
-          # a autenticação npm via ~/.npmrc (o secret NPM_TOKEN)
           echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-          # OS 5 DE PLATAFORMA PRIMEIRO — o npm resolve as
-          # optionalDependencies na instalação do pacote principal
-          for d in npm/win32-x64 npm/linux-x64 npm/linux-arm64 npm/darwin-x64 npm/darwin-arm64; do
-            (cd "$d" && npm publish --access public) \
-              || echo "aviso: npm publish falhou para $d — o release segue (npm é tolerante a falha, M4)"
-          done
+          if ! npm whoami --registry https://registry.npmjs.org; then
+            echo "::error::npm whoami falhou — o secret NPM_TOKEN está ausente, expirado ou sem permissão de write (regenere o token Granular com 'All packages' read-and-write e atualize o secret do repo)"
+            exit 1
+          fi
+          echo "npm autenticado como $(npm whoami --registry https://registry.npmjs.org)"
 
-      - name: Publish main npm package (por ÚLTIMO — tolerante a falha)
-        continue-on-error: true
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish platform npm packages (os 5 ANTES do principal)
         shell: bash
         run: |
           set -euo pipefail
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-          npm publish --access public \
-            || echo "aviso: npm publish do principal falhou — o release segue (npm é tolerante a falha, M4); os binários ficam nos assets da release"
+          VERSION_NPM="${VERSION#v}"
+          FAILED=""
+          for d in npm/win32-x64 npm/linux-x64 npm/linux-arm64 npm/darwin-x64 npm/darwin-arm64; do
+            pkg="@golmet/cli-${d##*/}"
+            if npm view "${pkg}@${VERSION_NPM}" version >/dev/null 2>&1; then
+              echo "${pkg}@${VERSION_NPM} já publicado — skip idempotente"
+            elif (cd "$d" && npm publish --access public); then
+              echo "✓ ${pkg}@${VERSION_NPM} publicado"
+            else
+              echo "::error::npm publish falhou para ${pkg}"
+              FAILED="${FAILED} ${pkg}"
+            fi
+          done
+          echo "FAILED_PKGS=${FAILED}" >> "${GITHUB_ENV}"
+
+      - name: Publish main npm package (por ÚLTIMO)
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION_NPM="${VERSION#v}"
+          node -e "
+            const fs = require('fs');
+            const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            p.version = '${VERSION_NPM}';
+            fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+          "
+          if npm view "golmet-cli@${VERSION_NPM}" version >/dev/null 2>&1; then
+            echo "golmet-cli@${VERSION_NPM} já publicado — skip idempotente"
+          elif npm publish --access public; then
+            echo "✓ golmet-cli@${VERSION_NPM} publicado"
+          else
+            echo "::error::npm publish falhou para golmet-cli"
+            echo "FAILED_PKGS=${FAILED_PKGS:-} golmet-cli" >> "${GITHUB_ENV}"
+          fi
+
+      - name: Status da release (VERMELHO se qualquer publish falhou)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${FAILED_PKGS:-}" ]; then
+            echo "::error::release INCOMPLETA — publishes falharam:${FAILED_PKGS} (os assets do GitHub estão no ar; corrija o npm e re-rune — os publishes são idempotentes)"
+            exit 1
+          fi
+          echo "release ${VERSION} completa — GitHub Release + npm ×6 ✓"

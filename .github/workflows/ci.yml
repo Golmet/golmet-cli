@@ -57,3 +57,154 @@ jobs:
       #   uses: golangci/golangci-lint-action@v6
       #   with:
       #     version: latest
+
+  conventional-commits:
+    # O versionamento (workflow version) lê os subjects dos commits de
+    # main para calcular o semver — um commit fora do padrão é invisível
+    # para o cálculo. Este gate bloqueia na entrada: todo commit do PR
+    # (menos merge commits — o conteúdo é o que sobrevive ao merge) e o
+    # título do PR (blindagem squash-merge: num squash, o título VIRA o
+    # subject do commit na main) seguem Conventional Commits.
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout (histórico completo)
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Subjects dos commits do PR (Conventional Commits)
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PATTERN='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9._/-]+\))?!?: .+'
+          BASE_SHA=$(git merge-base "origin/${BASE_REF}" HEAD)
+          FAIL=0
+          while read -r sha subject; do
+            parents=$(git show -s --format=%P "${sha}")
+            if [ "$(printf '%s' "${parents}" | wc -w)" -gt 1 ]; then
+              continue
+            fi
+            if ! printf '%s' "${subject}" | grep -qE "${PATTERN}"; then
+              echo "✗ $(echo "${sha}" | cut -c1-7) fora do padrão: \"${subject}\""
+              FAIL=1
+            fi
+          done < <(git log "${BASE_SHA}..HEAD" --pretty="%H %s")
+          if [ "${FAIL}" -ne 0 ]; then
+            echo ""
+            echo "esperado: <tipo>(<escopo>)!: <subject>"
+            echo "tipos: feat fix docs style refactor perf test build ci chore revert"
+            echo "exemplo: fix(lint): corrige falso-positivo nas âncoras de idioma"
+            echo "corrija com: git rebase -i origin/${BASE_REF} (reword nos commits)"
+            exit 1
+          fi
+          echo "✓ todos os commits do PR seguem Conventional Commits"
+
+      - name: Título do PR (blindagem squash-merge)
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PATTERN='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9._/-]+\))?!?: .+'
+          if ! printf '%s' "${PR_TITLE}" | grep -qE "${PATTERN}"; then
+            echo "::error::título do PR fora do padrão Conventional Commits: \"${PR_TITLE}\""
+            echo "esperado: <tipo>(<escopo>)!: <subject> — num squash merge o título vira o subject do commit na main"
+            exit 1
+          fi
+          echo "✓ título do PR"
+
+  release-readiness:
+    # O gate anti-quebra: valida AQUI, no PR, o que a release.yml executa
+    # NA TAG — sincronia de versões dos 6 package.json, shape publicável
+    # dos pacotes (npm pack --dry-run), cross-compile dos 5 alvos com os
+    # mesmos LDFLAGS da release e o contrato do launcher (resolução,
+    # despacho e fallback). PR verde ⇒ a tag não quebra na release.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Sincronia de versões (os 6 package.json)
+        shell: bash
+        run: |
+          node -e "
+            const fs = require('fs');
+            const dirs = ['.', 'npm/win32-x64', 'npm/linux-x64', 'npm/linux-arm64', 'npm/darwin-x64', 'npm/darwin-arm64'];
+            const versions = new Set(dirs.map(d => JSON.parse(fs.readFileSync(d + '/package.json', 'utf8')).version));
+            if (versions.size !== 1) {
+              console.error('✗ versões divergentes: ' + [...versions].join(', '));
+              process.exit(1);
+            }
+            console.log('✓ versões sincronizadas: ' + [...versions][0] + ' (a versão publicada vem da tag — o gate protege a sincronia interna)');
+          "
+
+      - name: npm pack --dry-run (shape dos 6 pacotes)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for d in . npm/win32-x64 npm/linux-x64 npm/linux-arm64 npm/darwin-x64 npm/darwin-arm64; do
+            (cd "${d}" && npm pack --dry-run >/dev/null) \
+              || { echo "✗ npm pack falhou para ${d} — o package.json não é publicável em shape"; exit 1; }
+            echo "✓ ${d}"
+          done
+
+      - name: Cross-compile smoke (os 5 alvos da release, mesmos LDFLAGS)
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="v0.0.0-readiness"
+          LDFLAGS="-s -w -X github.com/Golmet/golmet-cli/internal/cli.Version=${VERSION}"
+          targets=(
+            "windows/amd64"
+            "linux/amd64"
+            "linux/arm64"
+            "darwin/amd64"
+            "darwin/arm64"
+          )
+          for target in "${targets[@]}"; do
+            goos="${target%%/*}"
+            goarch="${target##*/}"
+            name="golmet_${goos}_${goarch}"
+            if [ "${goos}" = "windows" ]; then name="${name}.exe"; fi
+            echo "build ${name}"
+            CGO_ENABLED=0 GOOS="${goos}" GOARCH="${goarch}" \
+              go build -trimpath -ldflags "${LDFLAGS}" \
+              -o "dist-readiness/${name}" ./cmd/golmet
+          done
+          echo "✓ os 5 alvos compilam com os LDFLAGS da release"
+
+      - name: Smoke do launcher (contrato + despacho + fallback)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # 1. as funções do contrato
+          node -e "
+            const l = require('./bin/golmet.js');
+            if (l.platformPackage('win32', 'x64') !== '@golmet/cli-win32-x64') process.exit(1);
+            if (l.binaryName('win32') !== 'golmet.exe') process.exit(1);
+            if (l.binaryName('linux') !== 'golmet') process.exit(1);
+          "
+          echo "✓ contrato do launcher (platformPackage/binaryName)"
+          # 2. despacho real: binário fake resolvível como irmão do launcher
+          mkdir -p node_modules/@golmet/cli-linux-x64
+          printf '#!/bin/sh\necho "golmet fake v0.0.0-readiness"\n' > node_modules/@golmet/cli-linux-x64/golmet
+          chmod +x node_modules/@golmet/cli-linux-x64/golmet
+          out=$(node bin/golmet.js --version)
+          echo "${out}"
+          printf '%s\n' "${out}" | grep -q 'golmet fake' \
+            || { echo '✗ o launcher não despachou o binário resolvido'; exit 1; }
+          echo "✓ despacho: o launcher resolveu e executou o binário da plataforma"
+          # 3. fallback: sem binário → falha clara com exit 2 (o contrato da M31)
+          rm -rf node_modules/@golmet
+          if node bin/golmet.js --version >/dev/null 2>&1; then
+            echo '✗ o launcher deveria falhar sem o binário da plataforma'; exit 1
+          fi
+          echo '✓ fallback: sem binário, o launcher falha com a mensagem do canal manual'

@@ -1,0 +1,96 @@
+# version — a fonte da verdade do versionamento do kit. TODO merge na main
+# passa por aqui: os subjects dos commits desde a última tag v* são
+# classificados por Conventional Commits e a próxima versão (semver) é
+# calculada — feat → minor, fix → patch, `!` (qualquer tipo) ou footer
+# `BREAKING CHANGE:` → major; demais tipos (docs/chore/refactor/test/ci/
+# style/build) não geram release — nenhum merge de docs cria versão
+# fantasma. Com bump: cria a tag anotada no HEAD, empurra e DESPACHA o
+# workflow release explicitamente (push de tag feito com o GITHUB_TOKEN
+# não dispara workflows — o workflow_dispatch é a exceção documentada).
+name: version
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: version-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (histórico completo + tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Próxima versão (Conventional Commits → semver)
+        id: semver
+        shell: bash
+        run: |
+          set -euo pipefail
+          LAST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
+          if [ -n "${LAST_TAG}" ]; then
+            MAJOR="$(echo "${LAST_TAG#v}" | cut -d. -f1)"
+            MINOR="$(echo "${LAST_TAG#v}" | cut -d. -f2)"
+            PATCH="$(echo "${LAST_TAG#v}" | cut -d. -f3)"
+            RANGE="${LAST_TAG}..HEAD"
+          else
+            MAJOR=0
+            MINOR=0
+            PATCH=0
+            RANGE="HEAD"
+          fi
+          SUBJECTS=$(git log "${RANGE}" --pretty=%s)
+          BODIES=$(git log "${RANGE}" --pretty=%b || true)
+
+          BUMP="none"
+          # major: `!` no subject (qualquer tipo) ou footer BREAKING CHANGE:
+          if printf '%s\n' "${SUBJECTS}" | grep -qE '^[a-z]+(\([^)]*\))?!:' \
+            || printf '%s\n' "${BODIES}" | grep -q '^BREAKING CHANGE:'; then
+            BUMP="major"
+          elif printf '%s\n' "${SUBJECTS}" | grep -qE '^feat(\([^)]*\))?:'; then
+            BUMP="minor"
+          elif printf '%s\n' "${SUBJECTS}" | grep -qE '^fix(\([^)]*\))?:'; then
+            BUMP="patch"
+          fi
+
+          if [ "${BUMP}" = "none" ]; then
+            echo "sem commits releasáveis desde ${LAST_TAG:-a origem} — nenhuma tag, nenhuma release"
+            echo "bump=none" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          case "${BUMP}" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+          NEXT="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "bump=${BUMP}" >> "${GITHUB_OUTPUT}"
+          echo "version=${NEXT}" >> "${GITHUB_OUTPUT}"
+          echo "última tag: ${LAST_TAG:-nenhuma} · próxima versão: ${NEXT} (${BUMP})"
+
+      - name: Cria e empurra a tag + despacha a release
+        if: steps.semver.outputs.bump != 'none'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.semver.outputs.version }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${VERSION}" >/dev/null 2>&1; then
+            echo "tag ${VERSION} já existe na origin — skip (re-run/race)"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${VERSION}" -m "release ${VERSION}"
+          git push origin "refs/tags/${VERSION}"
+          gh workflow run release.yml --ref main -f tag="${VERSION}"
+          echo "tag ${VERSION} empurrada + workflow release despachado"
