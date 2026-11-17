@@ -1,0 +1,66 @@
+<p align="center">English | <a href="versioning.pt-br.md">Português (Brasil)</a></p>
+
+# Versioning (Conventional Commits → semver)
+
+The version of the kit is decided by **the merge, not by a person**: every
+merge to `main` runs the version workflow, which reads the commit subjects
+since the last `v*` tag, classifies them by Conventional Commits and computes
+the next semver. **The tag is the single source of truth** — the published
+npm version always equals the tag; the `package.json` files versioned in the
+repo are patched at publish time (the repo copy may lag one step; the
+registry never does).
+
+## The commit format
+
+```
+<type>(<optional scope>)!: <subject>
+
+optional body
+BREAKING CHANGE: <optional footer>
+```
+
+Valid types: `feat` `fix` `docs` `style` `refactor` `perf` `test` `build`
+`ci` `chore` `revert`. Every PR commit (except merge commits) and the PR
+title are validated by CI — a commit outside the pattern does not enter
+`main`, because it would be invisible to the version calculation.
+
+## The bump rule
+
+| Commits since the last `v*` tag | Bump | Example |
+|---|---|---|
+| `feat:` | **minor** | `feat(lint): L14 binary manifest check` |
+| `fix:` | **patch** | `fix(launcher): resolve fallback exit code` |
+| any type with `!`, or `BREAKING CHANGE:` footer | **major** | `feat!!: rename init flags` |
+| only `docs:` `chore:` `refactor:` `test:` `ci:` `style:` `build:` | **none** | no tag, no release |
+
+Precedence is semver's: major > minor > patch. One `feat!` among ten `fix`
+commits bumps the major.
+
+## The pipeline
+
+1. **PR** (`.github/workflows/ci.yml`) — three gates in parallel: the test
+   matrix (gofmt, vet, test, build, kit lint ×3 OS), `conventional-commits`
+   (subjects + PR title) and `release-readiness` (version sync across the 6
+   `package.json` files, `npm pack --dry-run` shape ×6, cross-compile smoke
+   of the 5 release targets, launcher contract + dispatch + fallback).
+2. **Merge to `main`** (`.github/workflows/version.yml`) — commits since the
+   last tag are classified; no releasable commit ends here silently. With a
+   bump: the annotated `vX.Y.Z` tag is created on HEAD, pushed, and the
+   release workflow is dispatched explicitly (a tag push made with the
+   `GITHUB_TOKEN` does not trigger workflows — `workflow_dispatch` is the
+   documented exception).
+3. **Tag** (`.github/workflows/release.yml`) — cross-compiles the 5
+   platforms with the version stamped by the tag, SHA-256 checksums, GitHub
+   Release (idempotent: create falls back to upload `--clobber` on re-run),
+   release notes as a Conventional Commits digest, then npm: token
+   pre-flight (`npm whoami`, fail fast), the 5 platform packages first, the
+   main package last, already-published packages are skipped. **Any failed
+   publish turns the job red** — the GitHub Release and its assets stay up,
+   and a re-run completes only what is missing.
+
+## Manual release
+
+Tags pushed manually (`git tag v1.2.3 && git push origin v1.2.3`) release
+through the same path. The release workflow also accepts a manual dispatch
+(Actions → release → tag), useful to resume an interrupted publish — the
+npm steps are idempotent.
