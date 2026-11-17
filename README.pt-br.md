@@ -8,6 +8,12 @@
 
 <h1 align="center">golmet-cli</h1>
 
+<p align="center">
+  <a href="https://www.npmjs.com/package/golmet-cli"><img src="https://img.shields.io/npm/v/golmet-cli.svg" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/golmet-cli"><img src="https://img.shields.io/npm/dw/golmet-cli.svg" alt="npm downloads"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License"></a>
+</p>
+
 ## O problema que o Golmet resolve
 
 Seus requisitos ficam num documento que ninguém relê. Os specs viram um diagrama
@@ -140,5 +146,5 @@ go vet ./... && gofmt -l . # obrigatórios antes de commitar
 
 O plano de marcos vive no [ROADMAP.md](ROADMAP.pt-br.md) (F1 = este release; F2 =
 o site de docs; F3 = fluxo de contribuição e migração de workspace).
-Contribuições: [CONTRIBUTING.md](CONTRIBUTING.md) — testes table-driven e
+Contribuições: [CONTRIBUTING.pt-br.md](CONTRIBUTING.pt-br.md) — testes table-driven e
 `gofmt` são obrigatórios. Licença [MIT](LICENSE).
