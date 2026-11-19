@@ -1920,7 +1920,7 @@ O twin PS já era seguro (`try/catch` com aviso, sem escrita em falha) — intoc
 
 ---
 
-## IMP-110 — gm-setup trata `gm-pia-connect-setup` como skill de pack opcional (IMP-080)
+## IMP-110 — gm-setup trata skill opcional de pack como pendência não bloqueante (IMP-080)
 
 **Data:** 18/10/2026
 **Origem:** 4ª análise arquitetural da config — única violação real de referência órfã (varredura determinística: 39 hits triados, 38 falsos positivos)
@@ -1928,13 +1928,13 @@ O twin PS já era seguro (`try/catch` com aviso, sem escrita em falha) — intoc
 
 ### Problema
 
-O `gm-setup` referenciava `gm-pia-connect-setup` como passo real (3 pontos: visão geral, Tools e o Passo 5 com instrução **incondicional** "carregue e aguarde a conclusão") + front matter `description:` — mas a skill não existe na base, registry ou runtime (resíduo do desacoplamento IMP-105; deve viver em pack). O `@gm-onboarding-orchestrator` já documentava o padrão correto: "podem não existir na config — trate como ⚠️ pendência, nunca como falha bloqueante".
+O `gm-setup` referenciava uma skill opcional de pack como passo real (3 pontos: visão geral, Tools e o Passo 5 com instrução **incondicional** "carregue e aguarde a conclusão") + front matter `description:` — mas a skill não existe na base, registry ou runtime (resíduo do desacoplamento IMP-105; deve viver em pack). O `@gm-onboarding-orchestrator` já documentava o padrão correto: "podem não existir na config — trate como ⚠️ pendência, nunca como falha bloqueante".
 
 ### Correções Aplicadas
 
 | Local | Mudança |
 |-------|---------|
-| `skills/gm-setup/SKILL.md` (description) | Delegação a pia-connect marcada como condicional ("quando presente na instalação — skill de pack opcional, IMP-105") |
+| `skills/gm-setup/SKILL.md` (description) | Delegação à skill opcional marcada como condicional ("quando presente na instalação — skill de pack opcional, IMP-105") |
 | `skills/gm-setup/SKILL.md` (Tools) | Idem |
 | `skills/gm-setup/SKILL.md` (Passo 5) | Ramo "Sim" agora **verifica a existência** da skill: existe → carrega e aguarda; não existe → registra ⚠️ pendência (padrão do onboarding-orchestrator, IMP-080) e segue para o Passo 5b |
 
@@ -2189,7 +2189,7 @@ O wizard de primeira configuração pressupunha o ambiente da <org>: coletava de
 
 | Mudança | Conteúdo |
 |---------|----------|
-| **Passo 0 — Perfil de adoção** | primeira `question` (agrupada com o diagnóstico): **core-only** (só o workflow — perfil com tracker/infra `<não configurado>`, pula Azure/PIA/validações de stack marcando "não aplicável") ou **completo** (fluxo integral). Sugestão automática de core-only quando o MCP azure-devops não está habilitado. Modo registrado no perfil |
+| **Passo 0 — Perfil de adoção** | primeira `question` (agrupada com o diagnóstico): **core-only** (só o workflow — perfil com tracker/infra `<não configurado>`, pula Azure e validações de stack marcando "não aplicável") ou **completo** (fluxo integral). Sugestão automática de core-only quando o MCP azure-devops não está habilitado. Modo registrado no perfil |
 | **Passo 2b** | core-only coleta só usuário + diretório + org_github (necessários para packs/gh); campos de tracker ficam `<não configurado — core-only>` |
 | **Resíduos neutralizados** | `<config-repo>/REPOSITORIES.md` → opcional e genérico (só perfil completo); "repos PRJ" → "seus projetos"; `PRJ.*`/`PRJ.*` → `PROD.*` como exemplo genérico |
 | **Validação de ambiente** | core-only valida só gh/git; completo mantém a suíte atual |

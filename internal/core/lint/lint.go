@@ -124,7 +124,6 @@ var ghostAllowlist = map[string]string{
 	"gm-pack-accumulation": "bloco <!-- gm-pack-accumulation --> do AGENTS.md (marcador de acúmulo) — não é componente",
 	"gm-scan":              "renomeada — a varredura hoje é `golmet validate` / gm_validate (histórico de prosa)",
 	"gm-stack-react":       "playbook React não criado — o frontend da casa é Angular (gm-stack-angular)",
-	"gm-pia-connect-setup": "skill opcional de pack (IMP-105) — só existe quando o pack a fornece",
 	"gm-coverage-audit":    "avaliada e não criada — cobertura é do gm-dev-qa/playbook da stack",
 	"gm-a11y":              "exemplo ilustrativo do FORMAT §6",
 	"gm-a11y-reviewer":     "exemplo ilustrativo do FORMAT §6",
