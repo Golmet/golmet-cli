@@ -43,6 +43,19 @@ jobs:
       - name: go test
         run: go test ./... -timeout 10m
 
+      # lint estrutural do kit (L1..L11) contra o próprio repo — erros
+      # bloqueiam; warnings informativos não falham (docs históricos citam
+      # componentes extintos como passado por natureza)
+      - name: kit lint
+        if: runner.os == 'Linux'
+        run: |
+          out=$(go run ./cmd/golmet lint 2>&1) || true
+          printf '%s\n' "$out"
+          if printf '%s\n' "$out" | grep -Eq '[1-9][0-9]* error\(s\)'; then
+            echo "::error::kit lint reportou erros (detalhes acima)"
+            exit 1
+          fi
+
       - name: go build
         run: go build ./...
 

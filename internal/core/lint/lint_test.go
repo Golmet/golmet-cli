@@ -242,6 +242,66 @@ func TestL6GhostsByContext(t *testing.T) {
 	if len(findingsOf(rep2, "L6")) != 1 {
 		t.Fatalf("L6 pós-allowlist = %+v, want só gm-fantasma", findingsOf(rep2, "L6"))
 	}
+	// allowlist em uso é SUPERFICIADO (L6-allowlist) — exceção nunca é
+	// silêncio invisível
+	al := findingsOf(rep2, "L6-allowlist")
+	if len(al) != 1 || !strings.Contains(al[0].Description, "gm-antigo") {
+		t.Fatalf("L6-allowlist = %+v, want 1 citando gm-antigo", al)
+	}
+}
+
+func TestL6ScopeRegistryGoldensSkills(t *testing.T) {
+	ws := kitFixture(t)
+	// fantasma citado na descrição DENTRO do registry
+	os.WriteFile(filepath.Join(ws, "coredata", "registry.yaml"), []byte(
+		"version: pilot-1\nitems:\n  - id: gm-a\n    kind: skill\n    description: usa o `gm-fantasma-reg`\n    body: sources/gm-a.md\n"), 0o644)
+	// fantasma em golden de render (árvore aninhada)
+	os.MkdirAll(filepath.Join(ws, "internal", "core", "content", "testdata", "golden"), 0o755)
+	os.WriteFile(filepath.Join(ws, "internal", "core", "content", "testdata", "golden", "x.md"), []byte("render citando `gm-fantasma-gold`\n"), 0o644)
+	// fantasma em skill BASE (subdir — o walker do L6 é recursivo)
+	os.MkdirAll(filepath.Join(ws, "skills", "gm-b"), 0o755)
+	os.WriteFile(filepath.Join(ws, "skills", "gm-b", "SKILL.md"), []byte("delega para `gm-fantasma-skill`\n"), 0o644)
+
+	rep := runLint(t, ws, t.TempDir())
+	l6 := findingsOf(rep, "L6")
+	if len(l6) != 3 {
+		t.Fatalf("L6 = %+v, want 3 (registry, golden, skill)", l6)
+	}
+	files := map[string]bool{}
+	for _, f := range l6 {
+		if f.Severity != "error" {
+			t.Errorf("escopo gerido deveria ser error: %+v", f)
+		}
+		files[f.File] = true
+	}
+	for _, want := range []string{
+		"coredata/registry.yaml",
+		filepath.ToSlash(filepath.Join("internal", "core", "content", "testdata", "golden", "x.md")),
+		filepath.ToSlash(filepath.Join("skills", "gm-b", "SKILL.md")),
+	} {
+		if !files[want] {
+			t.Errorf("L6 deveria cobrir %s: %+v", want, l6)
+		}
+	}
+}
+
+func TestL6AllowlistSurfacesInUse(t *testing.T) {
+	ws := kitFixture(t)
+	os.WriteFile(filepath.Join(ws, "coredata", "sources", "gm-a.md"), []byte("menciona `gm-legado` duas vezes: `gm-legado`\n"), 0o644)
+	ghostAllowlist["gm-legado"] = "renomeada na onda M6 (motivo)"
+	defer delete(ghostAllowlist, "gm-legado")
+
+	rep := runLint(t, ws, t.TempDir())
+	if got := findingsOf(rep, "L6"); len(got) != 0 {
+		t.Fatalf("L6 deveria silenciar gm-legado: %+v", got)
+	}
+	al := findingsOf(rep, "L6-allowlist")
+	if len(al) != 1 {
+		t.Fatalf("L6-allowlist = %+v, want 1 (agregado por nome)", al)
+	}
+	if !strings.Contains(al[0].Description, "gm-legado") || !strings.Contains(al[0].Description, "2 ocorrência") {
+		t.Errorf("descrição deveria citar nome e contagem: %+v", al[0])
+	}
 }
 
 // ---- L7 ----
