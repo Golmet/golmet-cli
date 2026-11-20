@@ -796,7 +796,18 @@ func lintPackNames(rep *Report, configRoot string) {
 
 // ---- L6 — componentes fantasmas ----
 
+type allowUse struct {
+	count int
+	file  string
+	line  int
+}
+
 func lintL6(rep *Report, ws string, kitMode bool, configRoot string, kitMDs []string, validGm []string) {
+	// A allowlist NÃO é silêncio perpétuo: cada nome exceção que AINDA
+	// aparece no conteúdo é superficiado no relatório (L6-allowlist) para
+	// revisão periódica. Uma entrada esquecida aqui foi o que deixou uma
+	// referência a skill extinta atravessar três releases do kit.
+	allowUsed := map[string]*allowUse{}
 	scan := func(rel, fpath, sev string) {
 		data, err := os.ReadFile(fpath)
 		if err != nil {
@@ -817,6 +828,10 @@ func lintL6(rep *Report, ws string, kitMode bool, configRoot string, kitMDs []st
 					}
 				}
 				if _, ok := ghostAllowlist[m]; ok {
+					if allowUsed[m] == nil {
+						allowUsed[m] = &allowUse{file: rel, line: i + 1}
+					}
+					allowUsed[m].count++
 					continue
 				}
 				rep.Findings = append(rep.Findings, Finding{
@@ -827,16 +842,33 @@ func lintL6(rep *Report, ws string, kitMode bool, configRoot string, kitMDs []st
 			}
 		}
 	}
-	// kit: sources/rules = error (contrato vivo); docs/raiz = warning (histórico)
+	// targets do L6: kitMDs (compartilhado com o L1) + conteúdo gerido que o
+	// L1 NÃO varre — descrições do registry e goldens citam paths de config
+	// que não existem no workspace (false positivo de L1), mas menção a
+	// componente extinto aqui é exatamente o que o L6 deve pegar
+	l6targets := append([]string{}, kitMDs...)
 	if kitMode {
-		for _, rel := range kitMDs {
+		l6targets = append(l6targets, "coredata/registry.yaml")
+		l6targets = append(l6targets, mdFilesDeep(ws, "skills")...)
+		l6targets = append(l6targets, mdFilesDeep(ws, filepath.Join("internal", "core", "content", "testdata"))...)
+	}
+	// severidade por contexto: contrato vivo = error (sources, rules, skills
+	// BASE, registry, goldens de render); histórico = warning; docs/migration
+	// descreve o modelo antigo por natureza — skip
+	if kitMode {
+		for _, rel := range l6targets {
 			// o doc de migração descreve o modelo antigo por natureza
 			// (componentes extintos citados como passado) — skip (L6)
 			if strings.HasPrefix(rel, "docs/migration") {
 				continue
 			}
 			sev := "warning"
-			if strings.HasPrefix(rel, "coredata/sources/") || strings.HasPrefix(rel, "coredata/rules/") {
+			switch {
+			case strings.HasPrefix(rel, "coredata/sources/"),
+				strings.HasPrefix(rel, "coredata/rules/"),
+				strings.HasPrefix(rel, "skills/"),
+				strings.HasPrefix(rel, "internal/core/content/testdata/"), // rels do walker são ToSlash — literal /, não filepath.Join
+				rel == "coredata/registry.yaml":
 				sev = "error"
 			}
 			scan(rel, filepath.Join(ws, filepath.FromSlash(rel)), sev)
@@ -853,6 +885,23 @@ func lintL6(rep *Report, ws string, kitMode bool, configRoot string, kitMDs []st
 		for _, rel := range mdFilesUnder(configRoot, "profile") {
 			scan(rel, filepath.Join(configRoot, filepath.FromSlash(rel)), "warning")
 		}
+	}
+	// superficia exceções em uso — agregado por nome, 1 finding por nome
+	names := make([]string, 0, len(allowUsed))
+	for n := range allowUsed {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	for _, n := range names {
+		h := allowUsed[n]
+		rep.Findings = append(rep.Findings, Finding{
+			Check:       "L6-allowlist",
+			Severity:    "warning",
+			File:        h.file,
+			Line:        h.line,
+			Description: fmt.Sprintf("ghostAllowlist em uso: `%s` — %d ocorrência(s) silenciada(s) nesta varredura; revisar se a exceção ainda se aplica", n, h.count),
+			Fix:         "remova a entrada se o nome deixou de ser citado, ou mantenha com o motivo atualizado no mapa ghostAllowlist (referência de IMP)",
+		})
 	}
 }
 
@@ -1791,6 +1840,35 @@ func dirExists(p string) bool {
 func readIfExists(p string) string {
 	data, _ := os.ReadFile(p)
 	return string(data)
+}
+
+// mdFilesDeep — .md recursivo (mdFilesUnder é só 1 nível); usado para os
+// escopos aninhados do L6 (skills/**, goldens de conteúdo).
+func mdFilesDeep(root, sub string) []string {
+	dir := root
+	if sub != "" {
+		dir = filepath.Join(root, filepath.FromSlash(sub))
+	}
+	var out []string
+	filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil // dir ausente/ilegível = sem alvos, não é falha
+		}
+		if d.IsDir() {
+			if d.Name() == ".git" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(d.Name(), ".md") {
+			return nil
+		}
+		if rel, rerr := filepath.Rel(root, p); rerr == nil {
+			out = append(out, filepath.ToSlash(rel))
+		}
+		return nil
+	})
+	return out
 }
 
 func containsStr(xs []string, s string) bool {
