@@ -39,7 +39,7 @@ func TestWizardProfileChoicesCopy(t *testing.T) {
 	if !strings.Contains(choices[0].Limitation, "sem agents nativos") {
 		t.Errorf("essencial.Limitation sem a limitação: %q", choices[0].Limitation)
 	}
-	if !strings.Contains(choices[1].What, "126 componentes") || !strings.Contains(choices[1].What, "config global") {
+	if !strings.Contains(choices[1].What, "127 componentes") || !strings.Contains(choices[1].What, "config global") {
 		t.Errorf("completo.What sem a experiência completa: %q", choices[1].What)
 	}
 	if !strings.Contains(choices[1].Limitation, "compatível apenas com opencode e claude-code") ||

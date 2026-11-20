@@ -61,7 +61,7 @@ func TestFullWorkspaceZoneCoexistsWithBaseManifest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FULL após BASE: %v", err)
 	}
-	if res == nil || res.Total != 129 {
+	if res == nil || res.Total != 130 {
 		t.Fatalf("FULL na zona: total=%v", res)
 	}
 	// manifest BASE intocado pelo FULL
@@ -72,7 +72,7 @@ func TestFullWorkspaceZoneCoexistsWithBaseManifest(t *testing.T) {
 	if err != nil || mf == nil || len(mf.Skills) != 16 {
 		t.Fatalf("manifest BASE ilegível após FULL: %v (%+v)", err, mf)
 	}
-	// manifest de conteúdo separado, schema próprio, 126 arquivos
+	// manifest de conteúdo separado, schema próprio, 127 arquivos
 	var cm struct {
 		Version string `json:"version"`
 		Files   []struct {
@@ -84,7 +84,7 @@ func TestFullWorkspaceZoneCoexistsWithBaseManifest(t *testing.T) {
 	if err := json.Unmarshal([]byte(raw), &cm); err != nil {
 		t.Fatalf("manifest-content.json inválido: %v", err)
 	}
-	if len(cm.Files) != 126 {
+	if len(cm.Files) != 127 {
 		t.Errorf("manifest-content com %d arquivos, want 126", len(cm.Files))
 	}
 	if _, err := os.Stat(filepath.Join(ws, ".golmet", "agents", "gm-dev.md")); err != nil {
@@ -108,7 +108,7 @@ func TestFullWorkspaceZoneCoexistsWithBaseManifest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FULL re-run: %v", err)
 	}
-	if res2.Total != 129 {
+	if res2.Total != 130 {
 		t.Fatalf("re-run total=%d", res2.Total)
 	}
 	for _, c := range res2.Conflicts {

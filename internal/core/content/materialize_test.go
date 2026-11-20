@@ -27,7 +27,7 @@ func TestMaterializeWritesFullAndManifest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rep.Total != 129 || len(rep.Written) != 126 || len(rep.Conflicts) != 0 {
+	if rep.Total != 130 || len(rep.Written) != 127 || len(rep.Conflicts) != 0 {
 		t.Fatalf("materialize: total=%d written=%d conflicts=%d", rep.Total, len(rep.Written), len(rep.Conflicts))
 	}
 	if _, err := os.Stat(filepath.Join(root, "agents", "gm-dev.md")); err != nil {

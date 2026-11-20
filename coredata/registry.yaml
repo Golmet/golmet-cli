@@ -1141,6 +1141,10 @@ items:
     requires: [file, glob, shell, ask]
     degrades: [edit, write, webfetch]
     body: sources/gm-knowledge-graph.md
+    # arquivos auxiliares do item — o render emite cada um para
+    # skills/<id>/<resto> (destino do config; IMP-008 — script determinístico
+    # que a skill executa no Passo 2)
+    files: [sources/gm-knowledge-graph/scripts/build-knowledge-graph.mjs]
 
   - id: gm-knowledge-route
     kind: skill
