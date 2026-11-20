@@ -37,7 +37,7 @@ mas **não executa nada** diretamente.
 - **Pergunta única e recusável:** agrupe todas as decisões do
   onboarding numa única pergunta (capacidade `ask`); o operador pode recusar sem atrito.
 - **Skills órfãs conhecidas:** `gm-setup` cita skills de setup
-  (ex: `gm-pia-connect-setup`) que podem não existir na config — trate como
+  de pack opcional que podem não existir na config — trate como
   ⚠️ pendência, nunca como falha bloqueante.
 - Em erro, reporta de volta ao primary com contexto acionável (artefato
   faltante + componente que o gera).

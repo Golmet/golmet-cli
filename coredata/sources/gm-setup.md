@@ -60,9 +60,8 @@ client-profile; nunca invente conteúdo fora dos blocos marcadores. Perfis:
 - `glob` (detectar módulos/repos no filesystem)
 - `question` (perguntar paths e opções — 1 pergunta por bloco)
 - `edit`/`write` (editar os artefatos locais — AGENTS.md, opencode.jsonc e perfis de `profile/`)
-  gm-pia-connect-setup somente se existir na instalação — skill de pack opcional, IMP-105)
 - `bash` (validação de ambiente conforme o perfil de adoção: core-only valida só gh/git; completo valida Test-Path, java -version, mvn -version, node -v)
-- `skill` (delegar gm-azure-setup / gm-gh-setup / gm-aws-setup / gm-jev-setup; gm-pia-connect-setup somente se existir na instalação — skill de pack opcional, IMP-105)
+- `skill` (delegar gm-azure-setup / gm-gh-setup / gm-aws-setup / gm-jev-setup)
 
 ## Modo de erro
 
@@ -85,7 +84,7 @@ de cada um antes de prosseguir. O usuário pode **pular** qualquer passo
 opcional, mas nunca executar dois passos em paralelo.
 
 ```
-Passo 0 → Passo 1 → Passo 2 → Passo 2b (perfil do cliente) → Passo 2c (perfil do operador) → Passo 3 → Passo 4 (Azure) → Passo 5 (PIA) → Passo 5b (gh) → Passo 5c (AWS) → Passo 5d (Jev) → Passo 6 → Passo 6b (Packs) → Passo 6c (hardening) → Passo 7
+Passo 0 → Passo 1 → Passo 2 → Passo 2b (perfil do cliente) → Passo 2c (perfil do operador) → Passo 3 → Passo 4 (Azure) → Passo 5b (gh) → Passo 5c (AWS) → Passo 5d (Jev) → Passo 6 → Passo 6b (Packs) → Passo 6c (hardening) → Passo 7
     ↓          ↓           ↓           ↓                ↓              ↓
  [define]   [pular]     [pular]     [pular]          [pular]        [pular]
 ```
@@ -99,7 +98,7 @@ Uma única `question`: **"Qual o perfil de adoção?"** com duas opções:
   workflow. Sem tracker Azure, sem validações de stack de dev (mvn/ng/JDK
   viram informativas no relatório), sem inventário de repos/REPOSITORIES.md.
   Perfil gravado com campos de tracker/infra como
-  `<não configurado — core-only>`. **Passos pulados**: 4 (Azure), 5 (PIA) e
+  `<não configurado — core-only>`. **Passos pulados**: 4 (Azure) e
   validações de stack do Passo 7 — marcados "não aplicável" no relatório.
   **Passos mantidos**: 1, 2, 2b (apenas usuário + diretório + org_github),
   2c (perfil do operador), 3, 5b (gh, opcional), 5c (AWS, opcional), 5d (Jev, opcional), 6, 6b (Packs), 6c (hardening), 7.
@@ -216,21 +215,8 @@ Se o bloco `<!-- azure-devops -->` estiver ausente ou incompleto →
 pergunte: "Deseja configurar o Azure DevOps agora?"
 
 - **Sim** → carregue `gm-azure-setup` e **aguarde** a conclusão
-  completa antes de prosseguir para o Passo 5.
-- **Pular** → registre como pendência no relatório e siga para o Passo 5.
-
-### Passo 5 — PIA (síncrono, opcional)
-
-Se o provider `pia-broker` não existir no opencode.jsonc → pergunte:
-"Deseja configurar o PIA agora?"
-
-- **Sim** → verifique se a skill `gm-pia-connect-setup` existe nesta
-  instalação (é skill de pack opcional — IMP-105, pode não estar presente).
-  Existe → carregue-a e **aguarde** a conclusão completa antes de prosseguir
-  para o Passo 5b. Não existe → registre ⚠️ pendência no relatório (padrão
-  do `@gm-onboarding-orchestrator` — IMP-080) e siga para o Passo 5b.
-- **Pular** → registre como pendência opcional no relatório e siga para
-  o Passo 5b.
+  completa antes de prosseguir para o Passo 5b.
+- **Pular** → registre como pendência no relatório e siga para o Passo 5b.
 
 ### Passo 5b — GitHub CLI / gh (síncrono, opcional)
 
@@ -301,8 +287,8 @@ products declarados vs disco, base canônica, artefatos org-level soltos).
 
 Se `profile/client-profile.md` declarar `packs:` (lista `<id>@<faixa>`),
 instale cada pack. Sem `packs:` no perfil → pule silenciosamente. Falha de
-um pack **não bloqueia os demais** (registre pendência — padrão do Passo
-PIA). Contrato completo em `PACK_SCHEMA.md`; compatibilidade em
+um pack **não bloqueia os demais** (registre pendência — padrão de passo
+opcional). Contrato completo em `PACK_SCHEMA.md`; compatibilidade em
 `BREAKING-CHANGES.md`.
 
 Para cada pack:
@@ -350,7 +336,6 @@ instalado; os findings entram neste relatório com severidade + remediação
    Perfis: profile/client-profile.md (cliente — IMP-103) | profile/operator-profile.md (operador — IMP-136)
 
 ✅ Azure: completo | ⚠️ Configure via gm-azure-setup
-✅ PIA: configurado | ℹ️ Pendência opcional: gm-pia-connect-setup
 ✅ GitHub (gh): autenticado | ⚠️ Pendência: gm-gh-setup
 ✅ AWS: configurado | ℹ️ Pendência opcional: gm-aws-setup
 ✅ Jev: runtime presente (smoke test ok) | ℹ️ Pendência opcional: gm-jev-setup

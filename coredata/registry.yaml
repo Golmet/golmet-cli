@@ -1441,9 +1441,8 @@ items:
       subagents de dev (gm-dev-backend, gm-dev-frontend) no opencode.jsonc,
       instala os packs declarados no perfil (`packs:` — clone em `packs/<id>/`,
       instala `provides`, grava `sources.yaml`), delega para gm-azure-setup,
-      gm-gh-setup, gm-aws-setup e gm-jev-setup (opcionais) e, quando presente na
-      instalação (skill de pack opcional — IMP-105), gm-pia-connect-setup;
-      valida o ambiente conforme o **perfil de adoção** — **core-only** (só o
+      gm-gh-setup, gm-aws-setup e gm-jev-setup (opcionais); valida o ambiente
+      conforme o **perfil de adoção** — **core-only** (só o
       workflow: sem tracker/infra, valida só gh/git) ou **completo** (tracker
       Azure + infra + packs + validações de stack). Use quando o usuário pedir
       "configurar o workflow", "setup do workflow", "primeira configuração",
