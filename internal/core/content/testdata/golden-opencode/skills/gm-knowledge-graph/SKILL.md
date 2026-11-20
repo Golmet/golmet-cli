@@ -82,15 +82,19 @@ skill própria (regra do bloco de acúmulo do AGENTS.md). Destino padrão: <cwd>
 
 ## Tools disponíveis
 
-- `shell` (executar o script determinístico scripts/build-knowledge-graph.mjs com Node)
+- `golmet graph` via `shell` (motor determinístico embutido no binário do kit — ADR-019) OU a tool MCP `gm_graph` (wrapper fino, read-only nas fontes)
 - `file` (inspeção pontual das fontes e do output para o relatório)
 - `glob` (localizar módulos/repo de docs)
 - `ask` (confirmar modo global vs delta e destino quando ambíguo)
 
-> **Escopo de tools (IMP-148):** o script exige Node >= 18 (node --version valida). Se Node
-> estiver indisponível, NÃO improvise parse manual em escala — registre pendência IMP-080
-> (instalar Node) e encerre sem output parcial. Sem rede: o HTML é self-contained por
-> construção (canvas + JS inline); qualquer script externo no HTML é bug.
+> **Motor embutido (ADR-019):** o determinístico mora no CLI/tool — `golmet
+> graph` roda em qualquer máquina com o binário do kit, SEM Node e SEM rede.
+> Strict só no registry (exit 1); fonte T1-T4 ausente = aviso + grafo parcial;
+> saída integral (os 3 artefatos ou nada). O seletor `--what` escolhe o
+> conteúdo: `workflow` (T5) · `pack` (T1+T2+T3) · `docs` (T4) · `all` —
+> combinável com `+` (ex.: `workflow+pack`); arestas cruzadas só entram quando
+> origem e destino estão selecionados. Julgamento de ruído permanece seu
+> (Passo 3 — agêntico).
 
 ## Modo de erro
 
@@ -109,18 +113,21 @@ artefatos, ou nada (escreve apenas após montar o grafo em memória).
 
 - --config-root (default: diretório de config do engine), --packs-root (default config-root),
   --projects-root (ex.: o diretorio_projetos do AGENTS.md — sem ele, T4 é pulado com aviso),
-  --out (default <cwd>/knowledge-graph/), --scope <modulo> (delta: T1-T5 integrais + APENAS
-  o módulo nomeado; sem scope = global).
+  --out (default <cwd>/knowledge-graph/), --scope <modulo> (delta: restringe docs ao
+  módulo nomeado), --what workflow|pack|docs|all (seletor de conteúdo — COMBINÁVEL com '+':
+  workflow=T5 · pack=T1+T2+T3 · docs=T4 · all=tudo, default; arestas cruzadas só com origem
+  e destino selecionados), --max-nodes (default 3500), --from-json (grafo congelado).
 - Global vs delta: se o operador não especificou e há ambiguidade (muitos módulos), pergunte
-  (1 pergunta agrupada — IMP-043). Delta para trabalho focado em um produto.
+  (1 pergunta agrupada — IMP-043). Delta para trabalho focado em um produto; `--what pack`
+  para inspecionar só o pack; `--what workflow` para a estrutura do próprio Golmet.
 
-### Passo 2 — Rodar o extrator determinístico (R4)
+### Passo 2 — Rodar o motor determinístico (ADR-019 — determinístico mora no CLI)
 
-Comando (uma linha):
+Comando (uma linha) — CLI ou tool MCP `gm_graph`:
 
-    node <skill-dir>/scripts/build-knowledge-graph.mjs --config-root <config> --projects-root "<diretorio_projetos>" --out <destino> [--scope <modulo>]
+    golmet graph --config-root <config> --projects-root "<diretorio_projetos>" --out <destino> [--scope <modulo>] [--what workflow|pack|docs|all]
 
-O script parseia as fontes (lista fechada de parsers — mini-parser de registry.yaml, INDEX.md,
+O motor parseia as fontes (lista fechada de parsers — registry.yaml, INDEX.md,
 lazy index, patterns INDEX, REQUIREMENTS/DECISIONS/TRACEABILITY/front matter de Feature.md),
 dedupe e ordena nós/arestas deterministicamente, aplica teto de nós (--max-nodes, default
 3500 — poda primeiro RN/PEND do modo global e reporta em meta.podado) e escreve os 3 artefatos.
@@ -128,7 +135,7 @@ dedupe e ordena nós/arestas deterministicamente, aplica teto de nós (--max-nod
 Regeneração sem re-parseio (grafo congelado — sem alterar dados): para reaplicar correção
 de template a artefatos já gerados, use --from-json apontando para um graph.json existente:
 
-    node <skill-dir>/scripts/build-knowledge-graph.mjs --from-json <caminho>/graph.json --out <destino>
+    golmet graph --from-json <caminho>/graph.json --out <destino>
 
 ### Passo 3 — Julgamento de ruído (o que NÃO é automático)
 

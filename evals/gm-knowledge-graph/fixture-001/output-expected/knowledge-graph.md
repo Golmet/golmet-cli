@@ -1,7 +1,7 @@
 # Grafo do Conhecimento (T1-T5)
 
-> Gerado por gm-knowledge-graph (scripts/build-knowledge-graph.mjs — determinístico).
-> Gerado em 2026-11-20T19:58 · modo: global · escopo: DemoApp
+> Gerado por golmet graph (motor determinístico do kit — ADR-019).
+> Gerado em 2026-11-20T21:15 · modo: global · escopo: DemoApp
 
 ## Contagem por tipo
 

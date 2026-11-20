@@ -161,7 +161,7 @@ func ProfileChoices() []ProfileChoice {
 		},
 		{
 			ID:         ProfileCompleto,
-			What:       "experiência completa na sua máquina — 127 componentes (agents + skills + rules) no formato nativo do engine, no config global (pessoal, não versionado)",
+			What:       "experiência completa na sua máquina — 126 componentes (agents + skills + rules) no formato nativo do engine, no config global (pessoal, não versionado)",
 			For:        "quem adota o workflow como padrão pessoal de trabalho — exige engine com skills nativas (opencode ou claude-code); o wizard filtra a lista",
 			Limitation: "compatível apenas com opencode e claude-code (derive via SkillsDir) — em engines sem skills nativas, use o perfil essencial",
 		},

@@ -179,7 +179,7 @@ func TestEngineMatrixProfilesAllSeven(t *testing.T) {
 		if err != nil {
 			t.Fatalf("completo %s: %v", id, err)
 		}
-		if resFull.Report.FullTotal != 130 {
+		if resFull.Report.FullTotal != 129 {
 			t.Errorf("completo %s: total=%d, want 129", id, resFull.Report.FullTotal)
 		}
 		root := filepath.Dir(adapter.SkillsDir(fullHome))

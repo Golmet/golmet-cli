@@ -56,6 +56,7 @@ func newRootCmd() *cobra.Command {
 		newIndexCmd(),
 		newNextCmd(),
 		newEvalCmd(),
+		newGraphCmd(),
 		newDBCmd(),
 		newTemplateCmd(),
 		newUninstallCmd(),

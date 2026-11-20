@@ -12,7 +12,7 @@
       "config/agents/*.md",
       "projects/{REQUIREMENTS.md, DECISIONS.md, quality/TRACEABILITY.md, delivery/**, specs/}"
     ],
-    "gerado_em": "2026-11-20T19:58",
+    "gerado_em": "2026-11-20T20:55",
     "avisos": [
       "dir ausente para fundado_em: config/agents"
     ],

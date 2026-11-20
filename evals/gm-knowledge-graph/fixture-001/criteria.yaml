@@ -1,22 +1,26 @@
-name: "gm-knowledge-graph - fixture sintética T1-T5 (global + determinismo + from-json + strict)"
+name: "gm-knowledge-graph - fixture sintética T1-T5 (paridade Go↔Node + determinismo + from-json + strict)"
 description: >
   Workspace sintético com config do engine mínimo (registry T5 em blocos +
   skill inline, pack T1/T2/T3 com domínio stale e pattern superado) e 1 módulo
   T4 (RNs/PENDs com promoção IMP-094, ADRs com decide, TRACEABILITY OK/FALHA,
   specs e features com âncora RN + âncora PEND legada). O runner semeia o
-  sandbox com input/, roda o extrator 2x (determinismo), regenera via
-  --from-json e tenta strict contra config sem registry (deve abortar sem
-  output). O kit pontua o ESTADO FINAL do sandbox.
+  sandbox com input/, roda o motor Go (golmet graph) 2x (determinismo),
+  regenera via --from-json e tenta strict contra config sem registry (deve
+  abortar sem output). O kit pontua o ESTADO FINAL do sandbox.
+
+  PARIDADE (ADR-019): output-expected/graph.json e output-expected/
+  knowledge-graph.html são o BASELINE CONGELADO DO EXTRATOR NODE (.mjs) de
+  referência — o criteria exige byte-equality do Go contra eles (exceto
+  gerado_em, normalizado). output-expected/knowledge-graph.md é o baseline
+  do PRÓPRIO GO (a linha de proveniência diverge do .mjs por design).
 
   Protocolo de execução (sandbox):
   1. copiar TODO o conteúdo de input/ para o sandbox
-  2. cd sandbox && node <script> --config-root config --packs-root config --pack demo --projects-root projects --out knowledge-graph
-  3. node <script> --from-json knowledge-graph/graph.json --out knowledge-graph-fromjson
-  4. node <script> --config-root config-vazia --packs-root config-vazia --pack demo --projects-root projects --out kg-abort  (esperado exit 1)
-  5. golmet eval <fixture-dir> --workspace <sandbox>
-  Onde <script> = scripts/build-knowledge-graph.mjs da skill (coredata/sources/gm-knowledge-graph/scripts/
-  no repo, skills/gm-knowledge-graph/scripts/ no config materializado). Caminhos PASSADOS
-  são relativos ao sandbox — os artefatos congelados em output-expected/ exigem esse formato.
+  2. cd sandbox && golmet graph --config-root config --packs-root config --pack demo --projects-root projects --out knowledge-graph
+  3. golmet graph --config-root config --packs-root config --pack demo --projects-root projects --out knowledge-graph-run2  (determinismo)
+  4. golmet graph --from-json knowledge-graph/graph.json --out knowledge-graph-fromjson
+  5. golmet graph --config-root config-vazia --packs-root config-vazia --pack demo --projects-root projects --out kg-abort  (esperado exit 1)
+  6. golmet eval <fixture-dir> --workspace <sandbox>
 inputs_required:
   - config/registry.yaml
   - config/AGENTS.md
@@ -35,6 +39,23 @@ checks:
 
   - type: file_exists
     path: "knowledge-graph/knowledge-graph.md"
+    severity: error
+
+  # --- PARIDADE Go ↔ .mjs: graph.json e HTML byte-iguais ao baseline Node ---
+  - type: reference_match
+    path: "knowledge-graph/graph.json"
+    expected: "output-expected/graph.json"
+    severity: error
+
+  - type: reference_match
+    path: "knowledge-graph/knowledge-graph.html"
+    expected: "output-expected/knowledge-graph.html"
+    severity: error
+
+  # --- md: baseline do próprio Go (linha de proveniência diverge por design) ---
+  - type: reference_match
+    path: "knowledge-graph/knowledge-graph.md"
+    expected: "output-expected/knowledge-graph.md"
     severity: error
 
   # --- T5: blocos + skill inline + arestas de delegação ---
@@ -186,19 +207,20 @@ checks:
     pattern: "**Bases T1 stale:** legado"
     severity: error
 
-  # --- determinismo: 2ª execução byte-igual (tolerância: datas/horas) ---
+  # --- determinismo Go: 2ª execução byte-igual ao MESMO baseline (paridade
+  #     de novo + idempotência da saída) ---
   - type: reference_match
-    path: "knowledge-graph/graph.json"
+    path: "knowledge-graph-run2/graph.json"
     expected: "output-expected/graph.json"
     severity: error
 
   - type: reference_match
-    path: "knowledge-graph/knowledge-graph.html"
+    path: "knowledge-graph-run2/knowledge-graph.html"
     expected: "output-expected/knowledge-graph.html"
     severity: error
 
   - type: reference_match
-    path: "knowledge-graph/knowledge-graph.md"
+    path: "knowledge-graph-run2/knowledge-graph.md"
     expected: "output-expected/knowledge-graph.md"
     severity: error
 
