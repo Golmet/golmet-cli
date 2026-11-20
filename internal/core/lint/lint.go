@@ -219,7 +219,8 @@ var reportPrefixes = []string{
 var (
 	mdLinkRe   = regexp.MustCompile(`\[[^\]]*\]\(([^)\s]+)\)`)
 	backtickRe = regexp.MustCompile("`([^`\n]+)`")
-	ghostRe    = regexp.MustCompile(`gm-[a-z0-9]+(-[a-z0-9]+)*`) // sem trailing hyphen — não captura prefixo truncado (gm-stack- de "gm-stack-*")
+	ghostRe    = regexp.MustCompile(`gm-[a-z0-9]+(-[a-z0-9]+)*`)                            // sem trailing hyphen — não captura prefixo truncado (gm-stack- de "gm-stack-*")
+	reOrgID    = regexp.MustCompile(`(?m)^\s*- (?:\{\s*)?id:\s*([A-Za-z0-9][A-Za-z0-9-]*)`) // - id: x (multiline) e - { id: x, ... } (inline dict)
 	kebabRe    = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 )
 
@@ -284,6 +285,15 @@ func Run(opt Options) (*Report, error) {
 	rep.ConfigRoot = configRoot
 
 	validGm := registryIDs(ws, kitMode)
+	// fontes de extensão da org (norma component-lifecycle: componentes
+	// novos nascem no pack): o modo config/packs resolve gm-* contra
+	// kit ∪ org — registry.yaml do config root + componentes declarados
+	// nos packs de state ativos. Resolver só contra o registry do binário
+	// gerava falso positivo estrutural: todo componente de org citado num
+	// AGENTS.md era fantasma (caso real gm-mkt, 2026-11-20).
+	if configRoot != "" {
+		validGm = append(validGm, orgComponentNames(configRoot)...)
+	}
 
 	// ---- alvos de scan ----
 	var kitMDs []string // rel ao ws
@@ -1787,6 +1797,61 @@ func registryIDs(ws string, kitMode bool) []string {
 		if !seen[id] {
 			seen[id] = true
 			out = append(out, id)
+		}
+	}
+	return out
+}
+
+// orgComponentNames — componentes declarados pelas fontes de extensão da
+// org no config root. Fontes: <configRoot>/registry.yaml (mesmo formato do
+// registry do binário) e packs de state ativos (agents/*.md, skills/<dir>/
+// com SKILL.md). Complementa registryIDs: o L6/L1 do modo config/packs
+// resolve gm-* contra kit ∪ org, não só contra o registro público.
+func orgComponentNames(configRoot string) []string {
+	if configRoot == "" {
+		return nil
+	}
+	seen := map[string]bool{}
+	var out []string
+	add := func(n string) {
+		if n == "" || seen[n] {
+			return
+		}
+		seen[n] = true
+		out = append(out, n)
+	}
+	// registry.yaml do config root — dois formatos em uso: multiline
+	// (`- id: x`) e inline dict (`- { id: x, ... }`). O content.ParseRegistry
+	// só suporta o multiline; regex local cobre os dois até o parser central
+	// suportar inline dicts (extensão futura, PR separado).
+	if regData, rerr := os.ReadFile(filepath.Join(configRoot, "registry.yaml")); rerr == nil {
+		for _, m := range reOrgID.FindAllStringSubmatch(string(regData), -1) {
+			add(m[1])
+		}
+	}
+	entries, err := os.ReadDir(filepath.Join(configRoot, "packs"))
+	if err != nil {
+		return out
+	}
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		packDir := filepath.Join(configRoot, "packs", e.Name())
+		if !isStatePack(packDir) {
+			continue
+		}
+		if agentMDs, gerr := filepath.Glob(filepath.Join(packDir, "agents", "*.md")); gerr == nil {
+			for _, f := range agentMDs {
+				add(strings.TrimSuffix(filepath.Base(f), ".md"))
+			}
+		}
+		if skillDirs, serr := os.ReadDir(filepath.Join(packDir, "skills")); serr == nil {
+			for _, sd := range skillDirs {
+				if sd.IsDir() && fileExists(filepath.Join(packDir, "skills", sd.Name(), "SKILL.md")) {
+					add(sd.Name())
+				}
+			}
 		}
 	}
 	return out

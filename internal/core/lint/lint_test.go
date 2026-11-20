@@ -250,6 +250,49 @@ func TestL6GhostsByContext(t *testing.T) {
 	}
 }
 
+func TestL6OrgComponentSources(t *testing.T) {
+	// componentes da org (registry do config root + packs de state) NÃO são
+	// fantasmas — norma component-lifecycle: componentes nascem no pack.
+	// Bug real: gm-mkt existente em registry/pack/engine era marcado como
+	// fantasma porque o lint resolvia gm-* só contra o registry do binário.
+	home := t.TempDir()
+	cfg := filepath.Join(home, ".config", "opencode")
+	os.MkdirAll(cfg, 0o755)
+	os.WriteFile(filepath.Join(cfg, "registry.yaml"), []byte(strings.Join([]string{
+		"primary_agents:",
+		"  - id: gm-org",
+		"    description: primary da org",
+		"subagents:",
+		"  - id: gm-org-orchestrator",
+		"    description: orchestrator da org",
+		"    owner: gm-org",
+		"skills:",
+		"  - { id: gm-org-skill, domain: outros, description: skill da org }",
+	}, "\n")), 0o644)
+	os.MkdirAll(filepath.Join(cfg, "packs", "org-pack", "agents"), 0o755)
+	os.WriteFile(filepath.Join(cfg, "packs", "org-pack", "agents", "gm-org-agent.md"), []byte("---\ndescription: agent do pack\n---\n"), 0o644)
+	os.MkdirAll(filepath.Join(cfg, "packs", "org-pack", "skills", "gm-pack-skill"), 0o755)
+	os.WriteFile(filepath.Join(cfg, "packs", "org-pack", "skills", "gm-pack-skill", "SKILL.md"), []byte("---\nname: gm-pack-skill\ndescription: skill do pack\n---\n"), 0o644)
+	os.WriteFile(filepath.Join(cfg, "packs", "org-pack", "pack.yaml"), []byte(strings.Join([]string{
+		"kind: state",
+		"id: org-pack",
+		"name: Org Pack",
+		"version: 1.0.0",
+	}, "\n")), 0o644)
+	os.WriteFile(filepath.Join(cfg, "AGENTS.md"), []byte(strings.Join([]string{
+		"- `gm-org` e `gm-org-orchestrator` e `gm-org-skill` — registry da org",
+		"- `gm-org-agent` e `gm-pack-skill` — pack da org",
+		"- `gm-fantasma-real` — não existe em nenhuma fonte",
+	}, "\n")), 0o644)
+
+	ws := t.TempDir() // sem coredata/registry.yaml → modo config
+	rep := runLint(t, ws, home)
+	l6 := findingsOf(rep, "L6")
+	if len(l6) != 1 || !strings.Contains(l6[0].Description, "gm-fantasma-real") {
+		t.Fatalf("L6 = %+v, want só gm-fantasma-real (componentes da org não são fantasmas)", l6)
+	}
+}
+
 func TestL6ScopeRegistryGoldensSkills(t *testing.T) {
 	ws := kitFixture(t)
 	// fantasma citado na descrição DENTRO do registry
