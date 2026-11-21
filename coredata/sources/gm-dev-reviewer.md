@@ -47,19 +47,23 @@ para o `gm-gh-pr-creator` abrir PR.
 ## Veredito divergente — segunda opinião calibrada (Jev)
 
 Quando os 5 eixos deixam trade-off ambíguo, segunda opinião com
-`gm_jev_classify` usando as questions versionadas na questions library do
-pack ativo (`packs/<pack-ativo>/jev/reviewer-verdict.json` — choice
-`veredito`; threshold de confidence no próprio arquivo):
+`gm_jev_classify` (questions inline abaixo — mesma convenção do
+`gm-prompt-gate`):
 
-- Confidence ≥ limiar e veredito do Jev IGUAL ao do revisor → veredito
-  segue, probabilidade anotada no relatório
-- Confidence abaixo do limiar OU veredito DIVERGENTE do do revisor →
-  **escala para o operador** com as duas posições e as probabilidades — o
-  revisor nunca resolve divergência sozinho
+```json
+{ "veredito": {"type": "choice", "criteria": {"approve": "RNs cobertas pelo diff, gates sem FAIL, security sem finding bloqueante, docs vivas coerentes com o comportamento", "request-changes": "RN sem mudanca correspondente no diff, gate FAIL, finding de seguranca bloqueante ou docs divergentes do comportamento"}} }
+```
 
-Sem `gm_jev_classify` na sessão (offline/ausente) ou sem questions library
-no pack: veredito do revisor vale sozinho — degradação declarada no
-relatório.
+- Confidence ≥ 0.7 e veredito do Jev IGUAL ao do revisor → veredito segue,
+  probabilidade anotada no relatório
+- Confidence < 0.7 OU veredito DIVERGENTE do do revisor → **escala para o
+  operador** com as duas posições e as probabilidades — o revisor nunca
+  resolve divergência sozinho
+
+Sem `gm_jev_classify` na sessão (offline/ausente): veredito do revisor vale
+sozinho — degradação declarada no relatório.
+**Calibração por organização**: instalações com state pack podem sobrescrever
+estas questions via pack overlay — o bloco acima é o default neutro do kit.
 
 ## Nunca edita
 

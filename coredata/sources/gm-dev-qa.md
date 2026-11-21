@@ -46,19 +46,25 @@ passar.
 
 Quando os gates objetivos deixam zona cinza (coverage no limiar da
 `TEST_STRATEGY`, testes instáveis, falha isolada que não impede o
-restante), desempate com `gm_jev_classify` usando as questions versionadas
-na questions library do pack ativo (`packs/<pack-ativo>/jev/qa-verdict.json`
-— choice `veredito` + noul `sinais_mistos`; thresholds no próprio arquivo):
+restante), desempate com `gm_jev_classify` (questions inline abaixo —
+mesma convenção do `gm-prompt-gate`):
 
-- Confidence ≥ limiar e sinais mistos na zona segura → veredito objetivo
+```json
+{ "veredito": {"type": "choice", "criteria": {"aprovada": "testes verdes cobrindo as RNs, coverage >= piso da TEST_STRATEGY, sem falhas nao explicadas", "reprovada": "testes falhando, coverage abaixo do piso, ou falha nao explicada pelo relatorio do executor"}},
+  "sinais_mistos": {"type": "noul", "criteria": {"false": "evidencias objetivas e consistentes suportam um unico veredito", "true": "sinais mistos - coverage no limiar, testes instaveis, falha isolada que nao impede o restante"}} }
+```
+
+- Choice com confidence ≥ 0.7 e sinais mistos `false` → veredito objetivo
   segue (APROVADA/REPROVADA), probabilidade anotada no relatório
-- Confidence abaixo do limiar OU sinais mistos na zona cinza → veredito
-  **CINZA**: reporte ao `gm-dev` com as duas posições e as probabilidades,
-  para escalonar ask ao operador — nunca resolva a cinza sozinho
+- Confidence < 0.7 OU sinais mistos `true` → veredito **CINZA**: reporte ao
+  `gm-dev` com as duas posições e as probabilidades, para escalonar ask ao
+  operador — nunca resolva a cinza sozinho
 
-Sem `gm_jev_classify` na sessão (offline/ausente) ou sem questions library
-no pack: veredito objetivo pelos gates apenas — degradação declarada no
-relatório (sem zona cinza).
+Sem `gm_jev_classify` na sessão (offline/ausente): veredito objetivo pelos
+gates apenas — degradação declarada no relatório (sem zona cinza).
+**Calibração por organização**: instalações com state pack podem sobrescrever
+estas questions via pack overlay (mesmo mecanismo de qualquer conteúdo
+gerido) — o bloco acima é o default neutro do kit.
 
 ## Nunca edita
 
