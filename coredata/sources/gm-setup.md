@@ -201,6 +201,14 @@ perfil em vez de perguntar a cada sessão.
    oriente a ressincronização do estado versionado (`golmet pack update`
    no pack que fornece as rules da org (packs/<id>/rules/), ou nova instalação do kit) e registre ⚠️ —
    nunca crie conteúdo de rules/ da org por conta própria.
+   **Componha as linhas das normas da org (a partir do pack — nunca
+   hardcode no template):** para cada state pack do cliente, leia
+   `packs/<id>/rules/*.md` e adicione ao índice 1 linha por norma no
+   formato `packs/<id>/rules/<assunto>.md` — <resumo> — <gatilho>, com o
+   gatilho extraído do header `> Gatilho: AO ...` da própria norma.
+   Idempotente: norma já listada fica como está; norma nova entra; norma
+   deletada do pack sai do índice (confirme a remoção com o operador). O
+   pack é a fonte — o template do kit não lista normas de org.
 3. **opencode.jsonc**:
    - `permission.external_directory["<dir>/**"] = "allow"`
    - `agent.gm-dev-backend.permission = { edit: { "<dir>/**": "allow", "*": "ask" }, write: { ... } }`
