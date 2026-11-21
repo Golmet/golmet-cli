@@ -26,6 +26,7 @@ canvas:active{cursor:grabbing}
 #vizinhos{margin-top:.6rem;color:var(--tx2)}
 #vizinhos .v{color:var(--tx);cursor:pointer}
 #vizinhos .v:hover{color:var(--ouro)}
+#vizinhos .vl{margin:4px 0;line-height:1.4}
 #reset{position:absolute;bottom:1rem;right:1rem;background:var(--bg2);color:var(--tx);border:1px solid var(--ln);border-radius:6px;padding:.4rem .9rem;cursor:pointer;font-family:inherit}
 #reset:hover{border-color:var(--ouro);color:var(--ouro)}
 #legenda{position:absolute;bottom:1rem;left:1rem;background:rgba(18,20,23,.9);border:1px solid var(--ln);border-radius:8px;padding:.7rem 1rem;font-size:.75rem;color:var(--tx2)}
@@ -241,15 +242,28 @@ function seleciona(nRaw){
   const at = Object.entries(n.n.attrs).filter(function(kv){ return kv[1]!==null&&kv[1]!==undefined&&kv[1]!==''; });
   document.getElementById('pAttrs').innerHTML = at.length ? '<table>'+at.map(function(kv){ var k=kv[0], v=String(kv[1]); if(v.length>140) v=v.slice(0,140)+'…'; return '<tr><td>'+k+'</td><td>'+v+'</td></tr>'; }).join('')+'</table>' : '';
   const selId = n.n.id;
-  const viz = G.edges.filter(function(e){ return e.from===selId||e.to===selId; }).map(function(e){
+  // agrupa vizinhos por (direção, tipo) — UMA div por grupo, legível em nós densos
+  const grupos = {}; // chave: (sai?'s':'e')+'|'+e.type
+  for (const e of G.edges){
+    if (e.from!==selId && e.to!==selId) continue;
     const sai = e.from===selId;
-    const outro = sai?e.to:e.from; const dn=pos.get(outro);
-    const nome = '<span class="v" data-id="'+outro+'">'+(dn?dn.n.label:outro)+'</span>';
-    if (sai) return nome+' <span style="color:#555">('+e.type+' →)</span>'; // sai do selecionado: voz direta
-    const inv = INVERSOS[e.type] || e.type; // fallback: label direto (com seta)
-    return '<span style="color:#555">← </span>'+nome+' <span style="color:#555">('+inv+')</span>'; // chega no selecionado: voz inversa
-  }).join(' · ');
-  document.getElementById('vizinhos').innerHTML = viz? '<strong style="color:#E8B44A">Vizinhos</strong><br>'+viz : '';
+    const k = (sai?'s':'e')+'|'+e.type;
+    const outro = sai?e.to:e.from;
+    const dn = pos.get(outro);
+    (grupos[k] = grupos[k] || { sai, type: e.type, nomes: [] })
+      .nomes.push({ id: outro, label: dn?dn.n.label:outro });
+  }
+  // sai primeiro; dentro de cada direção: contagem DESC, depois type alfabético
+  const linhas = Object.values(grupos).sort((a,b)=>
+    a.sai!==b.sai ? (a.sai?-1:1) : (b.nomes.length-a.nomes.length) || a.type.localeCompare(b.type)
+  ).map(g=>{
+    const inv = INVERSOS[g.type] || g.type;
+    const pre = g.sai ? '→ '+g.type+':' : '← '+inv+':';
+    const nomes = g.nomes.sort((a,b)=>a.label.localeCompare(b.label))
+      .map(n=>'<span class="v" data-id="'+n.id+'">'+n.label+'</span>').join(', ');
+    return '<div class="vl"><span style="color:#555">'+pre+'</span> '+nomes+'</div>';
+  }).join('');
+  document.getElementById('vizinhos').innerHTML = linhas ? '<strong style="color:#E8B44A">Vizinhos</strong>'+linhas : '';
   painel.querySelectorAll('.v').forEach(function(el){ el.addEventListener('click',function(){ const d=pos.get(el.dataset.id); if(d){ seleciona(d); const s=toScreen(d); // pan por DELTA — computar absoluto jogava o nó no canto
     animaPan({ x: view.x + (W/2-s[0]), y: view.y + (H/2-s[1]) }); } }); });
 }
