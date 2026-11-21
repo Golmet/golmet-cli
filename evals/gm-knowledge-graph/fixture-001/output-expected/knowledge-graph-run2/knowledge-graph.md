@@ -1,7 +1,7 @@
 # Grafo do Conhecimento (T1-T5)
 
 > Gerado por golmet graph (motor determinístico do kit — ADR-019).
-> Gerado em 2026-11-20T21:15 · modo: global · escopo: DemoApp
+> Gerado em 2026-11-21T15:36 · modo: global · escopo: DemoApp
 
 ## Contagem por tipo
 
@@ -60,7 +60,6 @@ graph LR
   t5_config_agents["AGENTS.md (config)"]
   t4_modulo_DemoApp -->|abre_questao| t4_pend_DemoApp_PEND_001
   t4_modulo_DemoApp -->|abre_questao| t4_pend_DemoApp_PEND_002
-  t5_dominio_demo -->|agrega| t5_skill_gm_demo_skill
   t4_rn_DemoApp_RN_001 -->|ancora| t4_feature_DemoApp_RN_001
   t4_rn_DemoApp_RN_002 -->|ancora| t4_feature_DemoApp_RN_002
   t2_pattern_validacao_dupla -->|aplica_em| t4_modulo_DemoApp
@@ -96,6 +95,7 @@ graph LR
   t5_subagent_gm_demo_backend -->|owner| t5_primary_gm_demo
   t2_pattern_import_legado -->|pertence| t2_pack_demo
   t2_pattern_validacao_dupla -->|pertence| t2_pack_demo
+  t5_skill_gm_demo_skill -->|pertence_a| t5_dominio_demo
   t4_pend_DemoApp_PEND_002 -->|promove| t4_rn_DemoApp_RN_002
 ```
 

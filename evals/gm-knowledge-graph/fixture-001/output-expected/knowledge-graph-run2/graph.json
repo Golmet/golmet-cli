@@ -12,7 +12,7 @@
       "config/agents/*.md",
       "projects/{REQUIREMENTS.md, DECISIONS.md, quality/TRACEABILITY.md, delivery/**, specs/}"
     ],
-    "gerado_em": "2026-11-20T20:55",
+    "gerado_em": "2026-11-21T15:36",
     "avisos": [
       "dir ausente para fundado_em: config/agents"
     ],
@@ -286,12 +286,6 @@
       "attrs": {}
     },
     {
-      "from": "t5:dominio:demo",
-      "to": "t5:skill:gm-demo-skill",
-      "type": "agrega",
-      "attrs": {}
-    },
-    {
       "from": "t4:rn:DemoApp:RN-001",
       "to": "t4:feature:DemoApp:RN-001",
       "type": "ancora",
@@ -514,6 +508,12 @@
       "from": "t2:pattern:validacao-dupla",
       "to": "t2:pack:demo",
       "type": "pertence",
+      "attrs": {}
+    },
+    {
+      "from": "t5:skill:gm-demo-skill",
+      "to": "t5:dominio:demo",
+      "type": "pertence_a",
       "attrs": {}
     },
     {
