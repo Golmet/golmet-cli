@@ -32,12 +32,13 @@ template em `profile/client-profile.template.md`.
 <preenchido pelo gm-setup quando o cliente tiver pack de organização>
 Organização GitHub: **<org>** — sempre em `gh`/API. Repos:
 `<Projeto>-<Camada>` MAIÚSCULAS, privados, branch `main`. Normas da org
-vivem no pack lazy, em `packs/<pack>/rules/<assunto>.md` — UMA norma por
-arquivo, com gatilho no índice lazy abaixo (IMP-105): identidade/repos
-(`org.md`), pipeline de deploy (`deploy.md`), runbook de VPS (`vps.md`),
-observabilidade (`observability.md`). Ler a norma ANTES de criar repos,
-pipelines ou operar a infra da organização. Escrever/atualizar normas é da
-skill `gm-rule-keeper` (T3); sem pack registrado, este bloco fica vazio e o
+vivem no pack lazy, em `packs/<pack>/rules/` — UMA norma por arquivo, com
+gatilho no índice lazy abaixo (IMP-105) — **o índice é composto pelo
+`gm-setup` a partir do header `> Gatilho: AO ...` de cada norma do pack**
+(norma nova no pack = linha nova no índice; sem edição manual deste
+template). Ler a norma ANTES de criar repos, pipelines ou operar a infra
+da organização. Escrever/atualizar normas é da skill `gm-rule-keeper`
+(T3); sem pack registrado, este bloco fica vazio e o
 perfil do cliente responde pelos defaults.
 
 <!-- /org-pack -->
