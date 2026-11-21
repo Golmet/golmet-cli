@@ -51,18 +51,18 @@ execuções é o gerado_em (precisão de minuto).`,
 				}
 			}
 			sum, err := graph.Run(graph.Options{
-				ConfigRoot:    configRoot,
-				PacksRoot:     packsRoot,
-				Pack:          pack,
-				ProjectsRoot:  projectsRoot,
-				Out:           outDir,
-				Scope:         scope,
-				MaxNodes:      maxNodes,
-				FromJSON:      fromJSON,
-				What:          what,
-				DispCfg:       configRoot,
-				DispPacks:     packsRoot,
-				DispProjects:  projectsRoot,
+				ConfigRoot:   configRoot,
+				PacksRoot:    packsRoot,
+				Pack:         pack,
+				ProjectsRoot: projectsRoot,
+				Out:          outDir,
+				Scope:        scope,
+				MaxNodes:     maxNodes,
+				FromJSON:     fromJSON,
+				What:         what,
+				DispCfg:      configRoot,
+				DispPacks:    packsRoot,
+				DispProjects: projectsRoot,
 			})
 			if err != nil {
 				if se, ok := err.(*graph.StrictError); ok {

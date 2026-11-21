@@ -91,7 +91,6 @@ func fileExists(p string) bool {
 	return err == nil && !st.IsDir()
 }
 
-
 func orDefault(v, def string) string {
 	if v == "" {
 		return def
@@ -282,7 +281,7 @@ func flowList(s string) []string {
 	if !strings.HasPrefix(s, "[") || !strings.Contains(s, "]") {
 		return nil
 	}
-	inner := s[1 : strings.LastIndex(s, "]")]
+	inner := s[1:strings.LastIndex(s, "]")]
 	parts := strings.Split(inner, ",")
 	var out []string
 	for _, p := range parts {

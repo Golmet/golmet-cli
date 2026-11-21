@@ -8,13 +8,13 @@ package graph
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-	_ "embed"
 )
 
 //go:embed template.html
@@ -177,7 +177,6 @@ func normalizePodado(v any) any {
 	return false
 }
 
-
 // ---- emissão ----
 
 func renderMD(g *Graph, maxNodes int) string {
@@ -296,9 +295,9 @@ func renderMD(g *Graph, maxNodes int) string {
 
 func renderHTML(g *Graph) (string, error) {
 	dados := struct {
-		GeradoEm string   `json:"gerado_em"`
-		Nodes    []*Node  `json:"nodes"`
-		Edges    []*Edge  `json:"edges"`
+		GeradoEm string  `json:"gerado_em"`
+		Nodes    []*Node `json:"nodes"`
+		Edges    []*Edge `json:"edges"`
 	}{GeradoEm: g.Meta.GeradoEm, Nodes: g.Nodes, Edges: g.Edges}
 	compact, err := marshalJSONCompact(dados)
 	if err != nil {

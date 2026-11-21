@@ -718,19 +718,19 @@ type graphParams struct {
 }
 
 type graphOut struct {
-	OK        bool             `json:"ok"`
-	Modo      string           `json:"modo"`
-	Escopo    string           `json:"escopo"`
-	What      string           `json:"what"`
-	Pack      string           `json:"pack,omitempty"`
-	Nodes     int              `json:"nodes"`
-	Edges     int              `json:"edges"`
-	PorTipo   map[string]int   `json:"por_tipo"`
-	StaleT1   []string         `json:"stale_t1"`
-	Avisos    []string         `json:"avisos"`
-	Podado    any              `json:"podado,omitempty"`
-	Artefatos graph.Artefatos  `json:"artefatos"`
-	Summary   string           `json:"summary"`
+	OK        bool            `json:"ok"`
+	Modo      string          `json:"modo"`
+	Escopo    string          `json:"escopo"`
+	What      string          `json:"what"`
+	Pack      string          `json:"pack,omitempty"`
+	Nodes     int             `json:"nodes"`
+	Edges     int             `json:"edges"`
+	PorTipo   map[string]int  `json:"por_tipo"`
+	StaleT1   []string        `json:"stale_t1"`
+	Avisos    []string        `json:"avisos"`
+	Podado    any             `json:"podado,omitempty"`
+	Artefatos graph.Artefatos `json:"artefatos"`
+	Summary   string          `json:"summary"`
 }
 
 func gmGraph(ctx context.Context, req *mcp.CallToolRequest, in graphParams) (*mcp.CallToolResult, graphOut, error) {
