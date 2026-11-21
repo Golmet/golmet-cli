@@ -41,6 +41,14 @@ footer `BREAKING CHANGE:` → major, os demais sem release. A regra completa
 vive em
 [docs/reference/versioning.md](docs/reference/versioning.pt-br.md).
 
+**Idioma dos commits: inglês — sempre.** Este repositório é público e
+internacional: o histórico completo de commits é legível por qualquer
+pessoa, e os subjects vão verbatim para as release notes e o CHANGELOG via
+git-cliff. Escreva todas as partes do commit em inglês — subject, corpo e
+footers. Contexto interno pertence aos canais de comunicação da equipe,
+não ao histórico público. Exemplo: `fix(lint): resolve org components in
+the ghost check` (e não "resolvem componentes da org").
+
 ## O fluxo de PR
 
 1. Abra o PR contra a `main` usando
