@@ -261,7 +261,7 @@ function seleciona(nRaw){
     const pre = g.sai ? '→ '+g.type+':' : '← '+inv+':';
     const nomes = g.nomes.sort((a,b)=>a.label.localeCompare(b.label))
       .map(n=>'<span class="v" data-id="'+n.id+'">'+n.label+'</span>').join(', ');
-    return '<div class="vl"><span style="color:#555">'+pre+'</span> '+nomes+'</div>';
+    return '<div class="vl"><span style="color:var(--tx2)">'+pre+'</span> '+nomes+'</div>';
   }).join('');
   document.getElementById('vizinhos').innerHTML = linhas ? '<strong style="color:#E8B44A">Vizinhos</strong>'+linhas : '';
   painel.querySelectorAll('.v').forEach(function(el){ el.addEventListener('click',function(){ const d=pos.get(el.dataset.id); if(d){ seleciona(d); const s=toScreen(d); // pan por DELTA — computar absoluto jogava o nó no canto
