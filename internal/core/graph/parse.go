@@ -418,6 +418,14 @@ func (g *engine) parseT3() {
 	if fileExists(filepath.Join(rulesDir, "stack-templates.yaml")) {
 		g.node("t3:rule:stack-templates.yaml", "t3_rule", "stack-templates.yaml", "T3",
 			newAttrs().set("arquivo", "packs/"+g.pack+"/rules/stack-templates.yaml").set("tipo", "registry T3 (yaml)"))
+		// IMP-011: registry yaml é elegível a indice_lazy pelo mesmo match do
+		// índice lazy (attrs.arquivo contra a referência "rules/<arquivo>",
+		// independente de extensão .md) — sem isso o nó fica órfão permanente
+		if strings.Contains(lazyTxt, "rules/stack-templates.yaml") {
+			g.edge("t5:config:agents", "t3:rule:stack-templates.yaml", "indice_lazy", nil)
+		} else {
+			g.aviso("registry yaml fora do índice lazy: stack-templates.yaml (sinal válido — reportar ao gm-rule-keeper)")
+		}
 	}
 }
 
