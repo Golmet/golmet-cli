@@ -40,6 +40,13 @@ automatic semver bump on merge — `feat` → minor, `fix` → patch, `!` or a
 rule lives in
 [docs/reference/versioning.md](docs/reference/versioning.md).
 
+**Subject language: English.** The commit subject is what release tooling
+consumes — git-cliff turns subjects verbatim into release notes and the
+CHANGELOG, which ship to an international npm audience. Write subjects in
+English; commit bodies may stay in Portuguese when they carry internal
+context. Example: `fix(lint): resolve org components in the ghost check`
+(not "resolvem componentes da org").
+
 ## The PR flow
 
 1. Open the PR against `main` using

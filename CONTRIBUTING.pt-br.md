@@ -41,6 +41,13 @@ footer `BREAKING CHANGE:` → major, os demais sem release. A regra completa
 vive em
 [docs/reference/versioning.md](docs/reference/versioning.pt-br.md).
 
+**Idioma do subject: inglês.** O subject do commit é o que a tooling de
+release consome — o git-cliff copia os subjects verbatim para as release
+notes e o CHANGELOG, que vão para um público internacional no npm. Escreva
+o subject em inglês; o corpo do commit pode ficar em português quando
+trouxer contexto interno. Exemplo: `fix(lint): resolve org components in
+the ghost check` (e não "resolvem componentes da org").
+
 ## O fluxo de PR
 
 1. Abra o PR contra a `main` usando
