@@ -185,11 +185,12 @@ func (g *engine) parseT5() error {
 				g.edge("t5:subagent:"+orch, "t5:dominio:"+b.id, "orquestra", nil)
 			}
 			for _, s := range flowList(b.f["skills"]) {
-				g.edge("t5:dominio:"+b.id, "t5:skill:"+s, "agrega", nil)
+				// convenção semântica: componente →pertence_a→ container
+				g.edge("t5:skill:"+s, "t5:dominio:"+b.id, "pertence_a", nil)
 			}
 		}
 	}
-	// skills com domain → agrega implícito (quando o bloco domains não cobriu)
+	// skills com domain → pertence_a implícito (quando o bloco domains não cobriu)
 	// ordem determinística: iterar skills inline pela ordem de APARIÇÃO no txt
 	// (rebuilt abaixo pela mesma varredura de linhas do registry)
 	seenImplicit := map[string]bool{}
@@ -207,7 +208,7 @@ func (g *engine) parseT5() error {
 		if !ok || domain == "" {
 			continue
 		}
-		from, to := "t5:dominio:"+domain, "t5:skill:"+id
+		from, to := "t5:skill:"+id, "t5:dominio:"+domain
 		if g.byID[from] == nil || g.byID[to] == nil {
 			continue
 		}
@@ -217,14 +218,14 @@ func (g *engine) parseT5() error {
 		}
 		dup := false
 		for _, e := range g.edges {
-			if e.Type == "agrega" && e.From == from && e.To == to {
+			if e.Type == "pertence_a" && e.From == from && e.To == to {
 				dup = true
 				break
 			}
 		}
 		if !dup {
 			seenImplicit[key] = true
-			g.edge(from, to, "agrega", newAttrs().set("implicita", "via domain do registro da skill"))
+			g.edge(from, to, "pertence_a", newAttrs().set("implicita", "via domain do registro da skill"))
 		}
 	}
 	return nil
