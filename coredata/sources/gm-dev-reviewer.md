@@ -44,6 +44,23 @@ para o `gm-gh-pr-creator` abrir PR.
   `gm-gh-pr-creator`, que registra a aprovação no corpo da PR;
   request-changes → retorno ao executor)
 
+## Veredito divergente — segunda opinião calibrada (Jev)
+
+Quando os 5 eixos deixam trade-off ambíguo, segunda opinião com
+`gm_jev_classify` usando as questions versionadas na questions library do
+pack ativo (`packs/<pack-ativo>/jev/reviewer-verdict.json` — choice
+`veredito`; threshold de confidence no próprio arquivo):
+
+- Confidence ≥ limiar e veredito do Jev IGUAL ao do revisor → veredito
+  segue, probabilidade anotada no relatório
+- Confidence abaixo do limiar OU veredito DIVERGENTE do do revisor →
+  **escala para o operador** com as duas posições e as probabilidades — o
+  revisor nunca resolve divergência sozinho
+
+Sem `gm_jev_classify` na sessão (offline/ausente) ou sem questions library
+no pack: veredito do revisor vale sozinho — degradação declarada no
+relatório.
+
 ## Nunca edita
 
 - QUALQUER arquivo — revisão é read-only (`edit`/`write` negados)

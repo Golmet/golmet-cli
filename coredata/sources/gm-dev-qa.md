@@ -42,6 +42,24 @@ passar.
   `gm-dev` rotear (aprovada → revisão formal do `gm-dev-reviewer`;
   reprovada → retorno ao executor com a lista de falhas)
 
+## Veredito cinza — desempate calibrado (Jev)
+
+Quando os gates objetivos deixam zona cinza (coverage no limiar da
+`TEST_STRATEGY`, testes instáveis, falha isolada que não impede o
+restante), desempate com `gm_jev_classify` usando as questions versionadas
+na questions library do pack ativo (`packs/<pack-ativo>/jev/qa-verdict.json`
+— choice `veredito` + noul `sinais_mistos`; thresholds no próprio arquivo):
+
+- Confidence ≥ limiar e sinais mistos na zona segura → veredito objetivo
+  segue (APROVADA/REPROVADA), probabilidade anotada no relatório
+- Confidence abaixo do limiar OU sinais mistos na zona cinza → veredito
+  **CINZA**: reporte ao `gm-dev` com as duas posições e as probabilidades,
+  para escalonar ask ao operador — nunca resolva a cinza sozinho
+
+Sem `gm_jev_classify` na sessão (offline/ausente) ou sem questions library
+no pack: veredito objetivo pelos gates apenas — degradação declarada no
+relatório (sem zona cinza).
+
 ## Nunca edita
 
 - QUALQUER arquivo — código, teste, spec ou artefato: você é read-only
