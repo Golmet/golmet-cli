@@ -16,6 +16,7 @@ import (
 	"github.com/Golmet/golmet-cli/internal/core"
 	"github.com/Golmet/golmet-cli/internal/core/doctor"
 	"github.com/Golmet/golmet-cli/internal/core/eval"
+	"github.com/Golmet/golmet-cli/internal/core/graph"
 	"github.com/Golmet/golmet-cli/internal/core/indexstate"
 	coreinstall "github.com/Golmet/golmet-cli/internal/core/install"
 	"github.com/Golmet/golmet-cli/internal/core/jev"
@@ -110,6 +111,11 @@ func NewServer() *mcp.Server {
 		Name:        "gm_lint",
 		Description: "Varredura estrutural determinística (L1 refs mortas, L3 órfãos, L4 manifest stale, L5 nomes fora do padrão, L6 componentes fantasmas, L7 estrutura canônica, L8 conformidade estrutural definitivo↔template, L9 schema do registry de stack-templates, L10 estado interno dos state packs, L11 diagramas Mermaid, L12 encoding e texto quebrado, L13 âncoras de idioma) sobre o kit/config/packs — read-only, sem confirm; findings com severidade + remediação PT-BR",
 	}, gmLint)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "gm_graph",
+		Description: "Grafo visual do ecossistema Golmet (ADR-019) — motor determinístico T1-T5: estrutura do workflow (T5), pack (T1+T2+T3), docs (T4) ou os 3 (default all; combinável com '+', ex. workflow+pack). Escreve graph.json + HTML self-contained + resumo MD no destino e devolve resumo (contagens por tipo, T1 stale, avisos, podado) + paths. Strict só no registry; read-only nas fontes; sem confirm",
+	}, gmGraph)
 
 	return server
 }
@@ -696,6 +702,101 @@ type lintOut struct {
 	Warnings   int            `json:"warnings"`
 	ByCheck    map[string]int `json:"by_check"`
 	Findings   []lint.Finding `json:"findings"`
+}
+
+// gm_graph — grafo visual do ecossistema Golmet (ADR-019): wrapper fino do
+// motor determinístico T1-T5 (mesmo padrão de gm_validate/gm_doctor).
+// Read-only nas fontes; SEM confirm (grava apenas os 3 artefatos no destino).
+type graphParams struct {
+	Workspace    string `json:"workspace,omitempty" jsonschema:"workspace de contexto (default: .; default do out = <workspace>/knowledge-graph)"`
+	ProjectsRoot string `json:"projects_root,omitempty" jsonschema:"raiz dos módulos de produto (T4/docs; sem ela, docs é pulado com aviso)"`
+	Scope        string `json:"scope,omitempty" jsonschema:"delta: restringe docs (T4) ao módulo nomeado"`
+	Out          string `json:"out,omitempty" jsonschema:"diretório de saída (default: <workspace>/knowledge-graph)"`
+	MaxNodes     int    `json:"max_nodes,omitempty" jsonschema:"teto de nós (default 3500; poda determinística RN/PEND do global primeiro)"`
+	FromJSON     string `json:"from_json,omitempty" jsonschema:"regenera os artefatos de um graph.json congelado (sem re-parseio)"`
+	What         string `json:"what,omitempty" jsonschema:"seletor de conteúdo: workflow|pack|docs|all — combinável com '+' (default all)"`
+}
+
+type graphOut struct {
+	OK        bool            `json:"ok"`
+	Modo      string          `json:"modo"`
+	Escopo    string          `json:"escopo"`
+	What      string          `json:"what"`
+	Pack      string          `json:"pack,omitempty"`
+	Nodes     int             `json:"nodes"`
+	Edges     int             `json:"edges"`
+	PorTipo   map[string]int  `json:"por_tipo"`
+	StaleT1   []string        `json:"stale_t1"`
+	Avisos    []string        `json:"avisos"`
+	Podado    any             `json:"podado,omitempty"`
+	Artefatos graph.Artefatos `json:"artefatos"`
+	Summary   string          `json:"summary"`
+}
+
+func gmGraph(ctx context.Context, req *mcp.CallToolRequest, in graphParams) (*mcp.CallToolResult, graphOut, error) {
+	ws := defaultWS(in.Workspace)
+	opt := graph.Options{
+		WorkspaceHint: ws,
+		ProjectsRoot:  in.ProjectsRoot,
+		Scope:         in.Scope,
+		Out:           in.Out,
+		MaxNodes:      in.MaxNodes,
+		FromJSON:      in.FromJSON,
+		What:          in.What,
+	}
+	sum, err := graph.Run(opt)
+	if err != nil {
+		return nil, graphOut{}, err // strict (registry) e args inválidos = tool-error
+	}
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf("OK: %d nós · %d arestas · %s\n", sum.Nodes, sum.Edges, sum.OutDir))
+	b.WriteString("Por tipo: " + mustJSONSummary(sum.PorTipo) + "\n")
+	stale := sum.StaleT1
+	if len(stale) == 0 {
+		stale = []string{"nenhuma"}
+	}
+	b.WriteString("T1 stale: " + strings.Join(stale, ", ") + "\n")
+	if len(sum.Avisos) > 0 {
+		b.WriteString(fmt.Sprintf("Avisos: %d\n", len(sum.Avisos)))
+		for i, a := range sum.Avisos {
+			if i >= 15 {
+				break
+			}
+			b.WriteString("  - " + a + "\n")
+		}
+	} else {
+		b.WriteString("Avisos: 0\n")
+	}
+	out := graphOut{
+		OK:        sum.OK,
+		Modo:      sum.Modo,
+		Escopo:    sum.Escopo,
+		What:      sum.What,
+		Pack:      sum.Pack,
+		Nodes:     sum.Nodes,
+		Edges:     sum.Edges,
+		PorTipo:   sum.PorTipo,
+		StaleT1:   sum.StaleT1,
+		Avisos:    sum.Avisos,
+		Podado:    sum.Podado,
+		Artefatos: sum.Artefatos,
+		Summary:   strings.TrimRight(b.String(), "\n"),
+	}
+	if out.PorTipo == nil {
+		out.PorTipo = map[string]int{}
+	}
+	if out.StaleT1 == nil {
+		out.StaleT1 = []string{}
+	}
+	if out.Avisos == nil {
+		out.Avisos = []string{}
+	}
+	return nil, out, nil
+}
+
+func mustJSONSummary(m map[string]int) string {
+	b, _ := json.Marshal(m)
+	return string(b)
 }
 
 func mcpHome(home string) (string, error) {

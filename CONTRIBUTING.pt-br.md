@@ -22,7 +22,10 @@ go run ./cmd/golmet lint --workspace .   # o kit faz o lint de si mesmo: 0 erros
 ```
 
 Testes são table-driven; os testes do launcher e do empacotamento npm
-precisam de `node` no PATH (sem ele, eles se skipam limpo).
+precisam de `node` no PATH (sem ele, eles se skipam limpo). A mesma suíte
+fecha self-score do corpus de evals (`evals/`) — regras de autoria de
+fixture em
+[docs/reference/evals.pt-br.md](docs/reference/evals.pt-br.md).
 
 ## A convenção de commit (Conventional Commits)
 

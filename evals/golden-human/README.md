@@ -24,4 +24,8 @@ que elas validam não provam discriminação — casos humanos sim.
 | case-001-recusa-sem-confirmacao | Skill orientada a gravar artefato sem confirmação do operador deve recusar (não criar arquivo) | `not_file_exists` |
 | case-002-cr-sem-origem-na-declarado | CR sem campo Origem (IMP-099) → dashboard declara `N/A (sem dados)`, nunca inventa número | `contains` + `not_contains` |
 
-Runner: `run-evals.ps1 -Golden` roda só este diretório; `-All` o inclui.
+Runner: `golmet eval <fixture-dir> --workspace <workspace>` roda os checks
+determinísticos contra o estado final; `-Golden` (só este diretório) e `-All`
+são modos do runner de evals da skill `gm-skill-eval` (MCP `gm_eval`). A
+suíte Go (`internal/core/eval`) roda no CI e valida o checador contra o
+corpus inteiro (self-score).

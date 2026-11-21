@@ -66,7 +66,7 @@ func TestRenderGoldenOpencodeByteEquality(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		if !d.IsDir() && (strings.HasSuffix(p, ".md") || strings.HasSuffix(p, ".yaml")) {
+		if !d.IsDir() && (strings.HasSuffix(p, ".md") || strings.HasSuffix(p, ".yaml") || strings.HasSuffix(p, ".mjs")) {
 			rel, _ := filepath.Rel(goldenRoot, p)
 			goldenFiles = append(goldenFiles, filepath.ToSlash(rel))
 		}

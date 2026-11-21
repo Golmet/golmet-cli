@@ -1,0 +1,23 @@
+# registry mínimo da fixture — schema T5 do config do engine (registry.yaml do CONFIG,
+# não o do coredata do kit): primary_agents/subagents/domains em blocos + skills inline.
+primary_agents:
+  - id: gm-demo
+    description: Primary de demonstração da fixture
+    delegates: [gm-demo-backend]
+    invokes_direct: [gm-demo-skill]
+
+subagents:
+  - id: gm-demo-backend
+    description: Subagent de demonstração
+    owner: gm-demo
+    available_to: [gm-demo]
+    registered_by: gm-demo
+    invokes: [gm-demo-skill]
+
+domains:
+  - id: demo
+    orchestrator: gm-demo-backend
+    skills: [gm-demo-skill]
+
+skills:
+  - { id: gm-demo-skill, domain: demo, description: Skill de demonstração da fixture }

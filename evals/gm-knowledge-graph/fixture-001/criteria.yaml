@@ -1,0 +1,244 @@
+name: "gm-knowledge-graph - fixture sintética T1-T5 (paridade Go↔Node + determinismo + from-json + strict)"
+description: >
+  Workspace sintético com config do engine mínimo (registry T5 em blocos +
+  skill inline, pack T1/T2/T3 com domínio stale e pattern superado) e 1 módulo
+  T4 (RNs/PENDs com promoção IMP-094, ADRs com decide, TRACEABILITY OK/FALHA,
+  specs e features com âncora RN + âncora PEND legada). O runner semeia o
+  sandbox com input/, roda o motor Go (golmet graph) 2x (determinismo),
+  regenera via --from-json e tenta strict contra config sem registry (deve
+  abortar sem output). O kit pontua o ESTADO FINAL do sandbox.
+
+  PARIDADE (ADR-019): output-expected/graph.json e output-expected/
+  knowledge-graph.html são o BASELINE CONGELADO DO EXTRATOR NODE (.mjs) de
+  referência — o criteria exige byte-equality do Go contra eles (exceto
+  gerado_em, normalizado). output-expected/knowledge-graph.md é o baseline
+  do PRÓPRIO GO (a linha de proveniência diverge do .mjs por design).
+
+  Protocolo de execução (sandbox):
+  1. copiar TODO o conteúdo de input/ para o sandbox
+  2. cd sandbox && golmet graph --config-root config --packs-root config --pack demo --projects-root projects --out knowledge-graph
+  3. golmet graph --config-root config --packs-root config --pack demo --projects-root projects --out knowledge-graph-run2  (determinismo)
+  4. golmet graph --from-json knowledge-graph/graph.json --out knowledge-graph-fromjson
+  5. golmet graph --config-root config-vazia --packs-root config-vazia --pack demo --projects-root projects --out kg-abort  (esperado exit 1)
+  6. golmet eval <fixture-dir> --workspace <sandbox>
+inputs_required:
+  - config/registry.yaml
+  - config/AGENTS.md
+  - projects/DemoApp/REQUIREMENTS.md
+  - projects/DemoApp/quality/TRACEABILITY.md
+
+checks:
+  # --- saída integral: os 3 artefatos ---
+  - type: file_exists
+    path: "knowledge-graph/graph.json"
+    severity: error
+
+  - type: file_exists
+    path: "knowledge-graph/knowledge-graph.html"
+    severity: error
+
+  - type: file_exists
+    path: "knowledge-graph/knowledge-graph.md"
+    severity: error
+
+  # --- PARIDADE Go ↔ .mjs: graph.json e HTML byte-iguais ao baseline Node ---
+  - type: reference_match
+    path: "knowledge-graph/graph.json"
+    expected: "output-expected/graph.json"
+    severity: error
+
+  - type: reference_match
+    path: "knowledge-graph/knowledge-graph.html"
+    expected: "output-expected/knowledge-graph.html"
+    severity: error
+
+  # --- md: baseline do próprio Go (linha de proveniência diverge por design) ---
+  - type: reference_match
+    path: "knowledge-graph/knowledge-graph.md"
+    expected: "output-expected/knowledge-graph.md"
+    severity: error
+
+  # --- T5: blocos + skill inline + arestas de delegação ---
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"id\": \"t5:primary:gm-demo\""
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"id\": \"t5:skill:gm-demo-skill\""
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"type\": \"delega\""
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"type\": \"owner\""
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"type\": \"indice_lazy\""
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"type\": \"fundado_em\""
+    severity: error
+
+  # --- T1: domínio stale detectado por proxima_revisao ---
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"stale\": true"
+    severity: error
+
+  # --- T2: pattern com status superado preservado ---
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"status\": \"superado\""
+    severity: error
+
+  # --- T4: nós do módulo ---
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"id\": \"t4:modulo:DemoApp\""
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"id\": \"t4:rn:DemoApp:RN-001\""
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"id\": \"t4:pend:DemoApp:PEND-001\""
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"id\": \"t4:adr:DemoApp:ADR-001\""
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"id\": \"t4:feature:DemoApp:RN-001\""
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"id\": \"t4:feature:DemoApp:RN-002\""
+    severity: error
+
+  # --- T4: âncora PEND legada sinalizada SEM aresta inventada (IMP-094) ---
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"ancora_legada\": true"
+    severity: error
+
+  - type: not_contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"from\": \"t4:pend:DemoApp:PEND-001\""
+    severity: error
+
+  # --- T4: promoção PEND-002 → RN-002 com evidência explícita ---
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"type\": \"promove\""
+    severity: error
+
+  # --- T4: TRACEABILITY → cobre com OK/FALHA ---
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"type\": \"cobre\""
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"status\": \"FALHA\""
+    severity: error
+
+  # --- T4: ADR decide RN/PEND; pattern aplica_em módulo ---
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"type\": \"decide\""
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"type\": \"ancora\""
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/graph.json"
+    pattern: "\"type\": \"aplica_em\""
+    severity: error
+
+  # --- HTML self-contained (zero script/estilo externo, file:// offline) ---
+  - type: not_contains
+    path: "knowledge-graph/knowledge-graph.html"
+    pattern: "<script src="
+    severity: error
+
+  - type: not_contains
+    path: "knowledge-graph/knowledge-graph.html"
+    pattern: "<link "
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/knowledge-graph.html"
+    pattern: "reset view"
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/knowledge-graph.html"
+    pattern: "layout "
+    severity: error
+
+  # --- md: resumo + Mermaid válido + stale reportado ---
+  - type: mermaid_valid
+    path: "knowledge-graph/knowledge-graph.md"
+    severity: error
+
+  - type: contains
+    path: "knowledge-graph/knowledge-graph.md"
+    pattern: "**Bases T1 stale:** legado"
+    severity: error
+
+  # --- determinismo Go: 2ª execução byte-igual ao MESMO baseline (paridade
+  #     de novo + idempotência da saída) ---
+  - type: reference_match
+    path: "knowledge-graph-run2/graph.json"
+    expected: "output-expected/graph.json"
+    severity: error
+
+  - type: reference_match
+    path: "knowledge-graph-run2/knowledge-graph.html"
+    expected: "output-expected/knowledge-graph.html"
+    severity: error
+
+  - type: reference_match
+    path: "knowledge-graph-run2/knowledge-graph.md"
+    expected: "output-expected/knowledge-graph.md"
+    severity: error
+
+  # --- --from-json: regeneração do grafo congelado sem divergir ---
+  - type: file_exists
+    path: "knowledge-graph-fromjson/graph.json"
+    severity: error
+
+  - type: reference_match
+    path: "knowledge-graph-fromjson/knowledge-graph.html"
+    expected: "output-expected/knowledge-graph.html"
+    severity: error
+
+  # --- strict: registry ausente ABORTA sem nenhum output ---
+  - type: not_file_exists
+    path: "kg-abort/graph.json"
+    severity: error
+
+  - type: not_file_exists
+    path: "kg-abort/knowledge-graph.html"
+    severity: error

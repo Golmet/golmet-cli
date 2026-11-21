@@ -1,0 +1,59 @@
+---
+name: "Client Requirements - delta de sincronização em linguagem do cliente, zero IDs"
+description: >
+  Sincronização INCREMENTAL: o CLIENT_REQUIREMENTS anterior já existe no
+  input (saldo + boleto) e o REQUIREMENTS novo traz RN-001 mantida + RN-003
+  nova (lembrete) SEM a RN do boleto (removida). A vista do cliente deve
+  mostrar o delta (novidade + remoção) em linguagem de negócio e continuar
+  SEM nenhum identificador interno (RN-XXX/PEND-XXX).
+inputs_required: [REQUIREMENTS.md]
+
+checks:
+  - type: file_exists
+    path: "delivery/CLIENT_REQUIREMENTS.md"
+    severity: error
+
+  - type: not_contains
+    path: "delivery/CLIENT_REQUIREMENTS.md"
+    pattern: "RN-0"
+    severity: error
+
+  - type: not_contains
+    path: "delivery/CLIENT_REQUIREMENTS.md"
+    pattern: "PEND-0"
+    severity: error
+
+  - type: contains
+    path: "delivery/CLIENT_REQUIREMENTS.md"
+    pattern: "Novidades desta sincronização"
+    severity: error
+
+  - type: contains
+    path: "delivery/CLIENT_REQUIREMENTS.md"
+    pattern: "Lembrete de vencimento"
+    severity: error
+
+  - type: contains
+    path: "delivery/CLIENT_REQUIREMENTS.md"
+    pattern: "Deixou de estar disponível"
+    severity: error
+
+  - type: contains
+    path: "delivery/CLIENT_REQUIREMENTS.md"
+    pattern: "Consulta de saldo"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "delivery/CLIENT_REQUIREMENTS.md"
+    severity: error
+
+  - type: no_todos
+    path: "delivery/CLIENT_REQUIREMENTS.md"
+    patterns: ["TODO", "FIXME"]
+    severity: error
+
+  - type: line_count_range
+    path: "delivery/CLIENT_REQUIREMENTS.md"
+    min: 20
+    max: 150
+    severity: warning

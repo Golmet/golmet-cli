@@ -10,19 +10,19 @@ The same kit runs through two surfaces, by audience:
 
 | Surface | Who uses it | What it runs |
 | --- | --- | --- |
-| **The CLI in your terminal** | you (the human operator) | all **18 commands** below - direct management |
-| **the 14 MCP tools** (`golmet mcp` inside Opencode) | the AI agents in the session | the `gm_*` tools - the native interface of the AI (mutation tools require `confirm=true`) |
+| **The CLI in your terminal** | you (the human operator) | all **19 commands** below - direct management |
+| **the 15 MCP tools** (`golmet mcp` inside Opencode) | the AI agents in the session | the `gm_*` tools - the native interface of the AI (mutation tools require `confirm=true`) |
 | The CLI via shell inside the session | the AI, when no tool covers it | commands without an MCP equivalent (`init`, `adopt`, `uninstall`, `upgrade`, `tools`) |
 
 Never mix audiences: when the operator runs a command, the CLI is the surface; when the AI acts, the MCP tools are - the mutation guards (confirm, dry-run) are enforced on the AI path.
 
-> would require an extra command outside the 18-command contract — KISS: the
+> would require an extra command outside the 19-command contract — KISS: the
 > doc is manual, the **lint L6 watches the cited `gm-*` components** and the
 > repo's sync-guard test breaks if a binary command appears/disappears
 > without this page (`internal/cli/docs_sync_test.go`). For the detailed
 > living contract, run `golmet <command> --help`.
 
-18 commands, one binary. The short table lives in the
+19 commands, one binary. The short table lives in the
 [README](../../README.md#commands); below, the per-command contract
 (flags, inputs/outputs, exit codes):
 
@@ -38,13 +38,14 @@ Never mix audiences: when the operator runs a command, the CLI is the surface; w
 | `golmet adopt [workspace]` | Adopts FORMAT v1 in an existing workspace: classified dry-run first, then deterministic `--apply` preserving legacy layouts. Flags: `--apply` · `--charter-status draft|confirmed` · `--json` |
 | `golmet eval` | Deterministic eval checker: scores `criteria.yaml` fixtures against the workspace; writes the per-fixture markdown report into `~/.golmet/eval-reports` (50-report retention). `--json` |
 | `golmet tools` | Kit-native tool installation with supply-chain verification (SHA-256 + attestation): `tools install codegraph` (the code graph — DR-016) |
-| `golmet mcp` | Serves the kit as an MCP server over stdio — the 14 `gm_*` tools (see [tools.md](tools.md)). No flags |
+| `golmet mcp` | Serves the kit as an MCP server over stdio — the 15 `gm_*` tools (see [tools.md](tools.md)). No flags |
 | `golmet index [workspace]` | Rebuilds `golmet.index.json` from the prose (the prose is canonical; the index is a cache — post-merge/corruption) |
 | `golmet pack add <repo>` | L2 packs: `pack add` (clone + overlay) · `pack update <repo>` (sync + overlay, engine required, never discards accumulation) · `pack publish <origin>` (state packs: commit + push) · `pack list`. Flags per subcommand (e.g. `--engine`, `--yes`) |
 | `golmet db drift [workspace]` | The database layer (`gm-dba`): compares the DATA_MODEL entities against the migrations snapshot — deterministic drift |
 | `golmet template <target>` | Emits the kit template straight from the embed (`agents` · `client-profile` · `operator-profile`). `--out <path>` writes to a file. Templates are construction artifacts: they live in the kit, NEVER installed into the config |
 | `golmet uninstall` | Removes the global Golmet structure layer by layer, with dynamic discovery of the real state (manifest + personal.json + engine). Interactive; `--only <csv> --yes` for non-interactive · `--dry-run` · `--json`. The pack is DESELECTED by default (the remote repo is never touched) |
 | `golmet upgrade` | Self-update of the binary from the latest GitHub release (SHA-256 verified). `--check` read-only · rollback via `<bin>.old` |
+| `golmet graph` | The deterministic knowledge-graph engine (T1-T5, ADR-019): writes `graph.json` + self-contained HTML + MD summary; selector `--what workflow|pack|docs|all` (combinable with `+`); `--scope` (docs delta), `--max-nodes`, `--from-json` (frozen graph), `--json`. Strict ONLY on the registry (exit 1); missing T1-T4 = warning + partial graph; all-or-nothing output. Exit 0 ok - 1 registry strict - 2 usage |
 | `golmet lint` | The deterministic structural sweep L1–L10 (+L7-size) over the kit/config/packs/workspace — findings with severity + PT-BR remediation. Exit 0 clean · 2 with findings · `--json`. The remediation cites the responsible canonical writer |
 
 ## Transversal conventions

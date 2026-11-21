@@ -10,14 +10,14 @@
 
 ## Duas interfaces, um kit
 
-Estas 14 tools são o **caminho da IA**: dentro do Opencode (com `golmet mcp`
+Estas 15 tools são o **caminho da IA**: dentro do Opencode (com `golmet mcp`
 registrado), os agentes atuam sobre o kit **por meio dessas tools** - os
 guardas (confirm, dry-run) são aplicados nesse caminho. O **caminho humano**
 é o CLI no terminal
 ([commands.pt-br.md](commands.pt-br.md)) - as mesmas operações, desenhadas
 para gestão direta.
 
-O servidor MCP (`golmet mcp`) expõe **14 tools** `gm_*` - o mesmo kit que as
+O servidor MCP (`golmet mcp`) expõe **15 tools** `gm_*` - o mesmo kit que as
 skills agentic usam, direto pelo protocolo. Regra transversal de mutação: as
 tools de MUTAÇÃO (`gm_update`, `gm_pack_update`, `gm_pack_publish`,
 `gm_upgrade`) exigem `confirm=true` - sem o confirm elas falham com a
@@ -28,6 +28,7 @@ o preview lista sem aplicar.
 | --- | --- | --- |
 | `gm_validate` | workspace | O payload do `golmet validate` (erros/avisos §11 + contadores + o contexto: container/workspace-produto). Parâmetros: `workspace`, `home`. Read-only |
 | `gm_doctor` | workspace + engine | O checklist de saúde + a seção `engine_config` (o estado classificado do config). Parâmetros: `workspace`, `engine` (default opencode), `home`. Read-only |
+| `gm_graph` | base de conhecimento (T1-T5) | O payload do `golmet graph` - grafo de conhecimento deterministico (workflow/pack/docs via `what`, combinavel com `+`). Parametros: `workspace`, `projects_root`, `scope`, `out`, `max_nodes`, `from_json`, `what`. Read-only nas fontes; grava os 3 artefatos no destino |
 | `gm_lint` | kit/config/packs/workspace | A varredura L1-L13 - findings com severidade + remediação. Parâmetros: `workspace`, `engine`, `home`. Read-only (nunca confirm) |
 | `gm_status` | workspace | O dashboard de estados das entidades. Parâmetro: `workspace`. Read-only |
 | `gm_next` | workspace | A próxima ação recomendada (p1..p9). Parâmetro: `workspace`. Read-only |

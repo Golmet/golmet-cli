@@ -45,10 +45,43 @@ func Render(fsys fs.FS, reg *Registry, engine string) ([]Rendered, []ErrMissingB
 			rel = "skills/" + it.Str("id") + "/SKILL.md"
 		}
 		out = append(out, Rendered{Rel: rel, Content: doc})
+		// arquivos auxiliares do item (chave `files:` — ex.: scripts
+		// determinísticos que a skill executa; IMP-008 — gm-knowledge-graph)
+		renderItemFiles(fsys, it, isAgent, &out, &missing)
 	}
 	renderRules(fsys, &out, &missing)
 	renderTemplates(fsys, &out, &missing)
 	return out, missing
+}
+
+// renderItemFiles anexa os arquivos auxiliares declarados na chave `files:`
+// do item (lista de paths coredata-relativos — ex.:
+// sources/gm-knowledge-graph/scripts/build-knowledge-graph.mjs). O destino no
+// config deriva do kind do item: sources/<id>/<resto> → skills/<id>/<resto>
+// (skill) ou agents/<id>/<resto> (primary/subagent). Conteúdo byte-fiel após
+// a normalização de resquícios de editor (BOM/EOL → canônico LF) — a mesma do
+// materialize. Path fora do prefixo sources/<id>/ ou ilegível vira item "sem
+// corpo" (mesma reportagem dos bodies do registry).
+func renderItemFiles(fsys fs.FS, it *Item, isAgent bool, out *[]Rendered, missing *[]ErrMissingBody) {
+	id := it.Str("id")
+	prefix := "sources/" + id + "/"
+	for _, f := range it.List("files") {
+		if !strings.HasPrefix(f, prefix) || strings.HasSuffix(f, "/") {
+			*missing = append(*missing, ErrMissingBody{ID: id + " (files)", Path: f})
+			continue
+		}
+		rel := "skills/" + id + "/" + strings.TrimPrefix(f, prefix)
+		if isAgent {
+			rel = "agents/" + id + "/" + strings.TrimPrefix(f, prefix)
+		}
+		data, err := fs.ReadFile(fsys, f)
+		if err != nil {
+			*missing = append(*missing, ErrMissingBody{ID: id + " (files)", Path: f})
+			continue
+		}
+		doc := rightTrimWS(string(Normalize(data)))
+		*out = append(*out, Rendered{Rel: rel, Content: doc + "\n"})
+	}
 }
 
 // renderRules anexa as rules canônicas da fonte (coredata/rules — *.md e

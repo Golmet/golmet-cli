@@ -1,0 +1,67 @@
+---
+name: "Quality gate - finding Crítico bloqueia e o veredito é FAIL"
+description: >
+  NEGATIVO: MeuCred-API com injeção de SQL (concatenação de parâmetros na
+  query da RN-001) e cobertura abaixo do limite. O gate deve fechar com
+  veredito FAIL, listar os findings bloqueantes com severidade e local, as
+  métricas na tabela padrão e a correção exigida antes do re-gate.
+inputs_required: [REQUIREMENTS.md, src/ConsultaSaldoService.cs]
+
+checks:
+  - type: file_exists
+    path: "quality/QUALITY_GATE.md"
+    severity: error
+
+  - type: frontmatter_valid
+    path: "quality/QUALITY_GATE.md"
+    severity: error
+
+  - type: contains
+    path: "quality/QUALITY_GATE.md"
+    pattern: "Veredito"
+    severity: error
+
+  - type: contains
+    path: "quality/QUALITY_GATE.md"
+    pattern: "**FAIL**"
+    severity: error
+
+  - type: section_exists
+    path: "quality/QUALITY_GATE.md"
+    section: "## 2. Findings Bloqueantes"
+    severity: error
+
+  - type: contains
+    path: "quality/QUALITY_GATE.md"
+    pattern: "**Crítico**"
+    severity: error
+
+  - type: contains
+    path: "quality/QUALITY_GATE.md"
+    pattern: "Injeção de SQL"
+    severity: error
+
+  - type: contains
+    path: "quality/QUALITY_GATE.md"
+    pattern: "RN-001"
+    severity: error
+
+  - type: table_has_columns
+    path: "quality/QUALITY_GATE.md"
+    columns: ["Métrica", "Valor", "Limite"]
+    severity: error
+
+  - type: frontmatter_valid
+    path: "quality/QUALITY_GATE.md"
+    severity: error
+
+  - type: no_todos
+    path: "quality/QUALITY_GATE.md"
+    patterns: ["TODO:", "FIXME:"]
+    severity: error
+
+  - type: line_count_range
+    path: "quality/QUALITY_GATE.md"
+    min: 30
+    max: 150
+    severity: warning

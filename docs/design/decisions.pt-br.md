@@ -408,4 +408,40 @@ Cada entrada documenta **o que foi decidido**, **por que foi decidido** e **quai
 
 ---
 
-_Este arquivo é mantido pela Quadri Golmet (gm-req, gm-doc, gm-dev, gm-devops) e atualizado quando novas decisões arquiteturais são tomadas. Cada ADR é imutável após registro — decisões revistas recebem nova entrada com referência à anterior._
+## ADR-019 - Motor do Grafo de Conhecimento em Go (CLI `golmet graph` + tool `gm_graph`)
+
+- **Data:** 20/11/2026
+- **Decisor:** Operador (Victor Souza)
+- **Status:** Aceita
+- **Contexto:** A skill `gm-knowledge-graph` foi concebida com um script determinístico externo (`scripts/build-knowledge-graph.mjs`) que o runtime agêntico executa via Node (IMP-148, Node ≥ 18). O componente chegou a nascer FANTASMA (IMP-008: SKILL.md documentando um script inexistente — a skill abortava no Passo 2), foi implementada em Node no ciclo anterior e validada com fixture de 38 checks com paridade byte-a-byte contra o paliativo da sessão (183 nós · 398 arestas). A porta para dentro do binário elimina a última dependência de runtime externo do kit para trabalho determinístico e aproxima o comando dos padrões já consagrados (`validate`/`doctor`/`lint`).
+- **Decisão:** Portar o motor COMPLETO (parsers T1-T5, poda, saneamento, seletor de conteúdo, 3 emissores) para **Go dentro do binário**, com três superfícies:
+  - **CLI `golmet graph`** — flags `--config-root --packs-root --projects-root --out --pack --scope --max-nodes --from-json --what --json`; mesmo contrato de artefatos (`graph.json`, `knowledge-graph.html`, `knowledge-graph.md`); strict SÓ no registry (exit 1); T1-T4 ausente = aviso + grafo parcial; saída integral ou nada; sem rede; HTML self-contained com template embutido no binário.
+  - **Tool MCP `gm_graph`** (15ª tool) — wrapper fino da função Go interna (mesmo padrão de `gm_validate`/`gm_doctor`); read-only nas fontes; **SEM confirm** (grava apenas os 3 artefatos no destino).
+  - **Skill `gm-knowledge-graph`** — Passo 2 passa a executar `golmet graph` (ou `gm_graph`); o julgamento de ruído (Passo 3) permanece AGÊNTICO.
+  - **Princípio de arquitetura (registro normativo):** *determinístico mora no CLI; o que é da organização mora no PACK (dados read-only, sem lógica); o julgamento mora no RUNTIME (skill agêntica).*
+  - **Seletor de conteúdo `--what`** (intenção da tool: "grafo visual do ecossistema Golmet" — estrutura do Golmet, o pack, a docs gerada, ou tudo ao mesmo tempo):
+
+| `what` | Stores | Conteúdo |
+|---|---|---|
+| `workflow` | T5 | registry (primaries, subagents, domains, skills), AGENTS.md, fundado_em |
+| `pack` | T1+T2+T3 | domínios de conhecimento (staleness), patterns, rules + índice lazy |
+| `docs` | T4 | módulos de produto (RNs/PENDs, ADRs, TRACEABILITY, features, specs) — combinável com `--scope <módulo>` |
+| `all` (default) | T1-T5 | tudo (comportamento histórico da skill) |
+
+Combinável com `+` (ex.: `what: workflow+pack`). **Arestas cruzadas** (`indice_lazy` T5→T3, `fundado_em` T5→T1, `aplica_em` T2→T4) só entram quando origem E destino estão selecionados.
+- **Paridade:** o fixture de 38 checks da `gm-knowledge-graph` é o critério de paridade — o `graph.json` e o HTML do comando Go são **byte-idênticos** aos do extrator Node de referência (exceto `gerado_em`, normalizado; precisão de MINUTO para idempotência de saída), incluindo contagens por tipo, avisos na mesma ordem e o embed JSON do HTML. `knowledge-graph.md` diverge só na linha de proveniência ("Gerado por golmet graph (motor determinístico do kit — ADR-019)"); o baseline do md no fixture é congelado do próprio Go.
+- **Alternativas avaliadas:**
+  - _Híbrido MCP→node (a tool spawna `node build-knowledge-graph.mjs`)_: **REJEITADA** — contradiz o princípio acima (determinístico mora no CLI, não em um runtime externo orquestrado pelo MCP), mantém a dependência Node ≥ 18 (IMP-148) e a fragilidade de caminho de script materializado; a experiência do IMP-008 (skill documentando um script que não existia — componente fantasma) é a evidência histórica de que a indireção runtime→script é ponto único de falha silenciosa.
+  - _Manter o .mjs como referência e o Go como mirror_: dois motores para manter = drift garantido; o fixture com baseline congelado do .mjs já cumpre o papel de referência sem código duplo.
+  - _Skill 100% agêntica (sem motor)_: parse manual em escala pelo runtime — proibido pelo próprio modo de erro da skill (R4/IMP-148) e causa raiz do IMP-008.
+- **Consequências:**
+  - ✓ Node ≥ 18 deixa de ser requisito DESTA skill (IMP-148 segue válido para outros consumers, se houver)
+  - ✓ 15ª tool MCP (`gm_graph`) com o mesmo contrato de confiança das demais (JSON estruturado, degradação declarada)
+  - ✓ Determinismo auditável byte-a-byte entre CLI e MCP (mesma função Go)
+  - ✓ A infraestrutura `files:` do renderer (ciclo anterior) permanece como capacidade genérica para skills futuras com scripts
+  - ✗ O `.mjs` é REMOVIDO na mesma release — o baseline de paridade no fixture é o registro do comportamento de referência
+  - ✗ Port exige disciplina de paridade a cada evolução do motor (o eval do fixture é o gate)
+
+---
+
+_Este arquivo é mantido pela Quadri Golmet (gm-req, gm-doc, gm-dev, gm-devops) e atualizado quando novas decisões arquiteturais são tomadas. Cada ADR é imutável após registro - decisões revistas recebem nova entrada com referência à anterior._

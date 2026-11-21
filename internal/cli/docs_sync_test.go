@@ -62,7 +62,7 @@ func TestDocsReferenceCoversAllLintChecks(t *testing.T) {
 func TestDocsReferenceCoversAllMCPTools(t *testing.T) {
 	doc := readDocRef(t, toolsRef)
 	for _, tool := range []string{
-		"gm_validate", "gm_doctor", "gm_lint", "gm_status", "gm_next",
+		"gm_validate", "gm_doctor", "gm_lint", "gm_graph", "gm_status", "gm_next",
 		"gm_index", "gm_update", "gm_pack_update", "gm_pack_publish",
 		"gm_pack_list",
 		"gm_eval", "gm_eval_reports", "gm_jev_classify", "gm_upgrade",

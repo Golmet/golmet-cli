@@ -1,0 +1,3 @@
+Este diretório NÃO contém registry.yaml de propósito — o extrator deve
+ABORTAR com exit 1 (strict no registry: a camada T5 é a espinha dorsal do
+grafo) e NÃO escrever nenhum artefato de saída.

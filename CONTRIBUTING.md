@@ -22,7 +22,9 @@ go run ./cmd/golmet lint --workspace .   # the kit lints itself: 0 errors, 0 war
 ```
 
 Tests are table-driven; the launcher and npm packaging tests need `node`
-on the PATH (they skip cleanly without it).
+on the PATH (they skip cleanly without it). The same suite self-scores the
+eval corpus (`evals/`) — fixture authoring rules in
+[docs/reference/evals.md](docs/reference/evals.md).
 
 ## The commit convention (Conventional Commits)
 
