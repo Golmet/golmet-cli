@@ -123,10 +123,7 @@ Este bloco é roteiro curto — cada tipo tem SEU índice: `packs/<pack>/domains
 CRITICAL: os arquivos abaixo NÃO são carregados automaticamente. Leia com o Read tool APENAS quando a tarefa atual exigir — nunca preventivamente. Quando lidos, trate como instruções obrigatórias que sobrescrevem defaults.
 
 - `profile/context7.md` — ANTES de responder sobre library/framework/SDK/CLI/cloud (MCP context7; não confie na memória). Infraestrutura do server: skill `gm-mcp-context7-setup`.
-- `packs/<pack>/rules/org.md` — norma da organização (identidade/repos/clientes — IMP-105) — AO criar repos/projetos na org ou editar o repo de docs do produto.
-- `packs/<pack>/rules/deploy.md` — pipeline de deploy validado (deploy.yml/secrets/deploy.sh) — AO criar/editar pipeline de deploy ou diagnosticar falha de deploy.
-- `packs/<pack>/rules/vps.md` — runbook de VPS (Docker/GHCR/tunnel/backup) — AO configurar/operar VPS.
-- `packs/<pack>/rules/observability.md` — observabilidade mínima (health/watchdog/alertas) — AO configurar saúde de serviços.
+- `packs/<pack>/rules/*.md` — normas da organização, **compostas pelo `gm-setup` a partir do header `> Gatilho: AO ...` de cada norma do pack** (uma linha por arquivo; norma nova no pack = linha nova no próximo setup/update — sem edição manual deste template).
 - `profile/stack-templates.yaml` — Registry de boilerplates Golmet por stack (.NET, React, Angular, Rust, Java). A org vem de `boilerplate_org` no client-profile. Carregado pelo gm-stack-boilerplate antes de scaffold de novo projeto; editar para adicionar/atualizar templates e recomendar o PR no .config do workflow.
 - `profile/client-profile.md` — ANTES de qualquer operação Azure DevOps/tracker (org, projeto, repos e usuário do cliente; IMP-103). Gravado pelo gm-setup; nunca versionado — template em `profile/client-profile.template.md`.
 - `profile/operator-profile.md` — ANTES de registrar responsabilidade/autoria (triagem de PENDs no gm-clarify, campo Decisor no gm-decision-log, campo Autor de IMP — IMP-136). Gravado pelo gm-setup; nunca versionado — template em `profile/operator-profile.template.md`.
