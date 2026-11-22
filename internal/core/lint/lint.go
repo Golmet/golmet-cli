@@ -1361,7 +1361,7 @@ func lintL11Mermaid(rep *Report, ws string, kitMDs []string, kitMode bool, confi
 					if !e.IsDir() {
 						continue
 					}
-					for _, p := range mdFilesUnder(packsRoot, e.Name()) {
+					for _, p := range mdFilesDeep(packsRoot, e.Name()) {
 						add(p, filepath.Join(packsRoot, filepath.FromSlash(p)))
 					}
 				}
@@ -1594,7 +1594,7 @@ func lintL12Encoding(rep *Report, ws string, kitMode bool, configRoot string) {
 					if !e.IsDir() {
 						continue
 					}
-					for _, p := range mdFilesUnder(packsRoot, e.Name()) {
+					for _, p := range mdFilesDeep(packsRoot, e.Name()) {
 						add(p, filepath.Join(packsRoot, filepath.FromSlash(p)))
 					}
 				}
@@ -1828,7 +1828,7 @@ func lintL14FrontMatter(rep *Report, ws string, kitMode bool, configRoot string)
 					if !e.IsDir() {
 						continue
 					}
-					for _, p := range mdFilesUnder(packsRoot, e.Name()) {
+					for _, p := range mdFilesDeep(packsRoot, e.Name()) {
 						add(p, filepath.Join(packsRoot, filepath.FromSlash(p)))
 					}
 				}

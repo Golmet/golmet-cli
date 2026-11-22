@@ -1110,7 +1110,11 @@ func TestL13Anchors(t *testing.T) {
 // real IMP-013: valor com `: ` sem aspas) = exatamente 1 error; front
 // matter válido (valores quotados) e bloco vazio = sem findings; sem
 // front matter e `---` só no corpo (horizontal rule / abertura sem
-// fechamento) = skip silencioso.
+// fechamento) = skip silencioso. CRLF (delimitadores e corpo, configs de
+// engine em Windows) parseia igual — tolerância via TrimSuffix. O walker
+// kit-mode (coredata/*, docs, *.md raiz + AGENTS.md, packs/<pack>/** e
+// profile/ do configRoot; evals/ fora) contribui findings de cada zona
+// e não vaza evals.
 func TestL14FrontMatter(t *testing.T) {
 	// l14CheckFile direto — os casos de front matter
 	fmFindings := func(content string) []Finding {
@@ -1173,5 +1177,67 @@ func TestL14FrontMatter(t *testing.T) {
 	}
 	if l14[0].Severity != "error" {
 		t.Errorf("severity = %q, want error", l14[0].Severity)
+	}
+
+	// CRLF — delimitadores e corpo com \r\n (configs de engine em
+	// Windows): tolerância via TrimSuffix na comparação dos
+	// delimitadores; o bloco com CRLF parseia igual (padrão IMP-013)
+	if got := fmFindings("---\r\ntitulo: \"X: Y\"\r\n---\r\n\ncorpo\r\n"); len(got) != 0 {
+		t.Fatalf("front matter válido CRLF flagado: %+v", got)
+	}
+	crlfGot := fmFindings("---\r\nitems:\r\n  - titulo: X: Y\r\n---\r\n\ncorpo\r\n")
+	if len(crlfGot) != 1 {
+		t.Fatalf("front matter inválido CRLF: want 1 finding, got %d: %+v", len(crlfGot), crlfGot)
+	}
+	if crlfGot[0].Line != 3 {
+		t.Errorf("line CRLF = %d, want 3", crlfGot[0].Line)
+	}
+
+	// walker kit-mode: coredata/*, docs e *.md raiz do kit; AGENTS.md,
+	// packs/<pack>/** e profile/ do configRoot. evals/ fora do walk
+	// kit-mode (fixtures com conteúdo proposital) — o falso positivo
+	// proposital de evals não pode vazar
+	kitWS, cfg := t.TempDir(), t.TempDir()
+	writeIn := func(base, rel, content string) {
+		t.Helper()
+		p := filepath.Join(base, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeIn(kitWS, "coredata/sources/quebrado.md", bad)
+	writeIn(kitWS, "coredata/rules/valido.md", "---\ntitulo: \"X: Y\"\n---\n\ncorpo\n")
+	writeIn(kitWS, "docs/guia.md", "---\nname: guia\n---\n\ncorpo\n")
+	writeIn(kitWS, "README.md", "---\nname: kit\n---\n\ncorpo\n")
+	writeIn(kitWS, "evals/proposital.md", bad) // fora do walk kit-mode
+	writeIn(cfg, "AGENTS.md", bad)
+	writeIn(cfg, "packs/techminds/domains/dom.md", bad)
+	writeIn(cfg, "profile/operator.md", "---\nname: op\n---\n\ncorpo\n")
+	krep := &Report{Findings: []Finding{}, ByCheck: map[string]int{}}
+	lintL14FrontMatter(krep, kitWS, true, cfg)
+	kitL14 := findingsOf(krep, "L14")
+	if len(kitL14) != 3 {
+		t.Fatalf("L14 kit-mode = %+v, want 3 findings (coredata, AGENTS.md, packs)", kitL14)
+	}
+	wantFiles := map[string]bool{
+		"coredata/sources/quebrado.md": true, "AGENTS.md": true,
+		"techminds/domains/dom.md": true,
+	}
+	for _, f := range kitL14 {
+		if !wantFiles[f.File] {
+			t.Errorf("L14 kit-mode file inesperado: %q (findings: %+v)", f.File, kitL14)
+		}
+		delete(wantFiles, f.File)
+	}
+	if len(wantFiles) != 0 {
+		t.Errorf("L14 kit-mode faltou: %v (findings: %+v)", wantFiles, kitL14)
+	}
+	for _, f := range kitL14 {
+		if strings.Contains(f.File, "evals/") {
+			t.Errorf("L14 kit-mode vazou evals: %q", f.File)
+		}
 	}
 }
