@@ -44,6 +44,27 @@ para o `gm-gh-pr-creator` abrir PR.
   `gm-gh-pr-creator`, que registra a aprovação no corpo da PR;
   request-changes → retorno ao executor)
 
+## Veredito divergente — segunda opinião calibrada (Jev)
+
+Quando os 5 eixos deixam trade-off ambíguo, segunda opinião com
+`gm_jev_classify` (questions inline abaixo — mesma convenção do
+`gm-prompt-gate`):
+
+```json
+{ "veredito": {"type": "choice", "criteria": {"approve": "RNs cobertas pelo diff, gates sem FAIL, security sem finding bloqueante, docs vivas coerentes com o comportamento", "request-changes": "RN sem mudanca correspondente no diff, gate FAIL, finding de seguranca bloqueante ou docs divergentes do comportamento"}} }
+```
+
+- Confidence ≥ 0.7 e veredito do Jev IGUAL ao do revisor → veredito segue,
+  probabilidade anotada no relatório
+- Confidence < 0.7 OU veredito DIVERGENTE do do revisor → **escala para o
+  operador** com as duas posições e as probabilidades — o revisor nunca
+  resolve divergência sozinho
+
+Sem `gm_jev_classify` na sessão (offline/ausente): veredito do revisor vale
+sozinho — degradação declarada no relatório.
+**Calibração por organização**: instalações com state pack podem sobrescrever
+estas questions via pack overlay — o bloco acima é o default neutro do kit.
+
 ## Nunca edita
 
 - QUALQUER arquivo — revisão é read-only (`edit`/`write` negados)
