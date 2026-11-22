@@ -41,9 +41,12 @@ Severity convention: **error** = breaks the contract or the render;
 ## L1 — dead references (error)
 
 Every path cited in `` `backticks` `` or markdown links of the swept
-`*.md` files (kit sources/docs; `AGENTS.md` + `profile/` of the config;
-pack docs) must resolve in a known root (the file's dir, the kit root, the
-config root). Known false positives are handled with declared roots
+`*.md` files (kit sources/docs; `AGENTS.md` + `profile/` of the config)
+must resolve in a known root (the file's dir, the kit root, the config
+root). Pack `*.md` files are NOT swept in v0.1 — pack business docs cite
+PRODUCT paths by design (a product repo's deploy.yml, for example), a
+structural false positive; pack-internal refs belong to L5/L7. Known
+false positives are handled with declared roots
 (`profile/x` resolves the kit-canonical `coredata/rules/x`; module-store
 refs and `skills/<id>` resolve against the registry).
 

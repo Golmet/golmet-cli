@@ -39,9 +39,12 @@ Convenção de severidade: **error** = quebra o contrato ou o render;
 ## L1 — referências mortas (error)
 
 Todo path citado em `` `backticks` `` ou links markdown dos `*.md` varridos
-(sources/docs do kit; `AGENTS.md` + `profile/` do config; docs de packs)
-deve resolver em raiz conhecida (o dir do arquivo, a raiz do kit, a raiz do
-config). Falsos-positivos conhecidos são tratados com raízes declaradas
+(sources/docs do kit; `AGENTS.md` + `profile/` do config) deve resolver em
+raiz conhecida (o dir do arquivo, a raiz do kit, a raiz do config). Os
+`*.md` de packs NÃO são varridos v0.1 — docs de negócio do pack citam
+paths de PRODUTO por design (deploy.yml do repo de produto, por exemplo),
+falso-positivo estrutural; refs internas do pack são domínio do L5/L7.
+Falsos-positivos conhecidos são tratados com raízes declaradas
 (`profile/x` resolve o `coredata/rules/x` canônico do kit; refs de
 module-stores e `skills/<id>` resolvem contra o registry).
 
