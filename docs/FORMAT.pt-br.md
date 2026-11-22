@@ -670,10 +670,13 @@ obriga); só a PERDA/ausência do mínimo declarado flaga.
 **Estrutura canônica declarada (fonte única em código — `internal/core/lint`):**
 
 - **State pack** (`packs/<id>/`): `pack.yaml` + qualquer subconjunto de
-  {`skills/`, `agents/`, `rules/`, `domains/`, `accumulation/`}; dentro de
+  {`skills/`, `agents/`, `rules/`, `domains/`, `accumulation/`, `mcp/`}; dentro de
   `accumulation/` só {`patterns/`, `metrics/`, `nuances/`};
   `accumulation/patterns/<tipo>/<slug>/PATTERN.md` com tipo em
-  {process, architecture, code, ui, test, data}.
+  {process, architecture, code, ui, test, data}; dentro de `mcp/` só
+  {`tools/`} (convenção do server MCP próprio do pack — `golmet pack mcp`:
+  `mcp/server.js` é o server stdio Node e `mcp/tools/*.js` é o registry
+  dinâmico de tools; arquivos diretos em `mcp/` são canônicos).
 - **Config engine** (1º nível): dirs {agents, skills, profile, packs,
   plugins, knowledge (legado), .golmet} + files {AGENTS.md, opencode.jsonc}
   — dir desconhecido = warning; template depositado no config

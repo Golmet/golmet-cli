@@ -15,7 +15,7 @@ func newPackCmd() *cobra.Command {
 		Use:   "pack",
 		Short: "Gerencia packs de skills e agents (camada L2)",
 		Long: "Gerencia packs de skills e agents (camada L2).\n\n" +
-			"Comandos: add, update, publish, list, search.\n\n" +
+			"Comandos: add, update, publish, list, search, mcp.\n\n" +
 			"Arquétipos (kind do pack.yaml): overlay (padrão — cache somente-leitura,\n" +
 			"provides em agents//skills/ sincronizados por overlay unidirecional) e\n" +
 			"state (working copy Git bidirecional em <config>/packs/<id>: skills/ e\n" +
@@ -30,7 +30,19 @@ func newPackCmd() *cobra.Command {
 	update := newPackAddCmd()
 	update.Use = "update <git-url-ou-diretorio>"
 	update.Short = "Atualiza um pack sincronizando novamente sua fonte (state: commit do WIP + rebase)"
-	cmd.AddCommand(add, update, newPackPublishCmd(), newPackListCmd(), newPackSearchCmd())
+	mcp := &cobra.Command{
+		Use:   "mcp",
+		Short: "Server MCP próprio de state packs (status e registro no engine)",
+		Long: "Server MCP próprio de state packs (arquétipo kind: state).\n\n" +
+			"Um state pack pode trazer um server MCP stdio Node na convenção\n" +
+			"<config>/packs/<id>/mcp/server.js (registry dinâmico de mcp/tools/*.js).\n" +
+			"O registro no engine usa SEMPRE o pipeline nativo (opencode: pré-check →\n" +
+			"`opencode mcp add --global` → pós-verify — nunca patch no opencode.jsonc,\n" +
+			"que tem comentários), com o nome \"pack-<id>\" (id do pack.yaml —\n" +
+			"desambigua multi-pack).",
+	}
+	mcp.AddCommand(newPackMCPStatusCmd(), newPackMCPSyncCmd())
+	cmd.AddCommand(add, update, newPackPublishCmd(), newPackListCmd(), newPackSearchCmd(), mcp)
 	return cmd
 }
 
@@ -232,5 +244,119 @@ func newPackListCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&home, "home", "", "home alternativo (testes)")
+	return cmd
+}
+
+// newPackMCPStatusCmd — golmet pack mcp status: estado read-only do server
+// MCP de cada state pack sincronizado (server.js na convenção, registro no
+// engine e node do PATH). Nunca registra nem escreve no engine.
+func newPackMCPStatusCmd() *cobra.Command {
+	var home string
+	var jsonOut bool
+	cmd := &cobra.Command{
+		Use:   "status",
+		Short: "Estado do server MCP de cada state pack (read-only)",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if home == "" {
+				var err error
+				home, err = os.UserHomeDir()
+				if err != nil {
+					return err
+				}
+			}
+			statuses, err := coreinstall.PackMCPStatuses(home)
+			if err != nil {
+				return err
+			}
+			if jsonOut {
+				return encodeJSON(cmd, statuses)
+			}
+			out := cmd.OutOrStdout()
+			if len(statuses) == 0 {
+				fmt.Fprintln(out, "nenhum state pack sincronizado")
+				return nil
+			}
+			for _, s := range statuses {
+				reg := "não registrado"
+				if s.Registered {
+					reg = "registrado"
+					if s.RegStatus != "" {
+						reg += " (" + s.RegStatus + ")"
+					}
+				}
+				node := "ausente"
+				if s.NodePresent {
+					node = s.NodeVersion
+					if !s.NodeRecent {
+						node += " (antigo — mínimo v20)"
+					}
+				}
+				fmt.Fprintf(out, "%s\t%s\t%s\t%s\t%s\t%s\n", s.Pack, s.Engine, s.ServerName, reg, node, s.State)
+				if s.State == coreinstall.PackMCPStateNaoRegistro {
+					fmt.Fprintln(out, "  fix: golmet pack mcp sync")
+				}
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&home, "home", "", "home alternativo (testes)")
+	cmd.Flags().BoolVar(&jsonOut, "json", false, "saída estruturada (array de status)")
+	return cmd
+}
+
+// newPackMCPSyncCmd — golmet pack mcp sync [--force]: registra o server
+// MCP dos state packs elegíveis (com mcp/server.js) pelo pipeline nativo
+// do engine. Idempotente (duplicado → unchanged); --force repassa o
+// re-add. Outcome manual/error em algum pack → exit 1 (parcial).
+func newPackMCPSyncCmd() *cobra.Command {
+	var home string
+	var force, jsonOut bool
+	cmd := &cobra.Command{
+		Use:   "sync",
+		Short: "Registra o server MCP dos state packs elegíveis (idempotente; --force re-add)",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if home == "" {
+				var err error
+				home, err = os.UserHomeDir()
+				if err != nil {
+					return err
+				}
+			}
+			results, err := coreinstall.PackMCPSync(home, force)
+			if err != nil {
+				return err
+			}
+			partial := false
+			for _, r := range results {
+				if r.Status != coreinstall.OutcomeRegistered && r.Status != coreinstall.OutcomeUnchanged {
+					partial = true
+				}
+			}
+			if jsonOut {
+				if err := encodeJSON(cmd, results); err != nil {
+					return err
+				}
+			} else {
+				out := cmd.OutOrStdout()
+				if len(results) == 0 {
+					fmt.Fprintln(out, "nenhum state pack com mcp/server.js encontrado")
+					return nil
+				}
+				for _, r := range results {
+					fmt.Fprintf(out, "pack %s (%s) — %s: %s\n", r.Pack, r.Engine, r.ServerName, r.Status)
+					if r.Detail != "" {
+						fmt.Fprintln(out, "  "+r.Detail)
+					}
+				}
+			}
+			if partial {
+				return exitError(1)
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&home, "home", "", "home alternativo (testes)")
+	cmd.Flags().BoolVar(&force, "force", false, "re-add mesmo já registrado (repasse ao pipeline do engine)")
+	cmd.Flags().BoolVar(&jsonOut, "json", false, "saída estruturada (array de resultados)")
 	return cmd
 }

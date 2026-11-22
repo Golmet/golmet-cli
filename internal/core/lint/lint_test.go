@@ -381,6 +381,42 @@ func TestL7CanonicalStructure(t *testing.T) {
 	}
 }
 
+// convenção do server MCP próprio do pack (`golmet pack mcp`): mcp/ é dir
+// canônico na raiz do state pack (com mcp/server.js + mcp/tools/*.js) e NÃO
+// reprova; dir não-canônico qualquer na raiz continua reprovando, e subdir
+// estranho DENTRO de mcp/ também (mesmo padrão do accumulationOnly).
+func TestL7PackStateMCPDir(t *testing.T) {
+	home := t.TempDir()
+	cfg := filepath.Join(home, ".config", "opencode")
+	pack := filepath.Join(cfg, "packs", "org-pack")
+	os.MkdirAll(filepath.Join(pack, "mcp", "tools"), 0o755)
+	os.WriteFile(filepath.Join(pack, "pack.yaml"), []byte("id: org-pack\nversion: 1\nname: Org\nkind: state\n"), 0o644)
+	os.WriteFile(filepath.Join(pack, "mcp", "server.js"), []byte("// server\n"), 0o644)
+	os.WriteFile(filepath.Join(pack, "mcp", "tools", "x.js"), []byte("// tool\n"), 0o644)
+	os.MkdirAll(filepath.Join(pack, "uploads"), 0o755)      // dir não-canônico na raiz
+	os.MkdirAll(filepath.Join(pack, "mcp", "cache"), 0o755) // subdir estranho em mcp/
+
+	rep := runLint(t, t.TempDir(), home)
+	l7 := findingsOf(rep, "L7")
+	if len(l7) != 2 {
+		t.Fatalf("L7 = %+v, want 2 error (uploads, mcp/cache)", l7)
+	}
+	var files []string
+	for _, f := range l7 {
+		files = append(files, f.File)
+	}
+	for _, want := range []string{"packs/org-pack/uploads", "packs/org-pack/mcp/cache"} {
+		if !containsStr(files, want) {
+			t.Errorf("L7 sem %s: %v", want, files)
+		}
+	}
+	for _, banned := range []string{"packs/org-pack/mcp", "packs/org-pack/mcp/tools"} {
+		if containsStr(files, banned) {
+			t.Errorf("convenção mcp/ não deveria reprovar: %v", files)
+		}
+	}
+}
+
 // ---- integração: sandbox limpo = zero findings; workspace inválido = erro ----
 
 func TestLintCleanSandboxAndInvalidWorkspace(t *testing.T) {
