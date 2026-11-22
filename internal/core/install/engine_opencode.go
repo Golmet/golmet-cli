@@ -146,6 +146,14 @@ type opencodeListEntry struct {
 	status string // connected · pending · needs authentication · failed: <motivo> · disabled
 }
 
+// opencodeEmptyListText — o engine responde exit 0 com ESTE texto quando
+// a sondagem não resolve (não-determinismo documentado no header deste
+// arquivo: pode listar 13 e, minutos depois, "não ter nada"). O parser o
+// trata como lista VAZIA — nunca vira entrada falsa ("No" / "MCP servers
+// configured") e os callers caem no fallback do config, que é a fonte
+// autoritativa.
+const opencodeEmptyListText = "no mcp servers configured"
+
 // parseOpencodeList extrai (glifo, nome, status) do output REAL: cada
 // linha é `<glifo> <nome> <status...>` (glifos ✓ ⚠ ✗ ○). Cabeçalhos e
 // linhas sem glifo conhecido são ignorados. Também aceita o formato
@@ -155,7 +163,7 @@ func parseOpencodeList(output string) []opencodeListEntry {
 	var out []opencodeListEntry
 	for _, raw := range strings.Split(output, "\n") {
 		line := strings.TrimSpace(raw)
-		if line == "" {
+		if line == "" || strings.EqualFold(line, opencodeEmptyListText) {
 			continue
 		}
 		line = stripGlyph(line)
