@@ -53,4 +53,14 @@ func TestCheckDetailsReflectOutcome(t *testing.T) {
 	if r.Status != StatusPass || !strings.Contains(r.Detail, "nenhum marcador") {
 		t.Errorf("no_todos pass = %+v", r)
 	}
+	// not_file_exists passando (arquivo ausente) → detail de sucesso
+	r = runOne(t, ws, Check{Type: "not_file_exists", Path: "ausente.md"})
+	if r.Status != StatusPass || !strings.Contains(r.Detail, "não existe") {
+		t.Errorf("not_file_exists pass = %+v", r)
+	}
+	// frontmatter_valid passando → detail de sucesso
+	r = runOne(t, ws, Check{Type: "frontmatter_valid", Path: "doc.md"})
+	if r.Status != StatusPass || !strings.Contains(r.Detail, "presente") {
+		t.Errorf("frontmatter_valid pass = %+v", r)
+	}
 }
