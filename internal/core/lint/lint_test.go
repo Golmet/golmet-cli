@@ -1103,4 +1103,75 @@ func TestL13Anchors(t *testing.T) {
 	}
 }
 
-// ---- L13 - âncoras de idioma ----
+// ---- L14 - front matter YAML parseável ----
+
+// TestL14FrontMatter cobre o check L14 via l14CheckFile direto + walker
+// lintL14FrontMatter em sandbox não-kit: front matter inválido (o caso
+// real IMP-013: valor com `: ` sem aspas) = exatamente 1 error; front
+// matter válido (valores quotados) e bloco vazio = sem findings; sem
+// front matter e `---` só no corpo (horizontal rule / abertura sem
+// fechamento) = skip silencioso.
+func TestL14FrontMatter(t *testing.T) {
+	// l14CheckFile direto — os casos de front matter
+	fmFindings := func(content string) []Finding {
+		t.Helper()
+		rep := &Report{Findings: []Finding{}, ByCheck: map[string]int{}}
+		l14CheckFile(rep, "doc.md", []byte(content))
+		return rep.Findings
+	}
+	// caso real IMP-013: `- titulo: X: Y` sem aspas → exatamente 1 error L14
+	bad := "---\nitems:\n  - titulo: X: Y\n---\n\ncorpo\n"
+	got := fmFindings(bad)
+	if len(got) != 1 {
+		t.Fatalf("front matter inválido: want 1 finding, got %d: %+v", len(got), got)
+	}
+	f := got[0]
+	if f.Check != "L14" || f.Severity != "error" {
+		t.Fatalf("finding = %+v, want check L14 / severity error", f)
+	}
+	if f.Line != 3 {
+		t.Errorf("line = %d, want 3 (a linha do valor quebrado no arquivo)", f.Line)
+	}
+	if !strings.Contains(f.Description, "front matter YAML inválido") || !strings.Contains(f.Fix, "aspas duplas") {
+		t.Errorf("description/fix = %q / %q", f.Description, f.Fix)
+	}
+	// front matter válido (valores com `: ` quotados) → sem findings
+	if got := fmFindings("---\ntitulo: \"X: Y\"\n---\n\ncorpo\n"); len(got) != 0 {
+		t.Fatalf("front matter válido flagado: %+v", got)
+	}
+	// bloco vazio entre delimitadores → parse válido, sem findings
+	if got := fmFindings("---\n---\n\ncorpo\n"); len(got) != 0 {
+		t.Fatalf("bloco vazio flagado: %+v", got)
+	}
+	// sem front matter (primeira linha não-delimitadora) → skip silencioso
+	if got := fmFindings("# doc\n\n---\n\nhr no meio — não é front matter\n"); len(got) != 0 {
+		t.Fatalf("`---` no corpo (sem abertura na 1ª linha) flagado: %+v", got)
+	}
+
+	// lintL14FrontMatter em sandbox não-kit — o walker em ação com os
+	// casos da spec juntos (inválido, válido, sem FM, abertura órfã)
+	ws := t.TempDir()
+	write := func(rel, content string) {
+		t.Helper()
+		p := filepath.Join(ws, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("quebrado.md", bad)
+	write("valido.md", "---\ntitulo: \"X: Y\"\n---\n\ncorpo\n")
+	write("sem-fm.md", "# sem front matter\n")
+	write("nested/abertura-orfa.md", "---\n\nhr — abertura sem fechamento, skip\n")
+	rep := &Report{Findings: []Finding{}, ByCheck: map[string]int{}}
+	lintL14FrontMatter(rep, ws, false, "")
+	l14 := findingsOf(rep, "L14")
+	if len(l14) != 1 || l14[0].File != "quebrado.md" {
+		t.Fatalf("L14 walker = %+v, want 1 finding em quebrado.md", l14)
+	}
+	if l14[0].Severity != "error" {
+		t.Errorf("severity = %q, want error", l14[0].Severity)
+	}
+}

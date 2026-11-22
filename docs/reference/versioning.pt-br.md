@@ -28,7 +28,7 @@ seria invisível para o cálculo de versão.
 
 | Commits desde a última tag `v*` | Bump | Exemplo |
 |---|---|---|
-| `feat:` | **minor** | `feat(lint): checagem L14 de manifest binário` |
+| `feat:` | **minor** | `feat(lint): checagem L15 de manifest binário` |
 | `fix:` | **patch** | `fix(launcher): exit code do fallback de resolução` |
 | qualquer tipo com `!`, ou footer `BREAKING CHANGE:` | **major** | `feat!!: renomeia flags do init` |
 | só `docs:` `chore:` `refactor:` `test:` `ci:` `style:` `build:` | **nenhum** | sem tag, sem release |

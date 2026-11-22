@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -414,6 +415,9 @@ func Run(opt Options) (*Report, error) {
 
 	// ---- L13 - âncoras de idioma (warning) ----
 	lintL13Anchors(rep, ws, kitMode, configRoot)
+
+	// ---- L14 - front matter YAML parseável (error) ----
+	lintL14FrontMatter(rep, ws, kitMode, configRoot)
 
 	// ---- resumo ----
 	for _, f := range rep.Findings {
@@ -1775,6 +1779,130 @@ func lintL13Anchors(rep *Report, ws string, kitMode bool, configRoot string) {
 				})
 			}
 		}
+	}
+}
+
+// ---- L14 - front matter YAML parseável (error) ----
+
+// yamlLineRe extrai a linha do erro de parse reportada pelo yaml.v3
+// ("yaml: line N: ...") — quando presente, vira o Line do finding.
+var yamlLineRe = regexp.MustCompile(`yaml: line (\d+):`)
+
+// lintL14FrontMatter valida o FRONT MATTER YAML dos *.md de conteúdo: um
+// bloco delimitado por `---` na primeira linha deve parsear como YAML
+// genérico (sem schema de componente — skills/agents têm suas regras
+// próprias de front matter). O achado real (IMP-013): `titulo: X: Y` sem
+// aspas passou por todos os checks e só quebrou no consumidor (editor) —
+// o lint torna isso audível. Arquivo sem front matter (primeira linha ≠
+// ---) = skip silencioso; bloco vazio entre delimitadores = parse válido.
+// Alvos: os mesmos *.md do L12 (mesmo walker: kit/config/packs; evals e
+// testdata fora no walk de runtime — fixtures podem conter conteúdo
+// proposital).
+func lintL14FrontMatter(rep *Report, ws string, kitMode bool, configRoot string) {
+	type lintFile struct{ rel, abs string }
+	var targets []lintFile
+	add := func(rel, abs string) { targets = append(targets, lintFile{rel, abs}) }
+	skipDir := func(name string) bool {
+		return name == ".git" || name == "node_modules" || name == ".golmet" ||
+			name == "evals" || name == "testdata"
+	}
+	if kitMode {
+		// docs vivos do kit — evals fora (fixtures com conteúdo proposital)
+		for _, sub := range []string{"coredata/sources", "coredata/rules", "coredata/templates", "docs"} {
+			for _, p := range mdFilesUnder(ws, sub) {
+				add(p, filepath.Join(ws, filepath.FromSlash(p)))
+			}
+		}
+		if out, err := filepath.Glob(filepath.Join(ws, "*.md")); err == nil {
+			for _, p := range out {
+				rel, _ := filepath.Rel(ws, p)
+				add(filepath.ToSlash(rel), p)
+			}
+		}
+	}
+	if configRoot != "" {
+		add("AGENTS.md", filepath.Join(configRoot, "AGENTS.md"))
+		if packsRoot := filepath.Join(configRoot, "packs"); dirExists(packsRoot) {
+			if entries, err := os.ReadDir(packsRoot); err == nil {
+				for _, e := range entries {
+					if !e.IsDir() {
+						continue
+					}
+					for _, p := range mdFilesUnder(packsRoot, e.Name()) {
+						add(p, filepath.Join(packsRoot, filepath.FromSlash(p)))
+					}
+				}
+			}
+		}
+		for _, p := range mdFilesUnder(configRoot, "profile") {
+			add(p, filepath.Join(configRoot, filepath.FromSlash(p)))
+		}
+	}
+	if !kitMode {
+		_ = filepath.WalkDir(ws, func(p string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return nil
+			}
+			if d.IsDir() {
+				if skipDir(d.Name()) {
+					return fs.SkipDir
+				}
+				return nil
+			}
+			if strings.HasSuffix(p, ".md") {
+				rel, _ := filepath.Rel(ws, p)
+				add(filepath.ToSlash(rel), p)
+			}
+			return nil
+		})
+	}
+
+	for _, t := range targets {
+		data, rerr := os.ReadFile(t.abs)
+		if rerr != nil {
+			continue
+		}
+		l14CheckFile(rep, t.rel, data)
+	}
+}
+
+// l14CheckFile extrai o front matter de um arquivo (dados crus): primeira
+// linha `---` até a linha de fechamento `---` (a primeira após a abertura),
+// parseado como YAML genérico. O `---` solto no corpo (sem abertura na
+// primeira linha) é horizontal rule markdown — não é front matter. CRLF é
+// tolerado na comparação dos delimitadores (configs de engine em Windows).
+func l14CheckFile(rep *Report, rel string, data []byte) {
+	lines := strings.Split(string(data), "\n")
+	if len(lines) == 0 || strings.TrimSuffix(lines[0], "\r") != "---" {
+		return // sem front matter — skip silencioso, não é erro
+	}
+	closeIdx := -1
+	for i := 1; i < len(lines); i++ {
+		if strings.TrimSuffix(lines[i], "\r") == "---" {
+			closeIdx = i
+			break
+		}
+	}
+	if closeIdx < 0 {
+		return // abertura sem fechamento — não é bloco de front matter
+	}
+	block := strings.Join(lines[1:closeIdx], "\n")
+	if strings.TrimSpace(block) == "" {
+		return // bloco vazio = parse válido, sem finding
+	}
+	var node yaml.Node
+	if uerr := yaml.Unmarshal([]byte(block), &node); uerr != nil {
+		line := 0
+		if m := yamlLineRe.FindStringSubmatch(uerr.Error()); m != nil {
+			if n, perr := strconv.Atoi(m[1]); perr == nil {
+				line = n + 1 // a linha do parser é relativa ao bloco — a abertura ocupa a linha 1 do arquivo
+			}
+		}
+		rep.Findings = append(rep.Findings, Finding{
+			Check: "L14", Severity: "error", File: rel, Line: line,
+			Description: "front matter YAML inválido: " + uerr.Error(),
+			Fix:         "corrija o YAML do front matter — valores com dois-pontos-e-espaço devem ser quotados com aspas duplas",
+		})
 	}
 }
 
