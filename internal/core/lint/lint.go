@@ -2042,7 +2042,12 @@ func readIfExists(p string) string {
 var packWalkSkipDirs = []string{"node_modules", ".golmet", "evals", "testdata"}
 
 // mdFilesDeep - .md recursivo (mdFilesUnder é só 1 nível); usado para os
-// escopos aninhados do L6 (skills/**, goldens de conteúdo).
+// escopos aninhados do L6 (skills/**, goldens de conteúdo) e para os
+// walkers kit-mode de packs (L11/L12/L14, com packWalkSkipDirs). Nota de
+// modelo de confiança (operação local, arquivos do próprio operador):
+// leitura integral SEM teto de tamanho por design, e WalkDir não segue
+// symlink de dir porém SEGUE junctions Windows como dirs — monitorar com
+// packs de terceiros.
 func mdFilesDeep(root, sub string, skipDirs ...string) []string {
 	skip := map[string]bool{".git": true}
 	for _, s := range skipDirs {

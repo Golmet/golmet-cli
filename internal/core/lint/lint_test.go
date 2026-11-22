@@ -1244,3 +1244,45 @@ func TestL14FrontMatter(t *testing.T) {
 		}
 	}
 }
+
+// TestMdFilesDeep — unit direto do helper recursivo: profundidade real
+// (subpastas 2+ níveis), rel paths prefixados pelo sub, ordem
+// lexicográfica determinística, skip default (.git), skips extras (a
+// invariante de evals/testdata dentro de packs) e não-.md ignorado.
+func TestMdFilesDeep(t *testing.T) {
+	base := t.TempDir()
+	writeRel := func(rel, content string) {
+		t.Helper()
+		p := filepath.Join(base, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeRel("pack/e1.md", "a")
+	writeRel("pack/deep/d2.md", "b")
+	writeRel("pack/domains/x/KNOWLEDGE.md", "c")
+	writeRel("pack/evals/fixture-001/doc.md", "d") // skip extra (invariante de fixtures)
+	writeRel("pack/testdata/x.md", "e")            // skip extra (idem)
+	writeRel("pack/.git/config.md", "f")           // skip default
+	writeRel("pack/nota.txt", "g")                 // não é .md
+	writeRel("outro/fora.md", "h")                 // fora do sub
+
+	want := []string{"pack/deep/d2.md", "pack/domains/x/KNOWLEDGE.md", "pack/e1.md"}
+	got := mdFilesDeep(base, "pack", "evals", "testdata")
+	if len(got) != len(want) {
+		t.Fatalf("mdFilesDeep = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("mdFilesDeep[%d] = %q, want %q", i, got[i], want[i])
+		}
+	}
+	// chamadas L6 sem skip extra: só .git é default — evals/testdata voltam
+	got = mdFilesDeep(base, "pack")
+	if len(got) != len(want)+2 { // + evals/fixture-001/doc.md e testdata/x.md
+		t.Fatalf("mdFilesDeep sem extras = %v, want %d itens", got, len(want)+2)
+	}
+}
