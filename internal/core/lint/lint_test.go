@@ -1113,8 +1113,9 @@ func TestL13Anchors(t *testing.T) {
 // fechamento) = skip silencioso. CRLF (delimitadores e corpo, configs de
 // engine em Windows) parseia igual — tolerância via TrimSuffix. O walker
 // kit-mode (coredata/*, docs, *.md raiz + AGENTS.md, packs/<pack>/** e
-// profile/ do configRoot; evals/ fora) contribui findings de cada zona
-// e não vaza evals.
+// profile/ do configRoot; evals/testdata fora — a invariante de fixtures
+// vale também DENTRO dos packs) contribui findings de cada zona e não
+// vaza evals/testdata.
 func TestL14FrontMatter(t *testing.T) {
 	// l14CheckFile direto — os casos de front matter
 	fmFindings := func(content string) []Finding {
@@ -1215,6 +1216,8 @@ func TestL14FrontMatter(t *testing.T) {
 	writeIn(kitWS, "evals/proposital.md", bad) // fora do walk kit-mode
 	writeIn(cfg, "AGENTS.md", bad)
 	writeIn(cfg, "packs/techminds/domains/dom.md", bad)
+	writeIn(cfg, "packs/techminds/evals/fixture-x.md", bad)     // fora: invariante de fixtures dentro do pack
+	writeIn(cfg, "packs/techminds/testdata/proposital.md", bad) // fora: idem
 	writeIn(cfg, "profile/operator.md", "---\nname: op\n---\n\ncorpo\n")
 	krep := &Report{Findings: []Finding{}, ByCheck: map[string]int{}}
 	lintL14FrontMatter(krep, kitWS, true, cfg)
@@ -1236,8 +1239,8 @@ func TestL14FrontMatter(t *testing.T) {
 		t.Errorf("L14 kit-mode faltou: %v (findings: %+v)", wantFiles, kitL14)
 	}
 	for _, f := range kitL14 {
-		if strings.Contains(f.File, "evals/") {
-			t.Errorf("L14 kit-mode vazou evals: %q", f.File)
+		if strings.Contains(f.File, "evals/") || strings.Contains(f.File, "testdata/") {
+			t.Errorf("L14 kit-mode vazou evals/testdata (dentro ou fora de packs): %q", f.File)
 		}
 	}
 }

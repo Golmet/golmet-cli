@@ -1361,7 +1361,7 @@ func lintL11Mermaid(rep *Report, ws string, kitMDs []string, kitMode bool, confi
 					if !e.IsDir() {
 						continue
 					}
-					for _, p := range mdFilesDeep(packsRoot, e.Name()) {
+					for _, p := range mdFilesDeep(packsRoot, e.Name(), packWalkSkipDirs...) {
 						add(p, filepath.Join(packsRoot, filepath.FromSlash(p)))
 					}
 				}
@@ -1594,7 +1594,7 @@ func lintL12Encoding(rep *Report, ws string, kitMode bool, configRoot string) {
 					if !e.IsDir() {
 						continue
 					}
-					for _, p := range mdFilesDeep(packsRoot, e.Name()) {
+					for _, p := range mdFilesDeep(packsRoot, e.Name(), packWalkSkipDirs...) {
 						add(p, filepath.Join(packsRoot, filepath.FromSlash(p)))
 					}
 				}
@@ -1828,7 +1828,7 @@ func lintL14FrontMatter(rep *Report, ws string, kitMode bool, configRoot string)
 					if !e.IsDir() {
 						continue
 					}
-					for _, p := range mdFilesDeep(packsRoot, e.Name()) {
+					for _, p := range mdFilesDeep(packsRoot, e.Name(), packWalkSkipDirs...) {
 						add(p, filepath.Join(packsRoot, filepath.FromSlash(p)))
 					}
 				}
@@ -2035,9 +2035,19 @@ func readIfExists(p string) string {
 	return string(data)
 }
 
-// mdFilesDeep — .md recursivo (mdFilesUnder é só 1 nível); usado para os
+// packWalkSkipDirs — skips do walker kit-mode de packs (mdFilesDeep):
+// a invariante "Evals ficam fora — fixtures podem conter conteúdo
+// proposital" vale também DENTRO dos packs; node_modules/.golmet por
+// paridade com o walker não-kit.
+var packWalkSkipDirs = []string{"node_modules", ".golmet", "evals", "testdata"}
+
+// mdFilesDeep - .md recursivo (mdFilesUnder é só 1 nível); usado para os
 // escopos aninhados do L6 (skills/**, goldens de conteúdo).
-func mdFilesDeep(root, sub string) []string {
+func mdFilesDeep(root, sub string, skipDirs ...string) []string {
+	skip := map[string]bool{".git": true}
+	for _, s := range skipDirs {
+		skip[s] = true
+	}
 	dir := root
 	if sub != "" {
 		dir = filepath.Join(root, filepath.FromSlash(sub))
@@ -2048,7 +2058,7 @@ func mdFilesDeep(root, sub string) []string {
 			return nil // dir ausente/ilegível = sem alvos, não é falha
 		}
 		if d.IsDir() {
-			if d.Name() == ".git" {
+			if skip[d.Name()] {
 				return filepath.SkipDir
 			}
 			return nil
