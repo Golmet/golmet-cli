@@ -197,13 +197,19 @@ func allowGaps(chk *Check) bool {
 
 func checkFileExists(tg targetInfo) checkOutcome {
 	_, err := os.Stat(tg.abs)
-	return checkOutcome{ok: err == nil, detail: "arquivo ausente: " + tg.rel,
-		fix: "gere o artefato em " + tg.rel}
+	if err != nil {
+		return checkOutcome{ok: false, detail: "arquivo ausente: " + tg.rel,
+			fix: "gere o artefato em " + tg.rel}
+	}
+	return checkOutcome{ok: true, detail: "arquivo presente: " + tg.rel}
 }
 
 func checkNotFileExists(tg targetInfo) checkOutcome {
 	_, err := os.Stat(tg.abs)
-	return checkOutcome{ok: os.IsNotExist(err), detail: "arquivo existe e não deveria: " + tg.rel,
+	if os.IsNotExist(err) {
+		return checkOutcome{ok: true, detail: "arquivo não existe (correto): " + tg.rel}
+	}
+	return checkOutcome{ok: false, detail: "arquivo existe e não deveria: " + tg.rel,
 		fix: "remova " + tg.rel + " (contrato de abort/não-invenção)"}
 }
 
@@ -230,7 +236,10 @@ func checkFrontmatterValid(tg targetInfo) checkOutcome {
 			fix: "gere " + tg.rel + " com front matter --- … ---"}
 	}
 	valid := strings.HasPrefix(doc, "---\n") || strings.HasPrefix(doc, "---\r\n")
-	return checkOutcome{ok: valid, detail: "front matter ausente (esperado --- inicial)",
+	if valid {
+		return checkOutcome{ok: true, detail: "front matter presente"}
+	}
+	return checkOutcome{ok: false, detail: "front matter ausente (esperado --- inicial)",
 		fix: "prefixe o front matter --- … --- em " + tg.rel}
 }
 
@@ -244,7 +253,10 @@ func checkContains(tg targetInfo, pattern string) checkOutcome {
 		doc, ok = readDoc(tg.abs)
 	}
 	found := ok && strings.Contains(doc, pattern)
-	return checkOutcome{ok: found, detail: fmt.Sprintf("pattern %q não encontrado em %s", pattern, tg.rel),
+	if found {
+		return checkOutcome{ok: true, detail: fmt.Sprintf("pattern %q encontrado em %s", pattern, tg.rel)}
+	}
+	return checkOutcome{ok: false, detail: fmt.Sprintf("pattern %q não encontrado em %s", pattern, tg.rel),
 		fix: "gere o conteúdo esperado (" + pattern + ") em " + tg.rel}
 }
 
@@ -258,7 +270,10 @@ func checkNotContains(tg targetInfo, pattern string) checkOutcome {
 		doc, ok = readDoc(tg.abs)
 	}
 	found := ok && strings.Contains(doc, pattern)
-	return checkOutcome{ok: !found, detail: fmt.Sprintf("pattern proibido %q encontrado em %s", pattern, tg.rel),
+	if !found {
+		return checkOutcome{ok: true, detail: fmt.Sprintf("pattern proibido não encontrado em %s", tg.rel)}
+	}
+	return checkOutcome{ok: false, detail: fmt.Sprintf("pattern proibido %q encontrado em %s", pattern, tg.rel),
 		fix: "remova o conteúdo proibido (" + pattern + ") de " + tg.rel}
 }
 
@@ -270,14 +285,20 @@ func checkNoTodos(tg targetInfo, patterns []string) checkOutcome {
 			hits = append(hits, p)
 		}
 	}
-	return checkOutcome{ok: len(hits) == 0, detail: "marcadores encontrados: " + strings.Join(hits, ","),
+	if len(hits) == 0 {
+		return checkOutcome{ok: true, detail: fmt.Sprintf("nenhum marcador dos %d monitorados", len(patterns))}
+	}
+	return checkOutcome{ok: false, detail: "marcadores encontrados: " + strings.Join(hits, ","),
 		fix: "remova os marcadores (" + strings.Join(hits, ", ") + ") de " + tg.rel}
 }
 
 func checkSectionExists(tg targetInfo, section string) checkOutcome {
 	doc, ok := readDoc(tg.abs)
 	found := ok && strings.Contains(doc, section)
-	return checkOutcome{ok: found, detail: fmt.Sprintf("seção %q ausente em %s", section, tg.rel),
+	if found {
+		return checkOutcome{ok: true, detail: fmt.Sprintf("seção %q presente em %s", section, tg.rel)}
+	}
+	return checkOutcome{ok: false, detail: fmt.Sprintf("seção %q ausente em %s", section, tg.rel),
 		fix: "gere a seção " + section + " em " + tg.rel}
 }
 
@@ -306,7 +327,10 @@ func checkSectionOrder(tg targetInfo, sections []string) checkOutcome {
 		return checkOutcome{ok: false, detail: "seções ausentes: " + strings.Join(missing, "; "),
 			fix: "gere as seções ausentes em " + tg.rel}
 	}
-	return checkOutcome{ok: ordered, detail: "ordem incorreta das seções (primeira aparição deve ser crescente)",
+	if ordered {
+		return checkOutcome{ok: true, detail: fmt.Sprintf("seções na ordem esperada (%d)", len(sections))}
+	}
+	return checkOutcome{ok: false, detail: "ordem incorreta das seções (primeira aparição deve ser crescente)",
 		fix: "reordene as seções conforme o criteria em " + tg.rel}
 }
 
