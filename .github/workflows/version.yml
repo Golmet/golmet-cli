@@ -38,7 +38,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          LAST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
+          # a tag de referência é a mais próxima NO HISTÓRIO de HEAD (sempre
+          # ancestral dela); ordenar a lista global de tags apanharia uma tag
+          # v* nascida em branch não-main e o bump sairia de um range errado
+          # (commits antigos entram no cálculo — versão fantasma)
+          LAST_TAG=$(git describe --tags --abbrev=0 --match 'v[0-9]*' HEAD 2>/dev/null || true)
           if [ -n "${LAST_TAG}" ]; then
             MAJOR="$(echo "${LAST_TAG#v}" | cut -d. -f1)"
             MINOR="$(echo "${LAST_TAG#v}" | cut -d. -f2)"
