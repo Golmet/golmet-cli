@@ -56,7 +56,13 @@ type Report struct {
 
 // packStateRootDirs — dirs canônicos na raiz de um state pack (working
 // copy): pack.yaml + qualquer subconjunto destes (+ meta .git/README/LICENSE).
-var packStateRootDirs = []string{"skills", "agents", "rules", "domains", "accumulation"}
+// `mcp` é a convenção do server MCP próprio do pack (`golmet pack mcp`):
+// mcp/server.js (server stdio Node) com registry dinâmico em mcp/tools/.
+var packStateRootDirs = []string{"skills", "agents", "rules", "domains", "accumulation", "mcp"}
+
+// mcpOnly — único subdir canônico de mcp/ (mesmo padrão do accumulationOnly
+// para accumulation/). Arquivos diretos em mcp/ são canônicos (server.js).
+var mcpOnly = []string{"tools"}
 
 // accumulationOnly — único conteúdo canônico de accumulation/.
 var accumulationOnly = []string{"patterns", "metrics", "nuances"}
@@ -1004,6 +1010,15 @@ func lintL7(rep *Report, ws string, kitMode bool, configRoot string) {
 						structErr("packs/"+packID+"/accumulation/"+a.Name(),
 							"dir não canônico em accumulation/ (canônico: "+strings.Join(accumulationOnly, ", ")+")",
 							"mova o conteúdo (patterns → gm-pattern-extractor, metrics → gm-metrics-collector, nuances → gm-nuance-collector) ou declare a exceção na allowlist do lint")
+					}
+				}
+			}
+			if mentries, err := os.ReadDir(filepath.Join(packDir, "mcp")); err == nil {
+				for _, m := range mentries {
+					if m.IsDir() && !containsStr(mcpOnly, m.Name()) {
+						structErr("packs/"+packID+"/mcp/"+m.Name(),
+							"dir não canônico em mcp/ (canônico: "+strings.Join(mcpOnly, ", ")+" — mcp/server.js é o server do pack)",
+							"mova o conteúdo para mcp/tools/ ou declare a exceção na allowlist do lint")
 					}
 				}
 			}

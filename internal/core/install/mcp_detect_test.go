@@ -47,6 +47,29 @@ func TestInstalledMCPsOpenCodeConfigFallback(t *testing.T) {
 	}
 }
 
+// a mentira do engine com TEXTO (caso real capturado: exit 0 com "No MCP
+// servers configured" minutos depois de listar 13) NÃO vira entrada falsa
+// no parser — lista vazia → fallback ao config intacto.
+func TestParseOpencodeListEmptyTextIsNotAnEntry(t *testing.T) {
+	if e := parseOpencodeList("No MCP servers configured\r\n"); len(e) != 0 {
+		t.Errorf("texto de lista vazia deveria devolver 0 entradas, veio %v", e)
+	}
+	home := newHome(t)
+	os.MkdirAll(filepath.Join(home, ".config", "opencode"), 0o755)
+	os.WriteFile(filepath.Join(home, ".config", "opencode", "opencode.jsonc"),
+		[]byte(opencodeConfigFixture), 0o644)
+	old := runEngineCmd
+	runEngineCmd = func(name string, args []string) (string, error) {
+		return "No MCP servers configured\r\n", nil
+	}
+	t.Cleanup(func() { runEngineCmd = old })
+
+	m := InstalledMCPs(home, newHome(t), "opencode")
+	if m["codebase-memory-mcp"] != "config" {
+		t.Errorf("fallback ao config deveria preservar os badges, veio %v", m)
+	}
+}
+
 // list vazio + config SEM MCPs → vazio (nenhum badge inventado).
 func TestInstalledMCPsOpenCodeEmptyConfig(t *testing.T) {
 	home := newHome(t)
