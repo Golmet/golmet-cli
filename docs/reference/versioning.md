@@ -58,6 +58,18 @@ commits bumps the major.
    publish turns the job red** — the GitHub Release and its assets stay up,
    and a re-run completes only what is missing.
 
+## Tag history note: v1.0.0
+
+The first tag predates this pipeline. `v1.0.0` was pushed by hand as a
+**lightweight** tag on `5ffacab`, half-way up the `release/v1.0.0` branch, so
+the commits that landed after it on that branch — including the `feat(ci)`
+that introduced this very version workflow — fell outside the tag and shipped
+as `v1.1.0`. That is why the `v1.1.0` tag sits on the merge commit of the
+`release/v1.0.0` PR: the merge carried the `feat(ci)`, and `feat` bumps the
+minor. The tag stays as-is: it is already published and referenced by npm
+releases, and re-cutting it would force-push a public tag. Every tag from
+`v1.1.0` on is annotated and created by the workflow.
+
 ## Manual release
 
 Tags pushed manually (`git tag v1.2.3 && git push origin v1.2.3`) release

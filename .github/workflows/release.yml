@@ -195,6 +195,14 @@ jobs:
             const fs = require('fs');
             const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
             p.version = '${VERSION_NPM}';
+            // as optionalDependencies acompanham a TAG: o package.json
+            // versionado traz 1.0.0 (placeholder) e o npm resolve optional
+            // por versão exata — fixo numa versão inexistente no registry o
+            // sub-pacote da plataforma não instala e o launcher cai no
+            // fallback "o binário da sua plataforma não acompanhou"
+            for (const name of Object.keys(p.optionalDependencies || {})) {
+              p.optionalDependencies[name] = '${VERSION_NPM}';
+            }
             fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
           "
           if npm view "golmet-cli@${VERSION_NPM}" version >/dev/null 2>&1; then

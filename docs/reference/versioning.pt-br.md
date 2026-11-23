@@ -59,6 +59,19 @@ A precedência é a do semver: major > minor > patch. Um `feat!` entre dez
    fecha o job vermelho** — a GitHub Release e os assets permanecem no ar,
    e o re-run completa só o que falta.
 
+## Nota de histórico: v1.0.0
+
+A primeira tag é anterior a esta pipeline. `v1.0.0` foi empurrada à mão como
+uma tag **leve** (`lightweight`) em `5ffacab`, no meio da branch
+`release/v1.0.0` — então os commits que entraram depois dela na branch,
+incluindo o `feat(ci)` que criou este próprio workflow de versionamento,
+ficaram de fora da tag e foram lançados como `v1.1.0`. É por isso que a tag
+`v1.1.0` está no commit de merge do PR `release/v1.0.0`: o merge carregava o
+`feat(ci)`, e `feat` sobe o minor. A tag permanece como está: já está
+publicada e referenciada pelas releases do npm, e recortá-la exigiria
+force-push de uma tag pública. Todas as tags de `v1.1.0` em diante são
+anotadas e criadas pelo workflow.
+
 ## Release manual
 
 Tag empurrada manualmente (`git tag v1.2.3 && git push origin v1.2.3`)
