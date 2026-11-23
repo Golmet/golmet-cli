@@ -1103,4 +1103,186 @@ func TestL13Anchors(t *testing.T) {
 	}
 }
 
-// ---- L13 - âncoras de idioma ----
+// ---- L14 - front matter YAML parseável ----
+
+// TestL14FrontMatter cobre o check L14 via l14CheckFile direto + walker
+// lintL14FrontMatter em sandbox não-kit: front matter inválido (o caso
+// real IMP-013: valor com `: ` sem aspas) = exatamente 1 error; front
+// matter válido (valores quotados) e bloco vazio = sem findings; sem
+// front matter e `---` só no corpo (horizontal rule / abertura sem
+// fechamento) = skip silencioso. CRLF (delimitadores e corpo, configs de
+// engine em Windows) parseia igual — tolerância via TrimSuffix. O walker
+// kit-mode (coredata/*, docs, *.md raiz + AGENTS.md, packs/<pack>/** e
+// profile/ do configRoot; evals/testdata fora — a invariante de fixtures
+// vale também DENTRO dos packs) contribui findings de cada zona e não
+// vaza evals/testdata.
+func TestL14FrontMatter(t *testing.T) {
+	// l14CheckFile direto — os casos de front matter
+	fmFindings := func(content string) []Finding {
+		t.Helper()
+		rep := &Report{Findings: []Finding{}, ByCheck: map[string]int{}}
+		l14CheckFile(rep, "doc.md", []byte(content))
+		return rep.Findings
+	}
+	// caso real IMP-013: `- titulo: X: Y` sem aspas → exatamente 1 error L14
+	bad := "---\nitems:\n  - titulo: X: Y\n---\n\ncorpo\n"
+	got := fmFindings(bad)
+	if len(got) != 1 {
+		t.Fatalf("front matter inválido: want 1 finding, got %d: %+v", len(got), got)
+	}
+	f := got[0]
+	if f.Check != "L14" || f.Severity != "error" {
+		t.Fatalf("finding = %+v, want check L14 / severity error", f)
+	}
+	if f.Line != 3 {
+		t.Errorf("line = %d, want 3 (a linha do valor quebrado no arquivo)", f.Line)
+	}
+	if !strings.Contains(f.Description, "front matter YAML inválido") || !strings.Contains(f.Fix, "aspas duplas") {
+		t.Errorf("description/fix = %q / %q", f.Description, f.Fix)
+	}
+	// front matter válido (valores com `: ` quotados) → sem findings
+	if got := fmFindings("---\ntitulo: \"X: Y\"\n---\n\ncorpo\n"); len(got) != 0 {
+		t.Fatalf("front matter válido flagado: %+v", got)
+	}
+	// bloco vazio entre delimitadores → parse válido, sem findings
+	if got := fmFindings("---\n---\n\ncorpo\n"); len(got) != 0 {
+		t.Fatalf("bloco vazio flagado: %+v", got)
+	}
+	// sem front matter (primeira linha não-delimitadora) → skip silencioso
+	if got := fmFindings("# doc\n\n---\n\nhr no meio — não é front matter\n"); len(got) != 0 {
+		t.Fatalf("`---` no corpo (sem abertura na 1ª linha) flagado: %+v", got)
+	}
+
+	// lintL14FrontMatter em sandbox não-kit — o walker em ação com os
+	// casos da spec juntos (inválido, válido, sem FM, abertura órfã)
+	ws := t.TempDir()
+	write := func(rel, content string) {
+		t.Helper()
+		p := filepath.Join(ws, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("quebrado.md", bad)
+	write("valido.md", "---\ntitulo: \"X: Y\"\n---\n\ncorpo\n")
+	write("sem-fm.md", "# sem front matter\n")
+	write("nested/abertura-orfa.md", "---\n\nhr — abertura sem fechamento, skip\n")
+	rep := &Report{Findings: []Finding{}, ByCheck: map[string]int{}}
+	lintL14FrontMatter(rep, ws, false, "")
+	l14 := findingsOf(rep, "L14")
+	if len(l14) != 1 || l14[0].File != "quebrado.md" {
+		t.Fatalf("L14 walker = %+v, want 1 finding em quebrado.md", l14)
+	}
+	if l14[0].Severity != "error" {
+		t.Errorf("severity = %q, want error", l14[0].Severity)
+	}
+
+	// CRLF — delimitadores e corpo com \r\n (configs de engine em
+	// Windows): tolerância via TrimSuffix na comparação dos
+	// delimitadores; o bloco com CRLF parseia igual (padrão IMP-013)
+	if got := fmFindings("---\r\ntitulo: \"X: Y\"\r\n---\r\n\ncorpo\r\n"); len(got) != 0 {
+		t.Fatalf("front matter válido CRLF flagado: %+v", got)
+	}
+	crlfGot := fmFindings("---\r\nitems:\r\n  - titulo: X: Y\r\n---\r\n\ncorpo\r\n")
+	if len(crlfGot) != 1 {
+		t.Fatalf("front matter inválido CRLF: want 1 finding, got %d: %+v", len(crlfGot), crlfGot)
+	}
+	if crlfGot[0].Line != 3 {
+		t.Errorf("line CRLF = %d, want 3", crlfGot[0].Line)
+	}
+
+	// walker kit-mode: coredata/*, docs e *.md raiz do kit; AGENTS.md,
+	// packs/<pack>/** e profile/ do configRoot. evals/ fora do walk
+	// kit-mode (fixtures com conteúdo proposital) — o falso positivo
+	// proposital de evals não pode vazar
+	kitWS, cfg := t.TempDir(), t.TempDir()
+	writeIn := func(base, rel, content string) {
+		t.Helper()
+		p := filepath.Join(base, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeIn(kitWS, "coredata/sources/quebrado.md", bad)
+	writeIn(kitWS, "coredata/rules/valido.md", "---\ntitulo: \"X: Y\"\n---\n\ncorpo\n")
+	writeIn(kitWS, "docs/guia.md", "---\nname: guia\n---\n\ncorpo\n")
+	writeIn(kitWS, "README.md", "---\nname: kit\n---\n\ncorpo\n")
+	writeIn(kitWS, "evals/proposital.md", bad) // fora do walk kit-mode
+	writeIn(cfg, "AGENTS.md", bad)
+	writeIn(cfg, "packs/techminds/domains/dom.md", bad)
+	writeIn(cfg, "packs/techminds/evals/fixture-x.md", bad)     // fora: invariante de fixtures dentro do pack
+	writeIn(cfg, "packs/techminds/testdata/proposital.md", bad) // fora: idem
+	writeIn(cfg, "profile/operator.md", "---\nname: op\n---\n\ncorpo\n")
+	krep := &Report{Findings: []Finding{}, ByCheck: map[string]int{}}
+	lintL14FrontMatter(krep, kitWS, true, cfg)
+	kitL14 := findingsOf(krep, "L14")
+	if len(kitL14) != 3 {
+		t.Fatalf("L14 kit-mode = %+v, want 3 findings (coredata, AGENTS.md, packs)", kitL14)
+	}
+	wantFiles := map[string]bool{
+		"coredata/sources/quebrado.md": true, "AGENTS.md": true,
+		"techminds/domains/dom.md": true,
+	}
+	for _, f := range kitL14 {
+		if !wantFiles[f.File] {
+			t.Errorf("L14 kit-mode file inesperado: %q (findings: %+v)", f.File, kitL14)
+		}
+		delete(wantFiles, f.File)
+	}
+	if len(wantFiles) != 0 {
+		t.Errorf("L14 kit-mode faltou: %v (findings: %+v)", wantFiles, kitL14)
+	}
+	for _, f := range kitL14 {
+		if strings.Contains(f.File, "evals/") || strings.Contains(f.File, "testdata/") {
+			t.Errorf("L14 kit-mode vazou evals/testdata (dentro ou fora de packs): %q", f.File)
+		}
+	}
+}
+
+// TestMdFilesDeep — unit direto do helper recursivo: profundidade real
+// (subpastas 2+ níveis), rel paths prefixados pelo sub, ordem
+// lexicográfica determinística, skip default (.git), skips extras (a
+// invariante de evals/testdata dentro de packs) e não-.md ignorado.
+func TestMdFilesDeep(t *testing.T) {
+	base := t.TempDir()
+	writeRel := func(rel, content string) {
+		t.Helper()
+		p := filepath.Join(base, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeRel("pack/e1.md", "a")
+	writeRel("pack/deep/d2.md", "b")
+	writeRel("pack/domains/x/KNOWLEDGE.md", "c")
+	writeRel("pack/evals/fixture-001/doc.md", "d") // skip extra (invariante de fixtures)
+	writeRel("pack/testdata/x.md", "e")            // skip extra (idem)
+	writeRel("pack/.git/config.md", "f")           // skip default
+	writeRel("pack/nota.txt", "g")                 // não é .md
+	writeRel("outro/fora.md", "h")                 // fora do sub
+
+	want := []string{"pack/deep/d2.md", "pack/domains/x/KNOWLEDGE.md", "pack/e1.md"}
+	got := mdFilesDeep(base, "pack", "evals", "testdata")
+	if len(got) != len(want) {
+		t.Fatalf("mdFilesDeep = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("mdFilesDeep[%d] = %q, want %q", i, got[i], want[i])
+		}
+	}
+	// chamadas L6 sem skip extra: só .git é default — evals/testdata voltam
+	got = mdFilesDeep(base, "pack")
+	if len(got) != len(want)+2 { // + evals/fixture-001/doc.md e testdata/x.md
+		t.Fatalf("mdFilesDeep sem extras = %v, want %d itens", got, len(want)+2)
+	}
+}

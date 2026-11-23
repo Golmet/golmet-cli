@@ -94,7 +94,7 @@ golmet init
 
 # the first commands, in order
 golmet validate   # the workspace against FORMAT v1 — exit ≠ 0 blocks CI
-golmet lint       # the deterministic structural sweep (L1-L13)
+golmet lint       # the deterministic structural sweep (L1-L14)
 golmet doctor     # environment health (S1–S5, machine checks)
 golmet status     # the entity-state dashboard
 ```
@@ -116,7 +116,7 @@ The public docs are written as a **journey** — start there:
 | [docs/FORMAT.md](docs/FORMAT.md)                                   | The normative spec (v1) — the contract every check enforces                                                                                           |
 | [docs/reference/compatibility.md](docs/reference/compatibility.md) | The real MCP x engine compatibility matrix - verified cell by cell, locked by tests (honest "unverified" marks)                                       |
 | [docs/reference/](docs/reference/)                                 | Reference: the 18 commands, the 14 MCP tools                                                                                                          |
-| [docs/reference/lint.md](docs/reference/lint.md)                   | The lint layers in depth: what each check (L1-L13) validates, why it exists, its finding example and the test that locks it                           |
+| [docs/reference/lint.md](docs/reference/lint.md)                   | The lint layers in depth: what each check (L1-L14) validates, why it exists, its finding example and the test that locks it                           |
 | [CHANGELOG.md](CHANGELOG.md)                                       | Wave by wave, with the real-world motivation                                                                                                          |
 | [LICENSE](LICENSE)                                                 | MIT                                                                                                                                                   |
 

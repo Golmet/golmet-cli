@@ -28,7 +28,7 @@ title are validated by CI — a commit outside the pattern does not enter
 
 | Commits since the last `v*` tag | Bump | Example |
 |---|---|---|
-| `feat:` | **minor** | `feat(lint): L14 binary manifest check` |
+| `feat:` | **minor** | `feat(lint): L15 binary manifest check` |
 | `fix:` | **patch** | `fix(launcher): resolve fallback exit code` |
 | any type with `!`, or `BREAKING CHANGE:` footer | **major** | `feat!!: rename init flags` |
 | only `docs:` `chore:` `refactor:` `test:` `ci:` `style:` `build:` | **none** | no tag, no release |

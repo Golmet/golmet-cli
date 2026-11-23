@@ -1,6 +1,6 @@
 ---
 name: gm-dba
-description: Database Administrator do workflow — a camada principal de banco de dados. 5 serviços chamáveis pelas outras camadas: modelar (revisão do DATA_MODEL), migrar (revisão de mapeamento/scripts de dados), performance (queries, índices, N+1), drift (DATA_MODEL ↔ migrations ↔ schema vivo) e operar (segurança, tenant isolation, backup). Read-only por default; DDL/DML exige gate explícito. Capacidade tracker: não. Migrations seguem o playbook da stack.
+description: "Database Administrator do workflow — a camada principal de banco de dados. 5 serviços chamáveis pelas outras camadas: modelar (revisão do DATA_MODEL), migrar (revisão de mapeamento/scripts de dados), performance (queries, índices, N+1), drift (DATA_MODEL ↔ migrations ↔ schema vivo) e operar (segurança, tenant isolation, backup). Read-only por default; DDL/DML exige gate explícito. Capacidade tracker: não. Migrations seguem o playbook da stack."
 requires: [file, shell, mcp]
 degrades:
   mcp: shell  # sem MCP postgres/sqlite, usa clientes CLI (psql/sqlcmd/sqlite3) via shell

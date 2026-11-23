@@ -49,7 +49,7 @@ superfície; quando a IA atua, as tools MCP são - os guardas de mutação
 | `golmet uninstall` | Remove a estrutura global do Golmet por camadas, com descoberta dinâmica do estado real (manifest + personal.json + engine). Interativo; `--only <csv> --yes` para não-interativo · `--dry-run` · `--json`. O pack é DESELECIONADO por default (o repo remoto nunca é tocado) |
 | `golmet upgrade` | Self-update do binário da última release GitHub (SHA-256 verificado). `--check` read-only · rollback via `<bin>.old` · o binário sob gestão npm → orienta `npm update -g golmet-cli` |
 | `golmet graph` | O motor deterministico do grafo de conhecimento (T1-T5, ADR-019): grava `graph.json` + HTML self-contained + resumo MD; seletor `--what workflow|pack|docs|all` (combinavel com `+`); `--scope` (delta docs), `--max-nodes`, `--from-json` (grafo congelado), `--json`. Strict SO no registry (exit 1); T1-T4 ausente = aviso + grafo parcial; saida integral ou nada. Exit 0 ok - 1 strict de registry - 2 uso |
-| `golmet lint` | Varredura estrutural determinística L1-L13 (+L7-size) sobre o kit/config/packs/workspace - findings com severidade + remediação PT-BR. Exit 0 limpo · 2 com findings · `--json`. A remediação cita o escritor canônico responsável |
+| `golmet lint` | Varredura estrutural determinística L1-L14 (+L7-size) sobre o kit/config/packs/workspace - findings com severidade + remediação PT-BR. Exit 0 limpo · 2 com findings · `--json`. A remediação cita o escritor canônico responsável |
 
 ## Convenções transversais
 

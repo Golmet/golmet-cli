@@ -36,13 +36,17 @@ Severity convention: **error** = breaks the contract or the render;
 | L11 | warning | broken or malformed Mermaid diagrams |
 | L12 | error (BOM = warning) | encoding and broken text: non-UTF-8 bytes, U+FFFD, double-encoded accents, UTF-16/BOM |
 | L13 | warning | language anchors: a PT-BR doc linking an EN destination when the PT counterpart exists on disk |
+| L14 | error | front matter YAML parseable: an opening `---` whose block fails YAML parsing (the unquoted `X: Y` value pattern) |
 
 ## L1 — dead references (error)
 
 Every path cited in `` `backticks` `` or markdown links of the swept
-`*.md` files (kit sources/docs; `AGENTS.md` + `profile/` of the config;
-pack docs) must resolve in a known root (the file's dir, the kit root, the
-config root). Known false positives are handled with declared roots
+`*.md` files (kit sources/docs; `AGENTS.md` + `profile/` of the config)
+must resolve in a known root (the file's dir, the kit root, the config
+root). Pack `*.md` files are NOT swept in v0.1 — pack business docs cite
+PRODUCT paths by design (a product repo's deploy.yml, for example), a
+structural false positive; pack-internal refs belong to L5/L7. Known
+false positives are handled with declared roots
 (`profile/x` resolves the kit-canonical `coredata/rules/x`; module-store
 refs and `skills/<id>` resolve against the registry).
 
@@ -176,6 +180,19 @@ badge, cross-links). The remediation swaps to the PT counterpart and warns
 to check the `#section` anchor in the new language.
 
 Tests: `TestL13Anchors`.
+
+## L14 — front matter YAML parseable (error)
+
+A `*.md` file whose front matter block (opening `---` on the first line,
+closed by the next `---`) fails YAML parsing (`gopkg.in/yaml.v3`). The
+real find: a value containing a colon-plus-space (`X: Y`) written
+unquoted — the parser reads it as a nested mapping ("Nested mappings are
+not allowed in compact mappings") and every YAML consumer of the doc
+fails with it. Quote the whole value with double quotes. Files without a
+front-matter opener skip silently; a lone `---` stays a legitimate
+horizontal rule.
+
+Tests: `TestL14FrontMatter`.
 
 ## The anti-false-positive policy
 

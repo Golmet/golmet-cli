@@ -113,7 +113,7 @@ A doc pública é escrita como uma **jornada** — comece por ela:
 | [docs/FORMAT.md](docs/FORMAT.pt-br.md)                                                   | A spec normativa (v1) — o contrato que todo check enforça                                                                                      |
 | [docs/reference/compatibility.md](docs/reference/compatibility.pt-br.md)                 | A matriz real MCP x engine - verificada celula a celula, travada por testes (marcas honestas de "nao verificado")                              |
 | [docs/reference/](docs/reference/)                                                       | Referência: os 18 commands, as 14 tools MCP                                                                                                    |
-| [docs/reference/lint.pt-br.md](docs/reference/lint.pt-br.md)                             | As camadas do lint em profundidade: o que cada check (L1-L13) valida, por que existe, exemplo de finding e o teste que trava                   |
+| [docs/reference/lint.pt-br.md](docs/reference/lint.pt-br.md)                             | As camadas do lint em profundidade: o que cada check (L1-L14) valida, por que existe, exemplo de finding e o teste que trava                   |
 | [CHANGELOG.md](CHANGELOG.md)                                                             | Onda por onda, com a motivação real                                                                                                            |
 | [LICENSE](LICENSE)                                                                       | MIT                                                                                                                                            |
 

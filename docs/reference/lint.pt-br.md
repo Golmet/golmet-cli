@@ -1,6 +1,6 @@
 <p align="center"><a href="../../README.md">English</a> | <a href="../../README.pt-br.md">Português (Brasil)</a> | <a href="lint.md">versão base deste doc</a></p>
 
-# As camadas do lint (L1-L13)
+# As camadas do lint (L1-L14)
 
 O `golmet lint` é a varredura estrutural determinística do kit, do config do
 engine e dos packs. É read-only, nunca adivinha e carrega o estado todo —
@@ -34,13 +34,17 @@ Convenção de severidade: **error** = quebra o contrato ou o render;
 | L11 | warning | diagramas Mermaid quebrados ou mal formatados |
 | L12 | error (BOM = warning) | encoding e texto quebrado: bytes não-UTF-8, U+FFFD, acentos com dupla codificação, UTF-16/BOM |
 | L13 | warning | âncoras de idioma: link de um doc `*.pt-br.md` apontando destino EN quando o par PT-BR existe no disco |
+| L14 | error | front matter YAML inválido: bloco `---` … `---` na primeira linha que não parseia como YAML genérico (ex.: valor com `: ` sem aspas) |
 
 ## L1 — referências mortas (error)
 
 Todo path citado em `` `backticks` `` ou links markdown dos `*.md` varridos
-(sources/docs do kit; `AGENTS.md` + `profile/` do config; docs de packs)
-deve resolver em raiz conhecida (o dir do arquivo, a raiz do kit, a raiz do
-config). Falsos-positivos conhecidos são tratados com raízes declaradas
+(sources/docs do kit; `AGENTS.md` + `profile/` do config) deve resolver em
+raiz conhecida (o dir do arquivo, a raiz do kit, a raiz do config). Os
+`*.md` de packs NÃO são varridos v0.1 — docs de negócio do pack citam
+paths de PRODUTO por design (deploy.yml do repo de produto, por exemplo),
+falso-positivo estrutural; refs internas do pack são domínio do L5/L7.
+Falsos-positivos conhecidos são tratados com raízes declaradas
 (`profile/x` resolve o `coredata/rules/x` canônico do kit; refs de
 module-stores e `skills/<id>` resolvem contra o registry).
 
@@ -174,6 +178,20 @@ base EN linkando o par PT é legítimo: badge, cross-links). A remediação
 troca para o par PT e avisa para conferir a âncora `#...` no idioma.
 
 Testes: `TestL13Anchors`.
+
+## L14 — front matter YAML parseável (error)
+
+Um bloco de front matter (`---` na primeira linha até o fechamento `---`)
+deve parsear como YAML genérico — sem schema de componente (skills/agents
+têm suas regras próprias). O achado real (IMP-013): `titulo: X: Y` sem
+aspas passou por todos os checks e só quebrou no consumidor (editor) —
+"Nested mappings are not allowed in compact mappings". Arquivo sem front
+matter = skip silencioso (não é erro); bloco vazio entre delimitadores =
+parse válido; abertura `---` sem fechamento não é front matter. Alvos: os
+mesmos `*.md` do L12 (kit/config/packs; evals e testdata fora — fixtures
+podem conter conteúdo proposital).
+
+Testes: `TestL14FrontMatter`.
 
 ## A política anti-falso-positivo
 

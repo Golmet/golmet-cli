@@ -1,10 +1,5 @@
 <p align="center">English | <a href="FORMAT.pt-br.md">Português (Brasil)</a></p>
-[overview.md](overview.md) §6.
-| ^ | ^ | **Exceção:** o doc de migração (`docs/migration.pt-br.md`) DESCREVE o modelo antigo por natureza — paths mortos e componentes extintos citados como passado — L1/L6 não se aplicam a ele (skip declarado no lint) |
-<p align="center">English | <a href="FORMAT.pt-br.md">Português (Brasil)</a></p>
-[overview.md](overview.md) §6.
-| L13 | warning | Âncoras de idioma: link de um doc `*.pt-br.md` apontando o destino em EN **quando o par PT-BR existe no disco** (o achado real: o README.pt-br navegava para os docs EN - o link resolvia no L1, mas ensinava o idioma errado). Só docs PT são validados (o EN base pode linkar o par PT legitimamente - badge, cross-links); link já PT, sem par PT no disco (o EN é o único destino), externo e âncora pura = OK; link morto = skip (o L1 cobre). A remediação mantém o fragmento `#...` e avisa para conferir a âncora no idioma |
-<p align="center">English | <a href="FORMAT.pt-br.md">Português (Brasil)</a></p>
+
 
 # FORMAT v1 — Normative Specification of the GOLMET Workspace
 
@@ -38,7 +33,7 @@ by `golmet doctor`, does not block. **MAY** — optional, unchecked.
 | §6 State directives | front matter accepted subset (normative, DR-018) |
 | §7 Entities and state machine | Charter, RN, PEND, CR, Feature, Task, Spec, ADR, Candidate — one section per entity |
 | §8 `golmet.index.json` | the state index — written ONLY by the kit |
-| §9 Enforcement | two levels; **§9.1 `golmet lint`** — the deterministic sweep (L1-L12 checks table, canonical structures, declared anti-false-positive heuristics and allowlists) |
+| §9 Enforcement | two levels; **§9.1 `golmet lint`** — the deterministic sweep (L1-L14 checks table, canonical structures, declared anti-false-positive heuristics and allowlists) |
 | §10 Skill contract | the capabilities front matter (requires/degrades/kit) |
 | §10.1 Skill + subagent dual registration | same id by need, not symmetry — the criterion |
 | §11 Structured errors | the error grammar of the checks |
@@ -46,6 +41,10 @@ by `golmet doctor`, does not block. **MAY** — optional, unchecked.
 | §13 Scope guard | what does NOT enter the format |
 | §14 Minimal example | a conforming workspace, complete |
 
+> Declared skip: the migration doc (`docs/migration*.md`) **describes the
+> legacy model by nature** — dead paths and extinct components cited as
+> past — so L1/L6 do not apply to it (enforced in the L1/L6 walkers).
+
 **The normative contract is enforced by** `golmet validate` (H1-H10),
-`golmet doctor` (S1-S5) and `golmet lint` (L1-L12) — see
+`golmet doctor` (S1-S5) and `golmet lint` (L1-L14) — see
 [overview.md](overview.md) §6.
