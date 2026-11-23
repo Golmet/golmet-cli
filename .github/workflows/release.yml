@@ -199,12 +199,23 @@ jobs:
             // versionado traz 1.0.0 (placeholder) e o npm resolve optional
             // por versão exata — fixo numa versão inexistente no registry o
             // sub-pacote da plataforma não instala e o launcher cai no
-            // fallback "o binário da sua plataforma não acompanhou"
+            // fallback de binário ausente
+            // ATENÇÃO: este bloco vive entre aspas duplas do bash — nunca
+            // use aspas duplas aqui (um comentário com aspas fecha a string
+            // e o node executa um script truncado sem gravar o arquivo)
             for (const name of Object.keys(p.optionalDependencies || {})) {
               p.optionalDependencies[name] = '${VERSION_NPM}';
             }
             fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
           "
+          # guard: o node -e acima grava a versão no package.json — se o
+          # script truncar (ver aviso acima), ele roda sem erro mas NÃO grava
+          # e o npm publicaria o placeholder. Confirma o stamp antes de tudo.
+          PUB_VERSION="$(node -p "require('./package.json').version")"
+          if [ "${PUB_VERSION}" != "${VERSION_NPM}" ]; then
+            echo "::error::package.json ficou em ${PUB_VERSION}, esperado ${VERSION_NPM} — o stamp não aplicou; abortando antes do publish"
+            exit 1
+          fi
           if npm view "golmet-cli@${VERSION_NPM}" version >/dev/null 2>&1; then
             echo "golmet-cli@${VERSION_NPM} já publicado — skip idempotente"
           elif npm publish --access public; then
