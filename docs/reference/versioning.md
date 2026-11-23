@@ -5,10 +5,16 @@
 The version of the kit is decided by **the merge, not by a person**: every
 merge to `main` runs the version workflow, which reads the commit subjects
 since the last `v*` tag, classifies them by Conventional Commits and computes
-the next semver. **The tag is the single source of truth** — the published
-npm version always equals the tag; the `package.json` files versioned in the
-repo are patched at publish time (the repo copy may lag one step; the
-registry never does).
+the next semver. **The tag is the single source of truth** - the published
+npm version always equals the tag. On every bump, the version workflow also
+**commits the version into the repo** (`chore(release): vX.Y.Z`, stamped
+into all 6 `package.json` files) and pushes it to `main` before tagging —
+the tag is cut **on that bump commit**, so `git show vX.Y.Z:package.json`
+always equals `vX.Y.Z` and a checkout of the tag is publishable as-is.
+Direct push by the workflow uses a deploy key (the builtin `GITHUB_TOKEN`
+cannot receive ruleset bypass); the publish-time stamp in the release
+workflow remains as a verification guard. Tags cut before this mechanism
+(`v1.7.2` and earlier) carry the old `1.0.0` placeholder in their tree.
 
 ## The commit format
 

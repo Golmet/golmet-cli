@@ -195,11 +195,13 @@ jobs:
             const fs = require('fs');
             const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
             p.version = '${VERSION_NPM}';
-            // as optionalDependencies acompanham a TAG: o package.json
-            // versionado traz 1.0.0 (placeholder) e o npm resolve optional
-            // por versão exata — fixo numa versão inexistente no registry o
-            // sub-pacote da plataforma não instala e o launcher cai no
-            // fallback de binário ausente
+            // as optionalDependencies acompanham a TAG: o npm resolve
+            // optional por versão exata — optional numa versão que não
+            // existe no registry = sub-pacote não instala = launcher cai
+            // no fallback de binário ausente (lição da issue do npm sem
+            // binário). O version workflow já gravou a versão no repo
+            // (commit de bump taggeado) — este stamp é verificação e
+            // vira no-op na árvore da tag
             // ATENÇÃO: este bloco vive entre aspas duplas do bash — nunca
             // use aspas duplas aqui (um comentário com aspas fecha a string
             // e o node executa um script truncado sem gravar o arquivo)
