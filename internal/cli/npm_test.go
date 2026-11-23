@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"testing"
@@ -241,8 +242,12 @@ func TestNPMLauncherPlatformResolution(t *testing.T) {
 
 // ---- M31 — o shape dos pacotes npm ----
 
-// O principal: version 1.0.0, bin golmet → ./bin/golmet.js, os 5
-// optionalDependencies @ 1.0.0, engines node >=14, files com bin/.
+// O principal: version em semver X.Y.Z (o version workflow bumpa o repo a
+// cada release — a tag aponta para o commit com a versão gravada), bin
+// golmet → ./bin/golmet.js, os 5 optionalDependencies @ MESMA versão
+// (a lição da issue do npm sem binário: optional resolvido por versão
+// exata — divergência = launcher sem binário), engines node >=14, files
+// com bin/.
 func TestNPMPackageShape(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join("..", "..", "package.json"))
 	if err != nil {
@@ -261,8 +266,9 @@ func TestNPMPackageShape(t *testing.T) {
 	if err := json.Unmarshal(data, &pkg); err != nil {
 		t.Fatalf("package.json ilegível: %v", err)
 	}
-	if pkg.Name != "golmet-cli" || pkg.Version != "1.0.0" {
-		t.Errorf("name/version = %s/%s", pkg.Name, pkg.Version)
+	semver := regexp.MustCompile(`^\d+\.\d+\.\d+$`)
+	if pkg.Name != "golmet-cli" || !semver.MatchString(pkg.Version) {
+		t.Errorf("name/version = %s/%s (version deve ser semver X.Y.Z gravado no repo)", pkg.Name, pkg.Version)
 	}
 	if pkg.Bin["golmet"] != "./bin/golmet.js" {
 		t.Errorf("bin = %v", pkg.Bin)
@@ -279,26 +285,37 @@ func TestNPMPackageShape(t *testing.T) {
 	if !hasBin {
 		t.Errorf("files sem bin/: %v", pkg.Files)
 	}
-	want := map[string]string{
-		"@golmet/cli-win32-x64":    "1.0.0",
-		"@golmet/cli-linux-x64":    "1.0.0",
-		"@golmet/cli-linux-arm64":  "1.0.0",
-		"@golmet/cli-darwin-x64":   "1.0.0",
-		"@golmet/cli-darwin-arm64": "1.0.0",
+	want := map[string]bool{
+		"@golmet/cli-win32-x64":    true,
+		"@golmet/cli-linux-x64":    true,
+		"@golmet/cli-linux-arm64":  true,
+		"@golmet/cli-darwin-x64":   true,
+		"@golmet/cli-darwin-arm64": true,
 	}
 	if len(pkg.OptionalDeps) != len(want) {
 		t.Fatalf("optionalDependencies = %d, want 5", len(pkg.OptionalDeps))
 	}
-	for name, ver := range want {
-		if got := pkg.OptionalDeps[name]; got != ver {
-			t.Errorf("optionalDependencies[%s] = %q, want %q", name, got, ver)
+	for name := range want {
+		if got := pkg.OptionalDeps[name]; got != pkg.Version {
+			t.Errorf("optionalDependencies[%s] = %q, want %q (a versão da optional é a MESMA do principal — npm resolve por versão exata)", name, got, pkg.Version)
 		}
 	}
 }
 
 // Os 5 sub-pacotes de plataforma: name/os/cpu coerentes com o dir e o
-// binário declarado no files.
+// binário declarado no files; version SEMPRE = a do principal (os 6
+// sincronizados pelo version workflow).
 func TestNPMPlatformPackagesShape(t *testing.T) {
+	root, err := os.ReadFile(filepath.Join("..", "..", "package.json"))
+	if err != nil {
+		t.Fatalf("package.json ausente: %v", err)
+	}
+	var rootPkg struct {
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal(root, &rootPkg); err != nil {
+		t.Fatalf("package.json ilegível: %v", err)
+	}
 	cases := []struct{ dir, name, os, cpu, bin string }{
 		{"win32-x64", "@golmet/cli-win32-x64", "win32", "x64", "golmet.exe"},
 		{"linux-x64", "@golmet/cli-linux-x64", "linux", "x64", "golmet"},
@@ -321,8 +338,8 @@ func TestNPMPlatformPackagesShape(t *testing.T) {
 		if err := json.Unmarshal(data, &pkg); err != nil {
 			t.Fatalf("package.json de %s ilegível: %v", c.dir, err)
 		}
-		if pkg.Name != c.name || pkg.Version != "1.0.0" {
-			t.Errorf("%s: name/version = %s/%s", c.dir, pkg.Name, pkg.Version)
+		if pkg.Name != c.name || pkg.Version != rootPkg.Version {
+			t.Errorf("%s: name/version = %s/%s, want version %q (sincronizado com o principal)", c.dir, pkg.Name, pkg.Version, rootPkg.Version)
 		}
 		if len(pkg.OS) != 1 || pkg.OS[0] != c.os || len(pkg.CPU) != 1 || pkg.CPU[0] != c.cpu {
 			t.Errorf("%s: os/cpu = %v/%v", c.dir, pkg.OS, pkg.CPU)
@@ -426,6 +443,51 @@ func TestVersionWorkflowBump(t *testing.T) {
 	}
 	if !strings.Contains(y, "gh workflow run release.yml") {
 		t.Errorf("o dispatch da release ausente — o push de tag com GITHUB_TOKEN não dispara o release.yml")
+	}
+}
+
+// ---- M38 — o commit de bump versionado: o version workflow grava a versão
+// nos 6 package.json e empurra `chore(release): vX.Y.Z` na main ANTES de
+// taggear — a tag aponta para o commit cuja árvore carrega a versão
+// publicada (checkout da tag = versão certa). O push é por DEPLOY KEY: o
+// GITHUB_TOKEN builtin não pode entrar no bypass do ruleset da main. ----
+
+func TestVersionWorkflowCommitsBump(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", ".github", "workflows", "version.yml"))
+	if err != nil {
+		t.Fatalf("version.yml ausente: %v", err)
+	}
+	y := string(data)
+	// o commit de bump é chore — chore não é releasável, então o commit
+	// próprio nunca infla o bump seguinte (sem loop de versão)
+	if !strings.Contains(y, "chore(release): ${VERSION}") {
+		t.Errorf("o commit de bump ausente ou com type não-chore — chore(release) não pode contar como releasável no range seguinte")
+	}
+	// os 6 package.json gravados (raiz + 5 de plataforma) + as optionals
+	for _, dir := range []string{"'.'", "'npm/win32-x64'", "'npm/darwin-arm64'"} {
+		if !strings.Contains(y, dir) {
+			t.Errorf("o stamp não cobre o dir %s (os 6 package.json são bumpados juntos)", dir)
+		}
+	}
+	if !strings.Contains(y, "optionalDependencies[name]") {
+		t.Errorf("as optionalDependencies não acompanham o stamp — npm resolve optional por versão exata")
+	}
+	// auto-assert de sincronia antes do push (o commit não passa por PR)
+	if !strings.Contains(y, "versões divergentes após o stamp") {
+		t.Errorf("o auto-assert de sincronia dos 6 ausente — commit de bump sem CI precisa validar dentro do passo")
+	}
+	// o push direto usa a deploy key (o GITHUB_TOKEN builtin não pode
+	// receber bypass de ruleset — restrição do GitHub)
+	if !strings.Contains(y, "BUMP_DEPLOY_KEY") {
+		t.Errorf("o secret BUMP_DEPLOY_KEY ausente — sem ele o push do commit bate no ruleset (PR + 1 aprovação)")
+	}
+	if !strings.Contains(y, "git@github.com:${{ github.repository }}.git") {
+		t.Errorf("o push via SSH da deploy key ausente — o remote https ainda usaria o GITHUB_TOKEN builtin")
+	}
+	// a tag aponta para a ponta da main (o commit de bump), não para o
+	// checkout do run (merge commit com os arquivos antigos)
+	if !strings.Contains(y, `git tag -a "${VERSION}" origin/main`) {
+		t.Errorf("a tag deve nascer no commit de bump (origin/main pós-push) — tag no HEAD do checkout deixaria a árvore da tag com a versão antiga")
 	}
 }
 
