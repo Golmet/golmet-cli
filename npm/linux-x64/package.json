@@ -1,13 +1,19 @@
 {
   "name": "@golmet/cli-linux-x64",
-  "version": "1.0.0",
+  "version": "1.7.3",
   "description": "The golmet native binary for linux/x64 — the stone guardian of your product's documented truth (GOLMET).",
-  "os": ["linux"],
-  "cpu": ["x64"],
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Golmet/golmet-cli.git"
   },
-  "files": ["golmet"]
+  "files": [
+    "golmet"
+  ]
 }
