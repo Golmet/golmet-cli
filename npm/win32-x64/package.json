@@ -1,6 +1,6 @@
 {
   "name": "@golmet/cli-win32-x64",
-  "version": "1.7.3",
+  "version": "1.7.4",
   "description": "The golmet native binary for win32/x64 — the stone guardian of your product's documented truth (GOLMET).",
   "os": [
     "win32"
