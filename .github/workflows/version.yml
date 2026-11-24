@@ -153,8 +153,12 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "${BUMP_DEPLOY_KEY}" > ~/.ssh/bump_deploy_key
           chmod 600 ~/.ssh/bump_deploy_key
-          git remote set-url --push origin "git@github.com:${{ github.repository }}.git"
-          GIT_SSH_COMMAND="ssh -i ~/.ssh/bump_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" git push origin "HEAD:main"
+          # push com a URL SSH explícita — NUNCA mutar o remote (set-url):
+          # o remote era mutado para SSH e o step de tag seguinte herdava o
+          # remote sem o GIT_SSH_COMMAND, morrendo em "Permission denied
+          # (publickey)" (lição da v1.7.3: o remote fica https e o step de
+          # tag usa o GH_TOKEN normal, como sempre usou)
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/bump_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" git push "git@github.com:${{ github.repository }}.git" "HEAD:main"
           echo "commit de bump ${VERSION} empurrado na main"
 
       - name: Cria e empurra a tag + despacha a release

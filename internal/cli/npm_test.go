@@ -484,6 +484,11 @@ func TestVersionWorkflowCommitsBump(t *testing.T) {
 	if !strings.Contains(y, "git@github.com:${{ github.repository }}.git") {
 		t.Errorf("o push via SSH da deploy key ausente — o remote https ainda usaria o GITHUB_TOKEN builtin")
 	}
+	// o remote NUNCA é mutado: set-url contaminava o step de tag seguinte
+	// (herdava SSH sem o GIT_SSH_COMMAND → Permission denied na v1.7.3)
+	if strings.Contains(y, "git remote set-url") {
+		t.Errorf("o version.yml não pode mutar o remote (git remote set-url) — o step de tag herda o remote e falha em Permission denied; use a URL SSH explícita no push")
+	}
 	// a tag aponta para a ponta da main (o commit de bump), não para o
 	// checkout do run (merge commit com os arquivos antigos)
 	if !strings.Contains(y, `git tag -a "${VERSION}" origin/main`) {
