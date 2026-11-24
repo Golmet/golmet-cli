@@ -5,10 +5,16 @@
 A versão do kit é decidida **pelo merge, não por uma pessoa**: todo merge na
 `main` roda o workflow de versão, que lê os subjects dos commits desde a
 última tag `v*`, classifica por Conventional Commits e calcula o próximo
-semver. **A tag é a fonte única da verdade** — a versão publicada no npm é
-sempre igual à tag; os `package.json` versionados no repo são patchados no
-momento do publish (a cópia do repo pode ficar um degrau atrás; o registry,
-nunca).
+semver. **A tag é a fonte única da verdade** - a versão publicada no npm é
+sempre igual à tag. Em todo bump, o workflow de versão também **grava a
+versão no repo** (`chore(release): vX.Y.Z`, carimbada nos 6 `package.json`)
+e empurra o commit na `main` antes de taggear — a tag nasce **nesse commit
+de bump**, então `git show vX.Y.Z:package.json` sempre é igual a `vX.Y.Z`
+e um checkout da tag já é publicável como está. O push direto do workflow
+usa uma deploy key (o `GITHUB_TOKEN` builtin não pode receber bypass de
+ruleset); o stamp no publish permanece como guard de verificação. Tags
+cortadas antes desse mecanismo (`v1.7.2` e anteriores) carregam o
+placeholder `1.0.0` antigo na árvore.
 
 ## O formato do commit
 

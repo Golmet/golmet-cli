@@ -4,9 +4,15 @@
 # calculada — feat → minor, fix → patch, `!` (qualquer tipo) ou footer
 # `BREAKING CHANGE:` → major; demais tipos (docs/chore/refactor/test/ci/
 # style/build) não geram release — nenhum merge de docs cria versão
-# fantasma. Com bump: cria a tag anotada no HEAD, empurra e DESPACHA o
-# workflow release explicitamente (push de tag feito com o GITHUB_TOKEN
-# não dispara workflows — o workflow_dispatch é a exceção documentada).
+# fantasma. Com bump: grava a versão nos 6 package.json (raiz + 5 de
+# plataforma), empurra o commit `chore(release): vX.Y.Z` na main e cria a
+# tag anotada NESE COMMIT DE BUMP — a árvore da tag carrega a versão
+# publicada (checkout da tag = versão certa, sem stamp). O push do commit
+# usa a DEPLOY KEY (secret BUMP_DEPLOY_KEY): o GITHUB_TOKEN builtin não
+# pode entrar na lista de bypass do ruleset (restrição do GitHub) e a main
+# exige PR + 1 aprovação. Depois DESPACHA o workflow release explicitamente
+# (push de tag feito com o GITHUB_TOKEN não dispara workflows — o
+# workflow_dispatch é a exceção documentada).
 name: version
 
 on:
@@ -84,6 +90,73 @@ jobs:
           echo "version=${NEXT}" >> "${GITHUB_OUTPUT}"
           echo "última tag: ${LAST_TAG:-nenhuma} · próxima versão: ${NEXT} (${BUMP})"
 
+      - name: Grava a versão nos 6 package.json e empurra o commit de bump
+        if: steps.semver.outputs.bump != 'none'
+        env:
+          BUMP_DEPLOY_KEY: ${{ secrets.BUMP_DEPLOY_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.semver.outputs.version }}"
+          VERSION_NPM="${VERSION#v}"
+          # idempotência: re-run com os arquivos já na versão alvo → pula o
+          # commit; a tag vem no passo seguinte (e se a tag já existe o run
+          # inteiro termina no skip dela)
+          CURRENT="$(node -p "require('./package.json').version")"
+          if [ "${CURRENT}" = "${VERSION_NPM}" ]; then
+            echo "package.json já em ${VERSION_NPM} — commit de bump pulado (idempotente)"
+            exit 0
+          fi
+          # race com merge humano: a main avançou desde o checkout → falha
+          # ruidosa e o re-run recomputa sobre a ponta (a concurrency
+          # serializa os runs do version — a janela de corrida é só de merge
+          # humano, rara)
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo "::error::main avançou desde o checkout — re-run do workflow para recomputar sobre a ponta"
+            exit 1
+          fi
+          # grava a versão nos 6 package.json e nos optionalDependencies —
+          # MESMO padrão de aspas do release.yml: este bloco vive entre
+          # aspas duplas do bash, NUNCA use aspas duplas aqui (comentário
+          # com aspas fecha a string e o node roda script truncado)
+          node -e "
+            const fs = require('fs');
+            const dirs = ['.', 'npm/win32-x64', 'npm/linux-x64', 'npm/linux-arm64', 'npm/darwin-x64', 'npm/darwin-arm64'];
+            for (const d of dirs) {
+              const p = JSON.parse(fs.readFileSync(d + '/package.json', 'utf8'));
+              p.version = '${VERSION_NPM}';
+              for (const name of Object.keys(p.optionalDependencies || {})) {
+                p.optionalDependencies[name] = '${VERSION_NPM}';
+              }
+              fs.writeFileSync(d + '/package.json', JSON.stringify(p, null, 2) + '\n');
+            }
+          "
+          # auto-assert: os 6 sincronizados na versão alvo antes de qualquer
+          # push (o commit não passa por PR — valida aqui)
+          node -e "
+            const fs = require('fs');
+            const dirs = ['.', 'npm/win32-x64', 'npm/linux-x64', 'npm/linux-arm64', 'npm/darwin-x64', 'npm/darwin-arm64'];
+            const seen = new Set(dirs.map(d => JSON.parse(fs.readFileSync(d + '/package.json', 'utf8')).version));
+            if (seen.size !== 1 || [...seen][0] !== '${VERSION_NPM}') {
+              console.error('versões divergentes após o stamp: ' + [...seen].join(', '));
+              process.exit(1);
+            }
+          "
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json npm/win32-x64/package.json npm/linux-x64/package.json npm/linux-arm64/package.json npm/darwin-x64/package.json npm/darwin-arm64/package.json
+          git commit -m "chore(release): ${VERSION}" -m "bump automático do workflow version — a tag aponta para este commit e a árvore dela carrega a versão publicada"
+          # o push usa a deploy key: a main exige PR (ruleset) e o
+          # github-actions[bot] não pode receber bypass — o actor DeployKey
+          # (bypass always) é o único caminho de push direto do CI
+          mkdir -p ~/.ssh
+          printf '%s\n' "${BUMP_DEPLOY_KEY}" > ~/.ssh/bump_deploy_key
+          chmod 600 ~/.ssh/bump_deploy_key
+          git remote set-url --push origin "git@github.com:${{ github.repository }}.git"
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/bump_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" git push origin "HEAD:main"
+          echo "commit de bump ${VERSION} empurrado na main"
+
       - name: Cria e empurra a tag + despacha a release
         if: steps.semver.outputs.bump != 'none'
         env:
@@ -98,7 +171,11 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "${VERSION}" -m "release ${VERSION}"
+          # re-sincroniza antes de taggear: a tag nasce NO COMMIT DE BUMP
+          # (tip da main após o push do passo anterior — ou nele mesmo no
+          # caso idempotente), nunca num ancestral sem a versão na árvore
+          git fetch origin main
+          git tag -a "${VERSION}" origin/main -m "release ${VERSION}"
           git push origin "refs/tags/${VERSION}"
           gh workflow run release.yml --ref main -f tag="${VERSION}"
           echo "tag ${VERSION} empurrada + workflow release despachado"
